@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { StarBackground } from "@/components/StarBackground";
@@ -54,6 +54,19 @@ export default function RegisterPage() {
       });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) { setError(body.error ?? "Đăng ký thất bại."); return; }
+
+      // Auto sign in user to establish session
+      const signInRes = await signIn("credentials", {
+        email: email.trim(),
+        password,
+        redirect: false,
+      });
+
+      if (signInRes?.error) {
+        setError("Tài khoản đã tạo nhưng tự động đăng nhập thất bại. Vui lòng đăng nhập thủ công.");
+        return;
+      }
+
       router.push("/setup/profile");
       router.refresh();
     } finally {
