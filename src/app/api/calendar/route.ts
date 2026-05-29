@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       orderBy: { startAt: "asc" },
     });
 
-    const allInstances = events.flatMap(event => 
+    const allInstances = events.flatMap((event: any) => 
       generateRecurringInstances(event, windowStart, windowEnd)
     );
 
