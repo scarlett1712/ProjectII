@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, ArrowRight, HelpCircle } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export interface TourStep {
   selector: string;
@@ -24,13 +25,21 @@ export function OnboardingTour({ pageKey, steps, onComplete }: OnboardingTourPro
   const [windowSize, setWindowSize] = useState({ width: 1200, height: 800 });
   const animationFrameId = useRef<number | null>(null);
 
+  const { data: session } = useSession();
+  const userEmail = session?.user?.email || "";
+
   useEffect(() => {
     setIsMounted(true);
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
 
-    // Check if tour was already completed and if it is a new signup
-    const completed = localStorage.getItem(`star-tour-completed-${pageKey}`);
-    const isNewSignup = localStorage.getItem("is-new-signup") === "true";
+    const suffix = userEmail ? `-${userEmail}` : "";
+    const completedKey = `star-tour-completed-${pageKey}${suffix}`;
+    const isNewSignupKey = `is-new-signup${suffix}`;
+
+    // Read user-scoped or global fallback
+    const completed = localStorage.getItem(completedKey) || (userEmail ? localStorage.getItem(`star-tour-completed-${pageKey}`) : null);
+    const isNewSignup = localStorage.getItem(isNewSignupKey) === "true" || localStorage.getItem("is-new-signup") === "true";
+
     if (isNewSignup && !completed && steps.length > 0) {
       // Start tour with a slight delay so page elements render fully
       const timer = setTimeout(() => {
@@ -38,7 +47,7 @@ export function OnboardingTour({ pageKey, steps, onComplete }: OnboardingTourPro
       }, 1200);
       return () => clearTimeout(timer);
     }
-  }, [pageKey, steps]);
+  }, [pageKey, steps, userEmail]);
 
   const activeStep = currentStepIdx >= 0 && currentStepIdx < steps.length ? steps[currentStepIdx] : null;
 
@@ -124,7 +133,15 @@ export function OnboardingTour({ pageKey, steps, onComplete }: OnboardingTourPro
   };
 
   const handleComplete = () => {
+    const suffix = userEmail ? `-${userEmail}` : "";
+    localStorage.setItem(`star-tour-completed-${pageKey}${suffix}`, "true");
     localStorage.setItem(`star-tour-completed-${pageKey}`, "true");
+
+    if (pageKey === "dashboard") {
+      localStorage.removeItem(`is-new-signup${suffix}`);
+      localStorage.removeItem("is-new-signup");
+    }
+
     setCurrentStepIdx(-1);
     if (onComplete) onComplete();
   };

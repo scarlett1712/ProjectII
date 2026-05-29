@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { StarBackground } from "@/components/StarBackground";
 import { DraggableStar } from "@/components/DraggableStar";
 
@@ -9,6 +10,9 @@ const DEFAULT_SLOTS = ["07:00", "09:00", "11:00", "13:30", "15:30", "17:30", "18
 
 export default function SetupWaterPage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const userEmail = session?.user?.email || "";
+
   const [target, setTarget] = useState("2000");
   const [slots, setSlots] = useState<string[]>(DEFAULT_SLOTS);
   const [newSlot, setNewSlot] = useState("");
@@ -62,6 +66,9 @@ export default function SetupWaterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type: "goal", dailyTargetMl: Number(target), slots }),
       });
+      if (userEmail) {
+        localStorage.setItem(`is-new-signup-${userEmail}`, "true");
+      }
       localStorage.setItem("is-new-signup", "true");
       router.push("/dashboard");
     } finally {
@@ -139,6 +146,9 @@ export default function SetupWaterPage() {
 
           <div className="mt-8 flex gap-3">
             <button type="button" onClick={() => {
+              if (userEmail) {
+                localStorage.setItem(`is-new-signup-${userEmail}`, "true");
+              }
               localStorage.setItem("is-new-signup", "true");
               router.push("/dashboard");
             }}

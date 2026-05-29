@@ -502,7 +502,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                   {!isCollapsed && (
                     <div className="flex-1 overflow-hidden">
-                      <p className="truncate text-sm font-bold">{session?.user?.name || "Lilstar"}</p>
+                      <p className="truncate text-sm font-bold">{session?.user?.name || "Người dùng"}</p>
                       <p className="truncate text-xs opacity-70">Người dùng</p>
                     </div>
                   )}
@@ -706,7 +706,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                   {!isEditingProfile ? (
                     <>
-                      <h2 className="mb-1 text-2xl font-bold text-[#A172FD]">{session?.user?.name || "Lilstar"}</h2>
+                      <h2 className="mb-1 text-2xl font-bold text-[#A172FD]">{session?.user?.name || "Người dùng"}</h2>
                       <p className="mb-8 text-sm text-[#6B7280]">Thông tin người dùng</p>
                       
                       <div className="w-full space-y-3">

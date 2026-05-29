@@ -1,19 +1,41 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { StarBackground } from "@/components/StarBackground";
 import { DraggableStar } from "@/components/DraggableStar";
 
 export default function SetupProfilePage() {
   const router = useRouter();
+  const { data: session } = useSession();
+  const userEmail = session?.user?.email || "";
+
   const [name, setName] = useState("");
-  const [gender, setGender] = useState("FEMALE");
-  const [age, setAge] = useState("21");
-  const [height, setHeight] = useState("154");
-  const [weight, setWeight] = useState("47");
-  const [activity, setActivity] = useState("LIGHT");
+  const [gender, setGender] = useState("");
+  const [age, setAge] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [activity, setActivity] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (userEmail) {
+      // Landed on setup page -> new signup for this account
+      localStorage.setItem(`is-new-signup-${userEmail}`, "true");
+      localStorage.removeItem(`star-tour-completed-dashboard-${userEmail}`);
+      localStorage.removeItem(`star-tour-completed-nutrition-meal-${userEmail}`);
+      localStorage.removeItem(`star-tour-completed-nutrition-water-${userEmail}`);
+      localStorage.removeItem(`star-tour-completed-calendar-${userEmail}`);
+      
+      // Also write global ones as fallback
+      localStorage.setItem("is-new-signup", "true");
+      localStorage.removeItem("star-tour-completed-dashboard");
+      localStorage.removeItem("star-tour-completed-nutrition-meal");
+      localStorage.removeItem("star-tour-completed-nutrition-water");
+      localStorage.removeItem("star-tour-completed-calendar");
+    }
+  }, [userEmail]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,12 +45,12 @@ export default function SetupProfilePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: name.trim() || "Lilstar",
-          gender,
-          age: age === "" ? "" : Number(age),
-          heightCm: height === "" ? "" : Number(height),
-          weightKg: weight === "" ? "" : Number(weight),
-          activityLevel: activity,
+          name: name.trim() || "Người dùng",
+          gender: gender || null,
+          age: age === "" ? null : Number(age),
+          heightCm: height === "" ? null : Number(height),
+          weightKg: weight === "" ? null : Number(weight),
+          activityLevel: activity || null,
         }),
       });
       router.push("/setup/notifications");
@@ -54,7 +76,7 @@ export default function SetupProfilePage() {
               <label htmlFor="name" className="mb-1 block text-sm font-medium text-[#374151]">Tên người dùng (Tùy chọn)</label>
               <input
                 id="name" type="text" value={name} onChange={(e) => setName(e.target.value)}
-                placeholder="Lilstar"
+                placeholder="Người dùng"
                 className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 text-sm text-gray-900 font-bold placeholder:text-[#9ca3af] outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50"
               />
             </div>
@@ -64,6 +86,7 @@ export default function SetupProfilePage() {
                 <label htmlFor="gender" className="mb-1 block text-sm font-medium text-[#374151]">Giới tính</label>
                 <select id="gender" value={gender} onChange={(e) => setGender(e.target.value)}
                   className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 text-sm text-gray-900 font-bold outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50">
+                  <option value="" disabled>Chọn giới tính</option>
                   <option value="FEMALE">Nữ</option>
                   <option value="MALE">Nam</option>
                   <option value="OTHER">Khác</option>
@@ -72,7 +95,8 @@ export default function SetupProfilePage() {
               <div>
                 <label htmlFor="age" className="mb-1 block text-sm font-medium text-[#374151]">Tuổi</label>
                 <input id="age" type="number" value={age} onChange={(e) => setAge(e.target.value)}
-                  className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 text-sm text-gray-900 font-bold outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50" />
+                  placeholder="Ví dụ: 21"
+                  className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 text-sm text-gray-900 font-bold placeholder:text-[#9ca3af] outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50" />
               </div>
             </div>
 
@@ -81,7 +105,8 @@ export default function SetupProfilePage() {
                 <label htmlFor="height" className="mb-1 block text-sm font-medium text-[#374151]">Chiều cao</label>
                 <div className="relative">
                   <input id="height" type="number" value={height} onChange={(e) => setHeight(e.target.value)}
-                    className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 pr-12 text-sm text-gray-900 font-bold outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50" />
+                    placeholder="Ví dụ: 154"
+                    className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 pr-12 text-sm text-gray-900 font-bold placeholder:text-[#9ca3af] outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50" />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af]">cm</span>
                 </div>
               </div>
@@ -89,7 +114,8 @@ export default function SetupProfilePage() {
                 <label htmlFor="weight" className="mb-1 block text-sm font-medium text-[#374151]">Cân nặng</label>
                 <div className="relative">
                   <input id="weight" type="number" value={weight} onChange={(e) => setWeight(e.target.value)}
-                    className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 pr-12 text-sm text-gray-900 font-bold outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50" />
+                    placeholder="Ví dụ: 47"
+                    className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 pr-12 text-sm text-gray-900 font-bold placeholder:text-[#9ca3af] outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50" />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[#9ca3af]">kg</span>
                 </div>
               </div>
@@ -99,6 +125,7 @@ export default function SetupProfilePage() {
               <label htmlFor="activity" className="mb-1 block text-sm font-medium text-[#374151]">Mức độ vận động</label>
               <select id="activity" value={activity} onChange={(e) => setActivity(e.target.value)}
                 className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 text-sm text-gray-900 font-bold outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50">
+                <option value="" disabled>Chọn mức độ vận động</option>
                 <option value="SEDENTARY">Ít vận động</option>
                 <option value="LIGHT">Vận động nhẹ</option>
                 <option value="MODERATE">Vận động vừa</option>
