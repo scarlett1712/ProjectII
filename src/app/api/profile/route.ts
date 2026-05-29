@@ -22,9 +22,9 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const weight = Number(body.weightKg);
-  const height = Number(body.heightCm);
-  const age = Number(body.age);
+  const weight = (body.weightKg !== undefined && body.weightKg !== null && body.weightKg !== "") ? Number(body.weightKg) : NaN;
+  const height = (body.heightCm !== undefined && body.heightCm !== null && body.heightCm !== "") ? Number(body.heightCm) : NaN;
+  const age = (body.age !== undefined && body.age !== null && body.age !== "") ? Number(body.age) : NaN;
 
   const dailyCalories = calculateDailyCalories({
     gender: body.gender,

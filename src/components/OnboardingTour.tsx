@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, ArrowRight, HelpCircle } from "lucide-react";
 
@@ -152,7 +153,7 @@ export function OnboardingTour({ pageKey, steps, onComplete }: OnboardingTourPro
     cardTop = Math.max(16, Math.min(windowSize.height - 180 - 16, cardTop));
   }
 
-  return (
+  return createPortal(
     <>
       {/* Darkened backdrop blocking page clicks */}
       <div className="fixed inset-0 z-[9990] bg-black/10 pointer-events-auto" />
@@ -243,6 +244,7 @@ export function OnboardingTour({ pageKey, steps, onComplete }: OnboardingTourPro
           </div>
         </motion.div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

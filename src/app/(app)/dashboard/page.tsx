@@ -29,7 +29,12 @@ const dashboardSteps: TourStep[] = [
   {
     selector: "#tour-deadlines",
     title: "Danh sách Deadline!!!",
-    content: "Các ghi chú công việc sắp tới sẽ xuất hiện ở đây dưới dạng các mẫu note xinh xắn. Bạn có thể kéo thả chúng ra xung quanh màn hình và click dấu tick để đánh dấu hoàn thành.",
+    content: "Các ghi chú công việc sắp tới sẽ xuất hiện ở đây dưới dạng các mẫu note xinh xắn. Bạn có thể nhấp vào để chỉnh sửa hoặc click dấu tick để đánh dấu hoàn thành.",
+  },
+  {
+    selector: "#tour-deadlines",
+    title: "Ghim note & Kéo thả tự do",
+    content: "Đặc biệt, bạn có thể kéo thả tự do các tờ giấy note này ra khỏi danh sách để dính ở bất cứ chỗ nào trên màn hình nền để dễ theo dõi!",
   },
   {
     selector: "#tour-energy-water",
@@ -40,6 +45,16 @@ const dashboardSteps: TourStep[] = [
     selector: "#tour-wallet-chart",
     title: "Thống kê Ví xèng",
     content: "Xem biểu đồ biến động số dư tài chính của bạn trong tuần để có kế hoạch chi tiêu hợp lý hơn.",
+  },
+  {
+    selector: "#tour-user-profile",
+    title: "Chỉnh sửa Hồ sơ người dùng",
+    content: "Nhấp vào thanh hồ sơ ở góc dưới bên trái để đổi tên hiển thị, cập nhật chiều cao, cân nặng, độ tuổi hoặc Đăng xuất bất cứ lúc nào.",
+  },
+  {
+    selector: "#tour-chatbot-star",
+    title: "Trợ lý sức khỏe Bé Sao ⭐",
+    content: "Bé Sao có thể chat trò chuyện, giải đáp thắc mắc, tự động ghi chú dựa theo thông tin của bạn và gửi thông báo nhắc lịch học, nhắc uống nước trực tiếp lên màn hình Windows!",
   }
 ];
 
@@ -683,7 +698,7 @@ export default function DashboardPage() {
         {showAddNote && (
           <div
             onClick={() => { setShowAddNote(false); setEditingTask(null); }}
-            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-md p-4"
+            className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -830,7 +845,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-md"
+          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md"
           onClick={() => setShowAddMeal(false)}
         >
           <motion.div
@@ -920,7 +935,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-md"
+          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md"
           onClick={() => setShowAddTransaction(false)}
         >
           <motion.div
@@ -1050,7 +1065,7 @@ export default function DashboardPage() {
         {showCalendarModal && (
           <div
             onClick={() => { setShowCalendarModal(false); }}
-            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-md p-4"
+            className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
@@ -1381,7 +1396,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-6 right-6 z-[200] flex items-center gap-3 rounded-2xl bg-white/85 border border-purple-100 p-4 shadow-2xl backdrop-blur-md"
+            className="fixed bottom-6 right-6 z-[220] flex items-center gap-3 rounded-2xl bg-white/85 border border-purple-100 p-4 shadow-2xl backdrop-blur-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-[#A172FD]">
               <Bell className="h-5 w-5 animate-bounce" />
@@ -1396,7 +1411,7 @@ export default function DashboardPage() {
         {confirmDialog && (
           <div
             onClick={() => setConfirmDialog(null)}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}

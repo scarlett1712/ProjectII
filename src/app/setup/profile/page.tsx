@@ -23,11 +23,11 @@ export default function SetupProfilePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          name: name.trim() || "Lilstar",
           gender,
-          age: Number(age),
-          heightCm: Number(height),
-          weightKg: Number(weight),
+          age: age === "" ? "" : Number(age),
+          heightCm: height === "" ? "" : Number(height),
+          weightKg: weight === "" ? "" : Number(weight),
           activityLevel: activity,
         }),
       });
@@ -51,9 +51,9 @@ export default function SetupProfilePage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="name" className="mb-1 block text-sm font-medium text-[#374151]">Tên người dùng *</label>
+              <label htmlFor="name" className="mb-1 block text-sm font-medium text-[#374151]">Tên người dùng (Tùy chọn)</label>
               <input
-                id="name" type="text" required value={name} onChange={(e) => setName(e.target.value)}
+                id="name" type="text" value={name} onChange={(e) => setName(e.target.value)}
                 placeholder="Lilstar"
                 className="w-full rounded-xl border border-transparent bg-[#f0ecff] px-4 py-2.5 text-sm text-gray-900 font-bold placeholder:text-[#9ca3af] outline-none transition focus:border-[#a78bfa] focus:ring-2 focus:ring-[#c4b5fd]/50"
               />

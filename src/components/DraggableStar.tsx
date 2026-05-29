@@ -86,14 +86,14 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 pointer-events-auto"
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[240] pointer-events-auto"
             onClick={() => setAlert(null)}
           />
         )}
       </AnimatePresence>
 
       <motion.div
-        className="fixed z-50 pointer-events-none"
+        className="fixed z-[250] pointer-events-none"
       animate={isAlerting ? {
         left: "calc(50vw - 70px)",
         top: "calc(50vh - 70px)",
@@ -113,7 +113,7 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
             exit={{ opacity: 0, y: 15, scale: 0.9 }}
             className={`absolute w-72 bg-white rounded-3xl p-5 shadow-[0_15px_40px_rgba(139,92,246,0.25)] border border-purple-100 pointer-events-auto text-center space-y-4 flex flex-col items-center ${
               isAlerting 
-                ? "left-full top-1/2 -translate-y-1/2 ml-44" 
+                ? "left-full top-1/2 -translate-y-1/2 ml-[250px]" 
                 : "bottom-full mb-6 left-1/2 -translate-x-1/2"
             }`}
           >
@@ -177,7 +177,7 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
               initial={{ opacity: 0.8, scale: 1 }}
               animate={{
                 opacity: [0.8, 0],
-                scale: [1, 3.5],
+                scale: [1, 4.5],
               }}
               transition={{
                 repeat: Infinity,
@@ -196,7 +196,7 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
           {[...Array(12)].map((_, i) => {
             const angle = (i * 360) / 12;
             const radian = (angle * Math.PI) / 180;
-            const distance = 220; // distance from center in parent coordinates
+            const distance = 260; // slightly wider particle circle to match 4.2x scale
             const tx = Math.cos(radian) * distance;
             const ty = Math.sin(radian) * distance;
             
@@ -229,17 +229,18 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
       {/* Star button */}
       <motion.button
+        id="tour-chatbot-star"
         type="button"
         aria-label="Open chatbot"
         className="pointer-events-auto cursor-grab active:cursor-grabbing outline-none"
         style={{ width: STAR_SIZE, height: STAR_SIZE, touchAction: "none" }}
         animate={isAlerting ? {
-          scale: [2.8, 3.2, 2.8],
-          rotate: 360,
+          scale: [3.8, 4.2, 3.8],
+          rotate: [0, 360],
           filter: [
-            "drop-shadow(0 0 25px rgba(253, 224, 71, 0.8))",
-            "drop-shadow(0 0 60px rgba(253, 224, 71, 1))",
-            "drop-shadow(0 0 25px rgba(253, 224, 71, 0.8))"
+            "drop-shadow(0 0 35px rgba(253, 224, 71, 0.9))",
+            "drop-shadow(0 0 80px rgba(253, 224, 71, 1))",
+            "drop-shadow(0 0 35px rgba(253, 224, 71, 0.9))"
           ]
         } : {
           scale: 1,

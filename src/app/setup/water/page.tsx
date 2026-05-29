@@ -138,7 +138,10 @@ export default function SetupWaterPage() {
           </div>
 
           <div className="mt-8 flex gap-3">
-            <button type="button" onClick={() => router.push("/dashboard")}
+            <button type="button" onClick={() => {
+              localStorage.setItem("is-new-signup", "true");
+              router.push("/dashboard");
+            }}
               className="flex-1 rounded-xl border-2 border-[#e5e7eb] py-3 font-semibold text-[#6b7280] transition hover:bg-gray-50 active:scale-95">
               Để sau
             </button>

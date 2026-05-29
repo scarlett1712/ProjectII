@@ -271,7 +271,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   : `Sự kiện "${item.title}" ${threshold === 'overdue' ? 'đang diễn ra!' : threshold === 'critical' ? 'sắp diễn ra (còn dưới 2 giờ)!' : 'sắp diễn ra (còn dưới 24 giờ)!'}`;
 
                 if (Notification.permission === "granted") {
-                  new Notification("Little Star Nhắc Nhở", { body: message, icon: "/favicon.ico" });
+                  try {
+                    new Notification("Little Star Nhắc Nhở", { body: message, icon: "/chatbot-star.png" });
+                  } catch (e) {
+                    console.error("Standard notification error, fallback to service worker if any", e);
+                  }
                 }
 
                 window.dispatchEvent(new CustomEvent("star-notification", {
@@ -299,7 +303,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 const message = `Đã đến giờ uống nước! Hãy uống ${slot.amountMl}ml nước nhé. 💧`;
                 
                 if (Notification.permission === "granted") {
-                  new Notification("Little Star Nhắc Nhở", { body: message, icon: "/favicon.ico" });
+                  try {
+                    new Notification("Little Star Nhắc Nhở", { body: message, icon: "/chatbot-star.png" });
+                  } catch (e) {
+                    console.error("Standard notification error, fallback to service worker if any", e);
+                  }
                 }
 
                 window.dispatchEvent(new CustomEvent("star-notification", {
@@ -462,7 +470,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="absolute bottom-[calc(100%-20px)] left-0 w-full overflow-hidden rounded-3xl border border-white/50 bg-white/90 p-2 shadow-2xl backdrop-blur-md"
+                      className="absolute bottom-[calc(100%-20px)] left-0 w-full overflow-hidden rounded-3xl border border-white/50 bg-white/90 p-2 shadow-2xl backdrop-blur-md z-[200]"
                     >
                       <button 
                         onClick={() => { setShowProfile(true); setUserMenuOpen(false); }}
@@ -483,6 +491,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </AnimatePresence>
 
                 <div 
+                  id="tour-user-profile"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className={`flex cursor-pointer items-center gap-3 rounded-3xl text-white shadow-lg transition-all active:scale-95 ${
                     isCollapsed ? "justify-center p-3" : "p-4"
@@ -525,6 +534,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
+                  {/* Notification permission prompt button */}
+                  {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && (
+                    <button
+                      onClick={async () => {
+                        const res = await Notification.requestPermission();
+                        if (res === "granted") {
+                          try {
+                            new Notification("Little Star Nhắc Nhở", {
+                              body: "Cảm ơn bạn đã bật thông báo hệ thống! 🌟",
+                              icon: "/chatbot-star.png"
+                            });
+                          } catch (e) {
+                            console.error(e);
+                          }
+                        }
+                        window.location.reload();
+                      }}
+                      className="flex items-center gap-1.5 rounded-full bg-yellow-50 hover:bg-yellow-100 px-3.5 py-1.5 text-[11px] font-black text-yellow-700 transition-all border border-yellow-200 shadow-sm animate-pulse cursor-pointer shrink-0"
+                      title="Bật thông báo Windows"
+                    >
+                      <span>⚠️ Bật thông báo Windows</span>
+                    </button>
+                  )}
+
                   {/* Global Search Bar */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-400" />
@@ -543,7 +576,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          className="absolute top-full right-0 mt-2 w-80 max-h-80 overflow-y-auto bg-white/95 rounded-2xl border border-purple-100 shadow-2xl p-2 z-[99] backdrop-blur-md"
+                          className="absolute top-full right-0 mt-2 w-80 max-h-80 overflow-y-auto bg-white/95 rounded-2xl border border-purple-100 shadow-2xl p-2 z-[200] backdrop-blur-md"
                         >
                           {searchLoading ? (
                             <p className="text-xs text-gray-400 p-3 text-center">Đang tìm kiếm...</p>
@@ -587,8 +620,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <AnimatePresence>
                       {showNotifDropdown && (
                         <>
-                          <div className="fixed inset-0 z-40" onClick={() => setShowNotifDropdown(false)} />
-                          <div className="absolute right-0 top-full mt-2 w-80 overflow-hidden rounded-3xl border border-purple-100 bg-white/95 p-4 shadow-2xl backdrop-blur-md z-50">
+                          <div className="fixed inset-0 z-[190]" onClick={() => setShowNotifDropdown(false)} />
+                          <div className="absolute right-0 top-full mt-2 w-80 overflow-hidden rounded-3xl border border-purple-100 bg-white/95 p-4 shadow-2xl backdrop-blur-md z-[200]">
                             <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-3">
                               <p className="text-sm font-black text-gray-800">Thông báo</p>
                               <div className="flex gap-2">
@@ -656,7 +689,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md"
+              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md"
               onClick={() => { setShowProfile(false); setIsEditingProfile(false); }}
             >
               <motion.div 
