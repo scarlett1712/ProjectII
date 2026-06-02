@@ -40,6 +40,7 @@ type Account = {
   id: string;
   name: string;
   balance: number;
+  color: string;
 };
 
 type Category = {
@@ -139,6 +140,7 @@ export default function BudgetPage() {
   // Form states
   const [accountName, setAccountName] = useState("");
   const [accountBalance, setAccountBalance] = useState("");
+  const [accountColor, setAccountColor] = useState("#A172FD");
   
   const [categoryName, setCategoryName] = useState("");
   const [categoryType, setCategoryType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
@@ -245,12 +247,14 @@ export default function BudgetPage() {
         body: JSON.stringify({
           name: accountName.trim(),
           balance: accountBalance ? Number(accountBalance) : 0,
+          color: accountColor,
         }),
       });
 
       if (res.ok) {
         setAccountName("");
         setAccountBalance("");
+        setAccountColor("#A172FD");
         setShowAddAccount(false);
         triggerToast("Đã thêm tài khoản mới!");
         fetchData();
@@ -276,12 +280,14 @@ export default function BudgetPage() {
           id: editingAccount.id,
           name: accountName.trim(),
           balance: accountBalance ? Number(accountBalance) : 0,
+          color: accountColor,
         }),
       });
 
       if (res.ok) {
         setAccountName("");
         setAccountBalance("");
+        setAccountColor("#A172FD");
         setEditingAccount(null);
         setShowEditAccount(false);
         triggerToast("Đã cập nhật thông tin tài khoản!");
@@ -853,7 +859,12 @@ export default function BudgetPage() {
                       Nguồn tiền tài khoản
                     </h3>
                     <button
-                      onClick={() => setShowAddAccount(true)}
+                      onClick={() => {
+                        setAccountName("");
+                        setAccountBalance("");
+                        setAccountColor("#A172FD");
+                        setShowAddAccount(true);
+                      }}
                       className="flex items-center gap-1 text-[11px] font-black text-[#A172FD] bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-full transition-all"
                     >
                       <Plus className="h-3 w-3" /> Thêm nguồn tiền
@@ -875,12 +886,14 @@ export default function BudgetPage() {
                         {processedAccounts.map((acc) => (
                           <tr key={acc.id} className="hover:bg-purple-50/20 transition-colors">
                             <td className="py-2.5 font-bold text-gray-900 flex items-center gap-1.5 group/cell">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: acc.color || "#A172FD" }} />
                               {acc.name}
                               <button
                                 onClick={() => {
                                   setEditingAccount(acc);
                                   setAccountName(acc.name);
                                   setAccountBalance(String(acc.balance));
+                                  setAccountColor(acc.color || "#A172FD");
                                   setShowEditAccount(true);
                                 }}
                                 className="opacity-0 group-hover/cell:opacity-100 p-0.5 rounded hover:bg-purple-50 text-[#A172FD] transition-all"
@@ -1434,6 +1447,65 @@ export default function BudgetPage() {
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
                   />
                 </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc nguồn tiền</label>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setAccountColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              accountColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setAccountColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              accountColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={accountColor}
+                            onChange={(e) => setAccountColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{accountColor}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: accountColor }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <button type="submit" className="w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
                   Lưu tài khoản
                 </button>
@@ -1477,6 +1549,65 @@ export default function BudgetPage() {
                     placeholder="0đ"
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
                   />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc nguồn tiền</label>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setAccountColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              accountColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setAccountColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              accountColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={accountColor}
+                            onChange={(e) => setAccountColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{accountColor}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: accountColor }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-2 pt-2">
                   <button
@@ -1853,8 +1984,11 @@ export default function BudgetPage() {
                               const selectedAcc = accounts.find((a) => a.id === txFromAccount);
                               return selectedAcc ? (
                                 <div className="flex flex-col items-start leading-tight min-w-0">
-                                  <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
-                                  <span className="text-[10px] text-gray-500 font-semibold">{formatVND(selectedAcc.balance)}</span>
+                                  <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedAcc.color || "#A172FD" }} />
+                                    <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 font-semibold ml-3.5">{formatVND(selectedAcc.balance)}</span>
                                 </div>
                               ) : (
                                 <span className="text-gray-400">-- Chọn tài khoản --</span>
@@ -1887,8 +2021,11 @@ export default function BudgetPage() {
                                 }}
                                 className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
                               >
-                                <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5">
+                                <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color || "#A172FD" }} />
+                                  <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                </div>
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5 ml-3.5">
                                   {formatVND(a.balance)}
                                 </span>
                               </button>
@@ -1925,8 +2062,11 @@ export default function BudgetPage() {
                               const selectedAcc = accounts.find((a) => a.id === txToAccount);
                               return selectedAcc ? (
                                 <div className="flex flex-col items-start leading-tight min-w-0">
-                                  <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
-                                  <span className="text-[10px] text-gray-500 font-semibold">{formatVND(selectedAcc.balance)}</span>
+                                  <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedAcc.color || "#A172FD" }} />
+                                    <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 font-semibold ml-3.5">{formatVND(selectedAcc.balance)}</span>
                                 </div>
                               ) : (
                                 <span className="text-gray-400">-- Chọn tài khoản --</span>
@@ -1959,8 +2099,11 @@ export default function BudgetPage() {
                                 }}
                                 className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
                               >
-                                <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5">
+                                <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color || "#A172FD" }} />
+                                  <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                </div>
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5 ml-3.5">
                                   {formatVND(a.balance)}
                                 </span>
                               </button>
@@ -2172,8 +2315,11 @@ export default function BudgetPage() {
                               const selectedAcc = accounts.find((a) => a.id === txFromAccount);
                               return selectedAcc ? (
                                 <div className="flex flex-col items-start leading-tight min-w-0">
-                                  <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
-                                  <span className="text-[10px] text-gray-500 font-semibold">{formatVND(selectedAcc.balance)}</span>
+                                  <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedAcc.color || "#A172FD" }} />
+                                    <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 font-semibold ml-3.5">{formatVND(selectedAcc.balance)}</span>
                                 </div>
                               ) : (
                                 <span className="text-gray-400">-- Chọn tài khoản --</span>
@@ -2206,8 +2352,11 @@ export default function BudgetPage() {
                                 }}
                                 className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
                               >
-                                <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5">
+                                <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color || "#A172FD" }} />
+                                  <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                </div>
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5 ml-3.5">
                                   {formatVND(a.balance)}
                                 </span>
                               </button>
@@ -2244,8 +2393,11 @@ export default function BudgetPage() {
                               const selectedAcc = accounts.find((a) => a.id === txToAccount);
                               return selectedAcc ? (
                                 <div className="flex flex-col items-start leading-tight min-w-0">
-                                  <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
-                                  <span className="text-[10px] text-gray-500 font-semibold">{formatVND(selectedAcc.balance)}</span>
+                                  <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedAcc.color || "#A172FD" }} />
+                                    <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                                  </div>
+                                  <span className="text-[10px] text-gray-500 font-semibold ml-3.5">{formatVND(selectedAcc.balance)}</span>
                                 </div>
                               ) : (
                                 <span className="text-gray-400">-- Chọn tài khoản --</span>
@@ -2278,8 +2430,11 @@ export default function BudgetPage() {
                                 }}
                                 className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
                               >
-                                <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5">
+                                <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color || "#A172FD" }} />
+                                  <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                </div>
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5 ml-3.5">
                                   {formatVND(a.balance)}
                                 </span>
                               </button>

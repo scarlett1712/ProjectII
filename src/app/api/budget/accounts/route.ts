@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { name, balance } = body;
+    const { name, balance, color } = body;
     if (!name) {
       return NextResponse.json({ error: "Tên tài khoản không được để trống" }, { status: 400 });
     }
@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         userId: auth.userId!,
         name: String(name).trim(),
         balance: balance ? Number(balance) : 0,
+        color: color ? String(color).trim() : "#A172FD",
       },
     });
     return NextResponse.json(account);
@@ -49,7 +50,7 @@ export async function PATCH(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { id, name, balance } = body;
+    const { id, name, balance, color } = body;
     if (!id) {
       return NextResponse.json({ error: "Missing ID" }, { status: 400 });
     }
@@ -57,6 +58,7 @@ export async function PATCH(req: NextRequest) {
     const updateData: any = {};
     if (name !== undefined) updateData.name = String(name).trim();
     if (balance !== undefined) updateData.balance = Number(balance);
+    if (color !== undefined) updateData.color = String(color).trim();
 
     const account = await db.budgetAccount.updateMany({
       where: { id, userId: auth.userId! },
