@@ -677,11 +677,10 @@ export default function BudgetPage() {
       .map((c) => ({
         name: c.name,
         value: c.actual,
+        color: c.color,
       }));
-    return data.length > 0 ? data : [{ name: "Chưa chi tiêu", value: 1 }];
+    return data.length > 0 ? data : [{ name: "Chưa chi tiêu", value: 1, color: "#E5E7EB" }];
   };
-
-  const PIE_COLORS = ["#A172FD", "#38BDF8", "#F472B6", "#FB923C", "#A7F3D0", "#F87171", "#C084FC", "#93C5FD"];
 
   return (
     <div className="space-y-6">
@@ -1364,7 +1363,7 @@ export default function BudgetPage() {
                           dataKey="value"
                         >
                           {getPieData().map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                            <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
                         <Tooltip formatter={(value) => formatVND(Number(value))} />
@@ -1374,10 +1373,10 @@ export default function BudgetPage() {
 
                   {/* Pie Chart Legend */}
                   <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                    {expenseCategoriesData.filter(c => c.actual > 0).map((cat, i) => (
+                    {expenseCategoriesData.filter(c => c.actual > 0).map((cat) => (
                       <div key={cat.id} className="flex items-center justify-between text-xs font-bold">
                         <div className="flex items-center gap-2 text-gray-500">
-                          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
                           <span>{cat.name}</span>
                         </div>
                         <span className="text-purple-950">{formatVND(cat.actual)}</span>
