@@ -14,6 +14,7 @@ import {
   PieChart as PieIcon,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   PlusCircle,
   HelpCircle,
   AlertCircle,
@@ -110,6 +111,11 @@ export default function BudgetPage() {
   const [showEditTransaction, setShowEditTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionType, setTransactionType] = useState<"EXPENSE" | "INCOME" | "TRANSFER">("EXPENSE");
+
+  // Custom Dropdowns state
+  const [catDropdownOpen, setCatDropdownOpen] = useState(false);
+  const [fromAccDropdownOpen, setFromAccDropdownOpen] = useState(false);
+  const [toAccDropdownOpen, setToAccDropdownOpen] = useState(false);
 
   // Form states
   const [accountName, setAccountName] = useState("");
@@ -391,6 +397,11 @@ export default function BudgetPage() {
       return;
     }
 
+    if (transactionType !== "TRANSFER" && !txCategory) {
+      triggerToast("Vui lòng chọn danh mục phân loại.");
+      return;
+    }
+
     if (transactionType === "EXPENSE" && !txFromAccount) {
       triggerToast("Vui lòng chọn tài khoản nguồn chi.");
       return;
@@ -444,6 +455,11 @@ export default function BudgetPage() {
 
     if (!txAmount || isNaN(Number(txAmount))) {
       triggerToast("Số tiền không hợp lệ.");
+      return;
+    }
+
+    if (transactionType !== "TRANSFER" && !txCategory) {
+      triggerToast("Vui lòng chọn danh mục phân loại.");
       return;
     }
 
@@ -1629,19 +1645,84 @@ export default function BudgetPage() {
                 {transactionType !== "TRANSFER" && (
                   <div>
                     <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Danh mục phân loại</label>
-                    <select
-                      required
-                      value={txCategory}
-                      onChange={(e) => setTxCategory(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                    >
-                      <option value="" disabled>-- Chọn phân loại --</option>
-                      {categories
-                        .filter((c) => c.type === transactionType)
-                        .map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                    </select>
+                    <div className="relative">
+                      {/* Trigger Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCatDropdownOpen(!catDropdownOpen);
+                          setFromAccDropdownOpen(false);
+                          setToAccDropdownOpen(false);
+                        }}
+                        className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
+                      >
+                        {txCategory ? (
+                          (() => {
+                            const selectedCat = categories.find((c) => c.id === txCategory);
+                            return selectedCat ? (
+                              <span
+                                className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                                style={{
+                                  backgroundColor: `${selectedCat.color}15`,
+                                  color: selectedCat.color,
+                                  border: `1px solid ${selectedCat.color}30`,
+                                }}
+                              >
+                                {selectedCat.name}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-- Chọn phân loại --</span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-gray-400">-- Chọn phân loại --</span>
+                        )}
+                        <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
+                      </button>
+
+                      {/* Backdrop for click-outside */}
+                      {catDropdownOpen && (
+                        <div
+                          className="fixed inset-0 z-[240]"
+                          onClick={() => setCatDropdownOpen(false)}
+                        />
+                      )}
+
+                      {/* Dropdown Options List */}
+                      {catDropdownOpen && (
+                        <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[260px] overflow-y-auto space-y-1">
+                          {categories
+                            .filter((c) => c.type === transactionType)
+                            .map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => {
+                                  setTxCategory(c.id);
+                                  setCatDropdownOpen(false);
+                                }}
+                                className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
+                              >
+                                <span
+                                  className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                                  style={{
+                                    backgroundColor: `${c.color}15`,
+                                    color: c.color,
+                                    border: `1px solid ${c.color}30`,
+                                  }}
+                                >
+                                  {c.name}
+                                </span>
+                              </button>
+                            ))}
+                          {categories.filter((c) => c.type === transactionType).length === 0 && (
+                            <div className="p-3 text-xs text-gray-400 text-center font-bold">
+                              Chưa có danh mục phân loại nào.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1651,17 +1732,70 @@ export default function BudgetPage() {
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
                         {transactionType === "TRANSFER" ? "Từ tài khoản" : "Tài khoản nguồn chi"}
                       </label>
-                      <select
-                        required
-                        value={txFromAccount}
-                        onChange={(e) => setTxFromAccount(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      >
-                        <option value="" disabled>-- Chọn tài khoản --</option>
-                        {accounts.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name} ({formatVND(a.balance)})</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        {/* Trigger Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFromAccDropdownOpen(!fromAccDropdownOpen);
+                            setCatDropdownOpen(false);
+                            setToAccDropdownOpen(false);
+                          }}
+                          className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
+                        >
+                          {txFromAccount ? (
+                            (() => {
+                              const selectedAcc = accounts.find((a) => a.id === txFromAccount);
+                              return selectedAcc ? (
+                                <div className="flex flex-col items-start leading-tight min-w-0">
+                                  <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                                  <span className="text-[10px] text-gray-500 font-semibold">{formatVND(selectedAcc.balance)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-- Chọn tài khoản --</span>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-gray-400">-- Chọn tài khoản --</span>
+                          )}
+                          <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
+                        </button>
+
+                        {/* Backdrop for click-outside */}
+                        {fromAccDropdownOpen && (
+                          <div
+                            className="fixed inset-0 z-[240]"
+                            onClick={() => setFromAccDropdownOpen(false)}
+                          />
+                        )}
+
+                        {/* Dropdown Options List */}
+                        {fromAccDropdownOpen && (
+                          <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1">
+                            {accounts.map((a) => (
+                              <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => {
+                                  setTxFromAccount(a.id);
+                                  setFromAccDropdownOpen(false);
+                                }}
+                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
+                              >
+                                <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5">
+                                  {formatVND(a.balance)}
+                                </span>
+                              </button>
+                            ))}
+                            {accounts.length === 0 && (
+                              <div className="p-3 text-xs text-gray-400 text-center font-bold">
+                                Chưa có tài khoản nào.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -1670,17 +1804,70 @@ export default function BudgetPage() {
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
                         {transactionType === "TRANSFER" ? "Đến tài khoản" : "Tài khoản nhận tiền"}
                       </label>
-                      <select
-                        required
-                        value={txToAccount}
-                        onChange={(e) => setTxToAccount(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      >
-                        <option value="" disabled>-- Chọn tài khoản --</option>
-                        {accounts.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name} ({formatVND(a.balance)})</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        {/* Trigger Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setToAccDropdownOpen(!toAccDropdownOpen);
+                            setCatDropdownOpen(false);
+                            setFromAccDropdownOpen(false);
+                          }}
+                          className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
+                        >
+                          {txToAccount ? (
+                            (() => {
+                              const selectedAcc = accounts.find((a) => a.id === txToAccount);
+                              return selectedAcc ? (
+                                <div className="flex flex-col items-start leading-tight min-w-0">
+                                  <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                                  <span className="text-[10px] text-gray-500 font-semibold">{formatVND(selectedAcc.balance)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-- Chọn tài khoản --</span>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-gray-400">-- Chọn tài khoản --</span>
+                          )}
+                          <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
+                        </button>
+
+                        {/* Backdrop for click-outside */}
+                        {toAccDropdownOpen && (
+                          <div
+                            className="fixed inset-0 z-[240]"
+                            onClick={() => setToAccDropdownOpen(false)}
+                          />
+                        )}
+
+                        {/* Dropdown Options List */}
+                        {toAccDropdownOpen && (
+                          <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1">
+                            {accounts.map((a) => (
+                              <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => {
+                                  setTxToAccount(a.id);
+                                  setToAccDropdownOpen(false);
+                                }}
+                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
+                              >
+                                <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5">
+                                  {formatVND(a.balance)}
+                                </span>
+                              </button>
+                            ))}
+                            {accounts.length === 0 && (
+                              <div className="p-3 text-xs text-gray-400 text-center font-bold">
+                                Chưa có tài khoản nào.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1777,19 +1964,84 @@ export default function BudgetPage() {
                 {transactionType !== "TRANSFER" && (
                   <div>
                     <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Danh mục phân loại</label>
-                    <select
-                      required
-                      value={txCategory}
-                      onChange={(e) => setTxCategory(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                    >
-                      <option value="" disabled>-- Chọn phân loại --</option>
-                      {categories
-                        .filter((c) => c.type === transactionType)
-                        .map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                    </select>
+                    <div className="relative">
+                      {/* Trigger Button */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCatDropdownOpen(!catDropdownOpen);
+                          setFromAccDropdownOpen(false);
+                          setToAccDropdownOpen(false);
+                        }}
+                        className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
+                      >
+                        {txCategory ? (
+                          (() => {
+                            const selectedCat = categories.find((c) => c.id === txCategory);
+                            return selectedCat ? (
+                              <span
+                                className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                                style={{
+                                  backgroundColor: `${selectedCat.color}15`,
+                                  color: selectedCat.color,
+                                  border: `1px solid ${selectedCat.color}30`,
+                                }}
+                              >
+                                {selectedCat.name}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-- Chọn phân loại --</span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-gray-400">-- Chọn phân loại --</span>
+                        )}
+                        <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
+                      </button>
+
+                      {/* Backdrop for click-outside */}
+                      {catDropdownOpen && (
+                        <div
+                          className="fixed inset-0 z-[240]"
+                          onClick={() => setCatDropdownOpen(false)}
+                        />
+                      )}
+
+                      {/* Dropdown Options List */}
+                      {catDropdownOpen && (
+                        <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[260px] overflow-y-auto space-y-1">
+                          {categories
+                            .filter((c) => c.type === transactionType)
+                            .map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => {
+                                  setTxCategory(c.id);
+                                  setCatDropdownOpen(false);
+                                }}
+                                className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
+                              >
+                                <span
+                                  className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                                  style={{
+                                    backgroundColor: `${c.color}15`,
+                                    color: c.color,
+                                    border: `1px solid ${c.color}30`,
+                                  }}
+                                >
+                                  {c.name}
+                                </span>
+                              </button>
+                            ))}
+                          {categories.filter((c) => c.type === transactionType).length === 0 && (
+                            <div className="p-3 text-xs text-gray-400 text-center font-bold">
+                              Chưa có danh mục phân loại nào.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -1799,17 +2051,70 @@ export default function BudgetPage() {
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
                         {transactionType === "TRANSFER" ? "Từ tài khoản" : "Tài khoản nguồn chi"}
                       </label>
-                      <select
-                        required
-                        value={txFromAccount}
-                        onChange={(e) => setTxFromAccount(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      >
-                        <option value="" disabled>-- Chọn tài khoản --</option>
-                        {accounts.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name} ({formatVND(a.balance)})</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        {/* Trigger Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFromAccDropdownOpen(!fromAccDropdownOpen);
+                            setCatDropdownOpen(false);
+                            setToAccDropdownOpen(false);
+                          }}
+                          className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
+                        >
+                          {txFromAccount ? (
+                            (() => {
+                              const selectedAcc = accounts.find((a) => a.id === txFromAccount);
+                              return selectedAcc ? (
+                                <div className="flex flex-col items-start leading-tight min-w-0">
+                                  <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                                  <span className="text-[10px] text-gray-500 font-semibold">{formatVND(selectedAcc.balance)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-- Chọn tài khoản --</span>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-gray-400">-- Chọn tài khoản --</span>
+                          )}
+                          <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
+                        </button>
+
+                        {/* Backdrop for click-outside */}
+                        {fromAccDropdownOpen && (
+                          <div
+                            className="fixed inset-0 z-[240]"
+                            onClick={() => setFromAccDropdownOpen(false)}
+                          />
+                        )}
+
+                        {/* Dropdown Options List */}
+                        {fromAccDropdownOpen && (
+                          <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1">
+                            {accounts.map((a) => (
+                              <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => {
+                                  setTxFromAccount(a.id);
+                                  setFromAccDropdownOpen(false);
+                                }}
+                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
+                              >
+                                <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5">
+                                  {formatVND(a.balance)}
+                                </span>
+                              </button>
+                            ))}
+                            {accounts.length === 0 && (
+                              <div className="p-3 text-xs text-gray-400 text-center font-bold">
+                                Chưa có tài khoản nào.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -1818,17 +2123,70 @@ export default function BudgetPage() {
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
                         {transactionType === "TRANSFER" ? "Đến tài khoản" : "Tài khoản nhận tiền"}
                       </label>
-                      <select
-                        required
-                        value={txToAccount}
-                        onChange={(e) => setTxToAccount(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      >
-                        <option value="" disabled>-- Chọn tài khoản --</option>
-                        {accounts.map((a) => (
-                          <option key={a.id} value={a.id}>{a.name} ({formatVND(a.balance)})</option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        {/* Trigger Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setToAccDropdownOpen(!toAccDropdownOpen);
+                            setCatDropdownOpen(false);
+                            setFromAccDropdownOpen(false);
+                          }}
+                          className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
+                        >
+                          {txToAccount ? (
+                            (() => {
+                              const selectedAcc = accounts.find((a) => a.id === txToAccount);
+                              return selectedAcc ? (
+                                <div className="flex flex-col items-start leading-tight min-w-0">
+                                  <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                                  <span className="text-[10px] text-gray-500 font-semibold">{formatVND(selectedAcc.balance)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">-- Chọn tài khoản --</span>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-gray-400">-- Chọn tài khoản --</span>
+                          )}
+                          <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
+                        </button>
+
+                        {/* Backdrop for click-outside */}
+                        {toAccDropdownOpen && (
+                          <div
+                            className="fixed inset-0 z-[240]"
+                            onClick={() => setToAccDropdownOpen(false)}
+                          />
+                        )}
+
+                        {/* Dropdown Options List */}
+                        {toAccDropdownOpen && (
+                          <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1">
+                            {accounts.map((a) => (
+                              <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => {
+                                  setTxToAccount(a.id);
+                                  setToAccDropdownOpen(false);
+                                }}
+                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
+                              >
+                                <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5">
+                                  {formatVND(a.balance)}
+                                </span>
+                              </button>
+                            ))}
+                            {accounts.length === 0 && (
+                              <div className="p-3 text-xs text-gray-400 text-center font-bold">
+                                Chưa có tài khoản nào.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
