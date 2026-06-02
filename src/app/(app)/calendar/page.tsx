@@ -26,6 +26,7 @@ import { vi } from "date-fns/locale";
 import { 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
   Plus, 
   Trash2, 
   Clock, 
@@ -301,6 +302,7 @@ export default function CalendarPage() {
   const [showTagModal, setShowTagModal] = useState(false);
   const [editingItem, setEditingItem] = useState<CalendarItem | null>(null);
   const [showEditTagModal, setShowEditTagModal] = useState(false);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
 
   // Form states
   const [title, setTitle] = useState("");
@@ -800,6 +802,7 @@ export default function CalendarPage() {
     setRecurrenceEndStr("");
     setCompleted(false);
     setPendingFloatPos(null);
+    setTagDropdownOpen(false);
   };
 
   const openCreatePopup = (start: Date | null, end: Date | null, isTaskVal = false) => {
@@ -1746,23 +1749,71 @@ export default function CalendarPage() {
 
                 {/* Classification Tag */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Phân loại nhãn</label>
-                  <select 
-                    value={selectedTagId} 
-                    onChange={e => {
-                      const val = e.target.value;
-                      setSelectedTagId(val);
-                      const tag = tags.find(t => t.id === val);
-                      if (tag) {
-                        setNoteColor(tag.color);
-                      }
-                    }} 
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                  >
-                    {tags.map(t => (
-                      <option key={t.id} value={t.id}>{t.name} ({t.isSystem ? "Mặc định" : "Custom"})</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-bold text-gray-400 tracking-wider mb-1.5 uppercase">Phân loại nhãn</label>
+                  <div className="relative">
+                    {/* Trigger Button */}
+                    <button
+                      type="button"
+                      onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+                      className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
+                    >
+                      {(() => {
+                        const selectedTag = tags.find((t) => t.id === selectedTagId);
+                        return selectedTag ? (
+                          <span
+                            className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                            style={{
+                              backgroundColor: `${selectedTag.color}15`,
+                              color: selectedTag.color,
+                              border: `1px solid ${selectedTag.color}30`,
+                            }}
+                          >
+                            {selectedTag.name} {selectedTag.isSystem ? "(Mặc định)" : "(Custom)"}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-- Chọn nhãn --</span>
+                        );
+                      })()}
+                      <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
+                    </button>
+
+                    {/* Backdrop for click-outside */}
+                    {tagDropdownOpen && (
+                      <div
+                        className="fixed inset-0 z-[240]"
+                        onClick={() => setTagDropdownOpen(false)}
+                      />
+                    )}
+
+                    {/* Dropdown Options List */}
+                    {tagDropdownOpen && (
+                      <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto space-y-1">
+                        {tags.map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedTagId(t.id);
+                              setNoteColor(t.color);
+                              setTagDropdownOpen(false);
+                            }}
+                            className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
+                          >
+                            <span
+                              className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                              style={{
+                                backgroundColor: `${t.color}15`,
+                                color: t.color,
+                                border: `1px solid ${t.color}30`,
+                              }}
+                            >
+                              {t.name} {t.isSystem ? "(Mặc định)" : "(Custom)"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Event Recurrence Options */}
