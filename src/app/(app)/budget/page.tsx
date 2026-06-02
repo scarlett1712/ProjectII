@@ -900,23 +900,23 @@ export default function BudgetPage() {
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="border-b border-purple-50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                          <th className="py-2">Danh mục</th>
-                          <th className="py-2">Ngày</th>
-                          <th className="py-2 text-right">Xèng</th>
-                          <th className="py-2">TK nhận</th>
-                          <th className="py-2">Chi tiết</th>
-                          <th className="py-2 text-center">Xóa</th>
+                          <th className="px-3 py-2">Danh mục</th>
+                          <th className="px-3 py-2">Ngày</th>
+                          <th className="px-3 py-2 text-right">Xèng</th>
+                          <th className="px-3 py-2">TK nhận</th>
+                          <th className="px-3 py-2">Chi tiết</th>
+                          <th className="px-3 py-2 text-center">Xóa</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-purple-50/50 font-semibold text-gray-600">
                         {transactions.filter(t => t.type === "INCOME").map((t) => (
                           <tr key={t.id} className="hover:bg-purple-50/10">
-                            <td className="py-2.5 font-bold text-gray-900">{t.category?.name || "Khác"}</td>
-                            <td className="py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
-                            <td className="py-2.5 text-right font-bold text-emerald-600">+{formatVND(t.amount)}</td>
-                            <td className="py-2.5">{t.toAccount?.name || "Ví"}</td>
-                            <td className="py-2.5 truncate max-w-[80px]" title={t.note || ""}>{t.note || "-"}</td>
-                            <td className="py-2.5 text-center">
+                            <td className="px-3 py-2.5 font-bold text-gray-900">{t.category?.name || "Khác"}</td>
+                            <td className="px-3 py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
+                            <td className="px-3 py-2.5 text-right font-bold text-emerald-600">+{formatVND(t.amount)}</td>
+                            <td className="px-3 py-2.5">{t.toAccount?.name || "Ví"}</td>
+                            <td className="px-3 py-2.5 truncate max-w-[80px]" title={t.note || ""}>{t.note || "-"}</td>
+                            <td className="px-3 py-2.5 text-center">
                               <button onClick={() => handleDeleteTx(t.id)} className="text-gray-400 hover:text-red-500 transition-colors">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -925,7 +925,7 @@ export default function BudgetPage() {
                         ))}
                         {transactions.filter(t => t.type === "INCOME").length === 0 && (
                           <tr>
-                            <td colSpan={6} className="py-6 text-center text-gray-400">Không có bản ghi thu nhập nào.</td>
+                            <td colSpan={6} className="px-3 py-6 text-center text-gray-400">Không có bản ghi thu nhập nào.</td>
                           </tr>
                         )}
                       </tbody>
@@ -940,33 +940,33 @@ export default function BudgetPage() {
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="border-b border-purple-50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                          <th className="py-2">Danh mục/Loại</th>
-                          <th className="py-2">Ngày</th>
-                          <th className="py-2 text-right">Xèng</th>
-                          <th className="py-2">TK Nguồn</th>
-                          <th className="py-2">Đến/Note</th>
-                          <th className="py-2 text-center">Xóa</th>
+                          <th className="px-3 py-2">Danh mục/Loại</th>
+                          <th className="px-3 py-2">Ngày</th>
+                          <th className="px-3 py-2 text-right">Xèng</th>
+                          <th className="px-3 py-2">TK Nguồn</th>
+                          <th className="px-3 py-2">Đến/Note</th>
+                          <th className="px-3 py-2 text-center">Xóa</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-purple-50/50 font-semibold text-gray-600">
                         {transactions.filter(t => t.type === "EXPENSE" || t.type === "TRANSFER").map((t) => (
                           <tr key={t.id} className="hover:bg-purple-50/10">
-                            <td className="py-2.5 font-bold text-gray-900">
+                            <td className="px-3 py-2.5 font-bold text-gray-900">
                               {t.type === "TRANSFER" ? (
                                 <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md text-[10px] font-black uppercase">Chuyển khoản</span>
                               ) : (
                                 t.category?.name || "Khác"
                               )}
                             </td>
-                            <td className="py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
-                            <td className={`py-2.5 text-right font-bold ${t.type === "TRANSFER" ? "text-indigo-500" : "text-red-500"}`}>
+                            <td className="px-3 py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
+                            <td className={`px-3 py-2.5 text-right font-bold ${t.type === "TRANSFER" ? "text-indigo-500" : "text-red-500"}`}>
                               {t.type === "TRANSFER" ? "" : "-"}{formatVND(t.amount)}
                             </td>
-                            <td className="py-2.5">{t.fromAccount?.name || "Ví"}</td>
-                            <td className="py-2.5 truncate max-w-[80px]" title={t.type === "TRANSFER" ? `Đến: ${t.toAccount?.name}` : t.note || ""}>
+                            <td className="px-3 py-2.5">{t.fromAccount?.name || "Ví"}</td>
+                            <td className="px-3 py-2.5 truncate max-w-[80px]" title={t.type === "TRANSFER" ? `Đến: ${t.toAccount?.name}` : t.note || ""}>
                               {t.type === "TRANSFER" ? `➔ ${t.toAccount?.name}` : t.note || "-"}
                             </td>
-                            <td className="py-2.5 text-center">
+                            <td className="px-3 py-2.5 text-center">
                               <button onClick={() => handleDeleteTx(t.id)} className="text-gray-400 hover:text-red-500 transition-colors">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -975,7 +975,7 @@ export default function BudgetPage() {
                         ))}
                         {transactions.filter(t => t.type === "EXPENSE" || t.type === "TRANSFER").length === 0 && (
                           <tr>
-                            <td colSpan={6} className="py-6 text-center text-gray-400">Không có bản ghi chi tiêu/chuyển khoản nào.</td>
+                            <td colSpan={6} className="px-3 py-6 text-center text-gray-400">Không có bản ghi chi tiêu/chuyển khoản nào.</td>
                           </tr>
                         )}
                       </tbody>
