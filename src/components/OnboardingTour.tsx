@@ -137,11 +137,6 @@ export function OnboardingTour({ pageKey, steps, onComplete }: OnboardingTourPro
     localStorage.setItem(`star-tour-completed-${pageKey}${suffix}`, "true");
     localStorage.setItem(`star-tour-completed-${pageKey}`, "true");
 
-    if (pageKey === "dashboard") {
-      localStorage.removeItem(`is-new-signup${suffix}`);
-      localStorage.removeItem("is-new-signup");
-    }
-
     setCurrentStepIdx(-1);
     if (onComplete) onComplete();
   };

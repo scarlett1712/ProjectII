@@ -8,8 +8,14 @@ import { DraggableStar } from "@/components/DraggableStar";
 
 export default function SetupProfilePage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userEmail = session?.user?.email || "";
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
@@ -18,6 +24,17 @@ export default function SetupProfilePage() {
   const [weight, setWeight] = useState("");
   const [activity, setActivity] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F3FF]">
+        <div className="text-center animate-pulse">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A172FD] border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-[#A172FD] font-black">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     if (userEmail) {

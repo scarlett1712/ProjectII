@@ -10,14 +10,31 @@ const DEFAULT_SLOTS = ["07:00", "09:00", "11:00", "13:30", "15:30", "17:30", "18
 
 export default function SetupWaterPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const userEmail = session?.user?.email || "";
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
 
   const [target, setTarget] = useState("2000");
   const [slots, setSlots] = useState<string[]>(DEFAULT_SLOTS);
   const [newSlot, setNewSlot] = useState("");
   const [loading, setLoading] = useState(false);
   const [aiMessage, setAiMessage] = useState("");
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F3FF]">
+        <div className="text-center animate-pulse">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A172FD] border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-[#A172FD] font-black">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     fetch("/api/profile")

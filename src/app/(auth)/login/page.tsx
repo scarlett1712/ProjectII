@@ -44,7 +44,7 @@ function LoginContent() {
       setTimeout(() => {
         router.push("/dashboard");
         router.refresh();
-      }, 10000);
+      }, 2500);
     } finally {
       setLoading(false);
     }
