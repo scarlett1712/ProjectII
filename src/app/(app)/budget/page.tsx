@@ -89,6 +89,8 @@ export default function BudgetPage() {
 
   // Modals state
   const [showAddAccount, setShowAddAccount] = useState(false);
+  const [showEditAccount, setShowEditAccount] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showLogTransaction, setShowLogTransaction] = useState(false);
   const [transactionType, setTransactionType] = useState<"EXPENSE" | "INCOME" | "TRANSFER">("EXPENSE");
@@ -213,6 +215,63 @@ export default function BudgetPage() {
       } else {
         const body = await res.json();
         triggerToast(body.error || "Không thể tạo tài khoản.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Edit Account
+  const handleEditAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAccount || !accountName.trim()) return;
+
+    try {
+      const res = await fetch("/api/budget/accounts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingAccount.id,
+          name: accountName.trim(),
+          balance: accountBalance ? Number(accountBalance) : 0,
+        }),
+      });
+
+      if (res.ok) {
+        setAccountName("");
+        setAccountBalance("");
+        setEditingAccount(null);
+        setShowEditAccount(false);
+        triggerToast("Đã cập nhật thông tin tài khoản!");
+        fetchData();
+      } else {
+        const body = await res.json();
+        triggerToast(body.error || "Không thể cập nhật tài khoản.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Delete Account
+  const handleDeleteAccount = async (id: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa tài khoản này? Toàn bộ giao dịch liên quan sẽ bị mất liên kết tài khoản.")) return;
+
+    try {
+      const res = await fetch(`/api/budget/accounts?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setAccountName("");
+        setAccountBalance("");
+        setEditingAccount(null);
+        setShowEditAccount(false);
+        triggerToast("Đã xóa tài khoản.");
+        fetchData();
+      } else {
+        const body = await res.json();
+        triggerToast(body.error || "Không thể xóa tài khoản.");
       }
     } catch (e) {
       console.error(e);
@@ -646,7 +705,23 @@ export default function BudgetPage() {
                       <tbody className="divide-y divide-purple-50/50 text-xs font-semibold text-gray-700">
                         {processedAccounts.map((acc) => (
                           <tr key={acc.id} className="hover:bg-purple-50/20 transition-colors">
-                            <td className="py-2.5 font-bold text-gray-900">{acc.name}</td>
+                            <td className="py-2.5 font-bold text-gray-900 flex items-center gap-1.5 group/cell">
+                              {acc.name}
+                              <button
+                                onClick={() => {
+                                  setEditingAccount(acc);
+                                  setAccountName(acc.name);
+                                  setAccountBalance(String(acc.balance));
+                                  setShowEditAccount(true);
+                                }}
+                                className="opacity-0 group-hover/cell:opacity-100 p-0.5 rounded hover:bg-purple-50 text-[#A172FD] transition-all"
+                                title="Chỉnh sửa tài khoản"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                            </td>
                             <td className="py-2.5 text-right text-gray-500">{formatVND(acc.starting)}</td>
                             <td className="py-2.5 text-right text-emerald-600">+{formatVND(acc.incoming)}</td>
                             <td className="py-2.5 text-right text-red-500">-{formatVND(acc.outgoing)}</td>
@@ -1110,6 +1185,59 @@ export default function BudgetPage() {
                 <button type="submit" className="w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
                   Lưu tài khoản
                 </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 1.5. Modal Edit Account */}
+        {showEditAccount && editingAccount && (
+          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" onClick={() => { setShowEditAccount(false); setEditingAccount(null); }}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-black text-purple-950">Chỉnh sửa tài khoản</h3>
+                <button onClick={() => { setShowEditAccount(false); setEditingAccount(null); }} className="p-1 rounded-full hover:bg-gray-100 text-gray-400"><X className="h-5 w-5" /></button>
+              </div>
+              <form onSubmit={handleEditAccount} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Tên tài khoản</label>
+                  <input
+                    type="text"
+                    required
+                    value={accountName}
+                    onChange={(e) => setAccountName(e.target.value)}
+                    placeholder="Tên tài khoản..."
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Số dư hiện tại (đ)</label>
+                  <input
+                    type="number"
+                    value={accountBalance}
+                    onChange={(e) => setAccountBalance(e.target.value)}
+                    placeholder="0đ"
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteAccount(editingAccount.id)}
+                    className="px-4 py-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors font-bold text-sm"
+                  >
+                    Xóa
+                  </button>
+                  <button type="submit" className="flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
+                    Lưu thay đổi
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>
