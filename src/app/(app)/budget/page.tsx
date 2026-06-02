@@ -107,6 +107,8 @@ export default function BudgetPage() {
   const [showEditCategory, setShowEditCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showLogTransaction, setShowLogTransaction] = useState(false);
+  const [showEditTransaction, setShowEditTransaction] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionType, setTransactionType] = useState<"EXPENSE" | "INCOME" | "TRANSFER">("EXPENSE");
 
   // Form states
@@ -429,6 +431,64 @@ export default function BudgetPage() {
       } else {
         const body = await res.json();
         triggerToast(body.error || "Lỗi khi ghi giao dịch.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Edit Transaction
+  const handleEditTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTransaction) return;
+
+    if (!txAmount || isNaN(Number(txAmount))) {
+      triggerToast("Số tiền không hợp lệ.");
+      return;
+    }
+
+    if (transactionType === "EXPENSE" && !txFromAccount) {
+      triggerToast("Vui lòng chọn tài khoản nguồn chi.");
+      return;
+    }
+    if (transactionType === "INCOME" && !txToAccount) {
+      triggerToast("Vui lòng chọn tài khoản nhận tiền.");
+      return;
+    }
+    if (transactionType === "TRANSFER" && (!txFromAccount || !txToAccount)) {
+      triggerToast("Vui lòng chọn tài khoản chuyển và nhận.");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/budget/transactions", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingTransaction.id,
+          amount: Number(txAmount),
+          type: transactionType,
+          categoryId: transactionType !== "TRANSFER" ? txCategory : null,
+          fromAccountId: transactionType !== "INCOME" ? txFromAccount : null,
+          toAccountId: transactionType !== "EXPENSE" ? txToAccount : null,
+          note: txNote.trim(),
+          occurredAt: new Date(txDate).toISOString(),
+        }),
+      });
+
+      if (res.ok) {
+        setTxAmount("");
+        setTxCategory("");
+        setTxFromAccount("");
+        setTxToAccount("");
+        setTxNote("");
+        setEditingTransaction(null);
+        setShowEditTransaction(false);
+        triggerToast("Đã cập nhật giao dịch!");
+        fetchData();
+      } else {
+        const body = await res.json();
+        triggerToast(body.error || "Lỗi khi cập nhật giao dịch.");
       }
     } catch (e) {
       console.error(e);
@@ -1015,7 +1075,7 @@ export default function BudgetPage() {
                           <th className="px-3 py-2 text-right">Xèng</th>
                           <th className="px-3 py-2">TK nhận</th>
                           <th className="px-3 py-2">Chi tiết</th>
-                          <th className="px-3 py-2 text-center">Xóa</th>
+                          <th className="px-3 py-2 text-center">Tác vụ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-purple-50/50 font-semibold text-gray-600">
@@ -1029,8 +1089,27 @@ export default function BudgetPage() {
                             <td className="px-3 py-2.5 text-right font-bold text-emerald-600">+{formatVND(t.amount)}</td>
                             <td className="px-3 py-2.5">{t.toAccount?.name || "Ví"}</td>
                             <td className="px-3 py-2.5 truncate max-w-[80px]" title={t.note || ""}>{t.note || "-"}</td>
-                            <td className="px-3 py-2.5 text-center">
-                              <button onClick={() => handleDeleteTx(t.id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                            <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingTransaction(t);
+                                  setTxAmount(String(t.amount));
+                                  setTxCategory(t.categoryId || "");
+                                  setTxFromAccount(t.fromAccountId || "");
+                                  setTxToAccount(t.toAccountId || "");
+                                  setTxNote(t.note || "");
+                                  setTxDate(new Date(t.occurredAt).toISOString().split("T")[0]);
+                                  setTransactionType(t.type);
+                                  setShowEditTransaction(true);
+                                }}
+                                className="text-gray-400 hover:text-purple-600 transition-colors"
+                                title="Sửa giao dịch"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                              <button onClick={() => handleDeleteTx(t.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Xóa giao dịch">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </td>
@@ -1058,7 +1137,7 @@ export default function BudgetPage() {
                           <th className="px-3 py-2 text-right">Xèng</th>
                           <th className="px-3 py-2">TK Nguồn</th>
                           <th className="px-3 py-2">Đến/Note</th>
-                          <th className="px-3 py-2 text-center">Xóa</th>
+                          <th className="px-3 py-2 text-center">Tác vụ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-purple-50/50 font-semibold text-gray-600">
@@ -1085,8 +1164,27 @@ export default function BudgetPage() {
                             <td className="px-3 py-2.5 truncate max-w-[80px]" title={t.type === "TRANSFER" ? `Đến: ${t.toAccount?.name}` : t.note || ""}>
                               {t.type === "TRANSFER" ? `➔ ${t.toAccount?.name}` : t.note || "-"}
                             </td>
-                            <td className="px-3 py-2.5 text-center">
-                              <button onClick={() => handleDeleteTx(t.id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                            <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingTransaction(t);
+                                  setTxAmount(String(t.amount));
+                                  setTxCategory(t.categoryId || "");
+                                  setTxFromAccount(t.fromAccountId || "");
+                                  setTxToAccount(t.toAccountId || "");
+                                  setTxNote(t.note || "");
+                                  setTxDate(new Date(t.occurredAt).toISOString().split("T")[0]);
+                                  setTransactionType(t.type);
+                                  setShowEditTransaction(true);
+                                }}
+                                className="text-gray-400 hover:text-purple-600 transition-colors"
+                                title="Sửa giao dịch"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                              <button onClick={() => handleDeleteTx(t.id)} className="text-gray-400 hover:text-red-500 transition-colors" title="Xóa giao dịch">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </td>
@@ -1615,6 +1713,154 @@ export default function BudgetPage() {
 
                 <button type="submit" className="w-full mt-4 rounded-xl bg-[#A172FD] py-4 font-bold text-white hover:bg-[#8b5cf6] transition-transform active:scale-[0.99] shadow-lg text-sm">
                   Ghi lại ngay ➔
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 4. Modal Edit Transaction (Edit Expense / Income / Transfer) */}
+        {showEditTransaction && editingTransaction && (
+          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" onClick={() => { setShowEditTransaction(false); setEditingTransaction(null); }}>
+            <motion.div
+              initial={{ y: 150, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 150, opacity: 0 }}
+              className="bg-white w-full max-w-[500px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-black text-purple-950">Chỉnh sửa giao dịch</h3>
+                <button onClick={() => { setShowEditTransaction(false); setEditingTransaction(null); }} className="p-1 rounded-full hover:bg-gray-100 text-gray-400"><X className="h-5 w-5" /></button>
+              </div>
+
+              {/* Transaction Type tab buttons inside modal */}
+              <div className="grid grid-cols-3 gap-1 bg-purple-50 p-1 rounded-xl text-xs font-black mb-6">
+                <button
+                  type="button"
+                  onClick={() => setTransactionType("EXPENSE")}
+                  className={`py-2 rounded-lg text-center transition-all ${transactionType === "EXPENSE" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
+                >
+                  Chi tiêu
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTransactionType("INCOME")}
+                  className={`py-2 rounded-lg text-center transition-all ${transactionType === "INCOME" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
+                >
+                  Thu nhập
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTransactionType("TRANSFER")}
+                  className={`py-2 rounded-lg text-center transition-all ${transactionType === "TRANSFER" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
+                >
+                  Chuyển khoản
+                </button>
+              </div>
+
+              <form onSubmit={handleEditTransaction} className="space-y-4">
+                {/* 1. Amount */}
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Số tiền (đ)</label>
+                  <input
+                    type="number"
+                    required
+                    value={txAmount}
+                    onChange={(e) => setTxAmount(e.target.value)}
+                    placeholder="Nhập số tiền..."
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-lg font-black text-purple-950 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                  />
+                </div>
+
+                {/* 2. Selection fields depending on type */}
+                {transactionType !== "TRANSFER" && (
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Danh mục phân loại</label>
+                    <select
+                      required
+                      value={txCategory}
+                      onChange={(e) => setTxCategory(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                    >
+                      <option value="" disabled>-- Chọn phân loại --</option>
+                      {categories
+                        .filter((c) => c.type === transactionType)
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  {transactionType !== "INCOME" && (
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
+                        {transactionType === "TRANSFER" ? "Từ tài khoản" : "Tài khoản nguồn chi"}
+                      </label>
+                      <select
+                        required
+                        value={txFromAccount}
+                        onChange={(e) => setTxFromAccount(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                      >
+                        <option value="" disabled>-- Chọn tài khoản --</option>
+                        {accounts.map((a) => (
+                          <option key={a.id} value={a.id}>{a.name} ({formatVND(a.balance)})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {transactionType !== "EXPENSE" && (
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
+                        {transactionType === "TRANSFER" ? "Đến tài khoản" : "Tài khoản nhận tiền"}
+                      </label>
+                      <select
+                        required
+                        value={txToAccount}
+                        onChange={(e) => setTxToAccount(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                      >
+                        <option value="" disabled>-- Chọn tài khoản --</option>
+                        {accounts.map((a) => (
+                          <option key={a.id} value={a.id}>{a.name} ({formatVND(a.balance)})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {/* 3. Date */}
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Thời gian</label>
+                    <input
+                      type="date"
+                      required
+                      value={txDate}
+                      onChange={(e) => setTxDate(e.target.value)}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                    />
+                  </div>
+
+                  {/* 4. Note */}
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Ghi chú chi tiết</label>
+                    <input
+                      type="text"
+                      value={txNote}
+                      onChange={(e) => setTxNote(e.target.value)}
+                      placeholder="Ăn tối, đi xem phim..."
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full mt-4 rounded-xl bg-[#A172FD] py-4 font-bold text-white hover:bg-[#8b5cf6] transition-transform active:scale-[0.99] shadow-lg text-sm">
+                  Lưu thay đổi ➔
                 </button>
               </form>
             </motion.div>

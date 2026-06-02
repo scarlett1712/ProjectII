@@ -107,6 +107,100 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  const auth = await requireUserId();
+  if (auth.response) return auth.response;
+
+  try {
+    const body = await req.json();
+    const { id, amount, type, categoryId, fromAccountId, toAccountId, note, occurredAt } = body;
+
+    if (!id || !amount || !type) {
+      return NextResponse.json({ error: "Thiếu thông tin cập nhật" }, { status: 400 });
+    }
+
+    const value = Number(amount);
+    const occurredTime = occurredAt ? new Date(occurredAt) : new Date();
+
+    const result = await db.$transaction(async (tx) => {
+      // 1. Get the original transaction
+      const oldTx = await tx.budgetTransaction.findUnique({
+        where: { id },
+      });
+
+      if (!oldTx || oldTx.userId !== auth.userId) {
+        throw new Error("Giao dịch không tồn tại hoặc không thuộc quyền sở hữu của bạn");
+      }
+
+      // 2. Reverse old balances
+      const oldVal = oldTx.amount;
+      if (oldTx.type === "EXPENSE" && oldTx.fromAccountId) {
+        await tx.budgetAccount.update({
+          where: { id: oldTx.fromAccountId },
+          data: { balance: { increment: oldVal } },
+        });
+      } else if (oldTx.type === "INCOME" && oldTx.toAccountId) {
+        await tx.budgetAccount.update({
+          where: { id: oldTx.toAccountId },
+          data: { balance: { decrement: oldVal } },
+        });
+      } else if (oldTx.type === "TRANSFER" && oldTx.fromAccountId && oldTx.toAccountId) {
+        await tx.budgetAccount.update({
+          where: { id: oldTx.fromAccountId },
+          data: { balance: { increment: oldVal } },
+        });
+        await tx.budgetAccount.update({
+          where: { id: oldTx.toAccountId },
+          data: { balance: { decrement: oldVal } },
+        });
+      }
+
+      // 3. Apply new balances
+      if (type === "EXPENSE" && fromAccountId) {
+        await tx.budgetAccount.update({
+          where: { id: fromAccountId },
+          data: { balance: { decrement: value } },
+        });
+      } else if (type === "INCOME" && toAccountId) {
+        await tx.budgetAccount.update({
+          where: { id: toAccountId },
+          data: { balance: { increment: value } },
+        });
+      } else if (type === "TRANSFER" && fromAccountId && toAccountId) {
+        await tx.budgetAccount.update({
+          where: { id: fromAccountId },
+          data: { balance: { decrement: value } },
+        });
+        await tx.budgetAccount.update({
+          where: { id: toAccountId },
+          data: { balance: { increment: value } },
+        });
+      }
+
+      // 4. Update the transaction record itself
+      const updatedTx = await tx.budgetTransaction.update({
+        where: { id },
+        data: {
+          amount: value,
+          type: type as TransactionType,
+          categoryId: type !== "TRANSFER" ? (categoryId || null) : null,
+          fromAccountId: type !== "INCOME" ? (fromAccountId || null) : null,
+          toAccountId: type !== "EXPENSE" ? (toAccountId || null) : null,
+          note: note || null,
+          occurredAt: occurredTime,
+        },
+      });
+
+      return updatedTx;
+    });
+
+    return NextResponse.json(result);
+  } catch (e: any) {
+    console.error(e);
+    return NextResponse.json({ error: e.message || "Server Error" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   const auth = await requireUserId();
   if (auth.response) return auth.response;
