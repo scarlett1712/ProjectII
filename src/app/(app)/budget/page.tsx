@@ -71,15 +71,34 @@ type Transaction = {
   toAccount?: Account | null;
 };
 
-const presetColors = [
+const boldColors = [
   "#A172FD", // Violet
-  "#38BDF8", // Blue
-  "#F472B6", // Pink
-  "#FB923C", // Orange
+  "#3B82F6", // Blue
+  "#EC4899", // Pink
+  "#F97316", // Orange
   "#10B981", // Green
-  "#F87171", // Red
-  "#C084FC", // Purple
-  "#06B6D4"  // Turquoise
+  "#EF4444", // Red
+  "#8B5CF6", // Purple
+  "#06B6D4", // Turquoise
+  "#F59E0B", // Amber/Gold
+  "#6366F1", // Indigo
+  "#14B8A6", // Teal
+  "#D946EF"  // Fuchsia
+];
+
+const pastelColors = [
+  "#C4B5FD", // Lavender Pastel
+  "#93C5FD", // Blue Pastel
+  "#FBCFE8", // Pink Pastel
+  "#FED7AA", // Orange Pastel
+  "#A7F3D0", // Green Pastel
+  "#FCA5A5", // Red Pastel
+  "#E9D5FF", // Purple Pastel
+  "#99F6E4", // Teal Pastel
+  "#FEF08A", // Yellow Pastel
+  "#C7D2FE", // Indigo Pastel
+  "#BAE6FD", // Light Blue Pastel
+  "#F5D0FE"  // Fuchsia Pastel
 ];
 
 export default function BudgetPage() {
@@ -1506,18 +1525,61 @@ export default function BudgetPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc danh mục</label>
-                  <div className="flex flex-wrap gap-2">
-                    {presetColors.map(c => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setCategoryColor(c)}
-                        style={{ backgroundColor: c }}
-                        className={`w-7 h-7 rounded-full border-2 transition-all ${
-                          categoryColor === c ? "border-[#A172FD]" : "border-transparent"
-                        }`}
-                      />
-                    ))}
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setCategoryColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              categoryColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setCategoryColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              categoryColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={categoryColor}
+                            onChange={(e) => setCategoryColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{categoryColor}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: categoryColor }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <button type="submit" className="w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
@@ -1556,18 +1618,61 @@ export default function BudgetPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc danh mục</label>
-                  <div className="flex flex-wrap gap-2">
-                    {presetColors.map(c => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setCategoryColor(c)}
-                        style={{ backgroundColor: c }}
-                        className={`w-7 h-7 rounded-full border-2 transition-all ${
-                          categoryColor === c ? "border-[#A172FD]" : "border-transparent"
-                        }`}
-                      />
-                    ))}
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setCategoryColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              categoryColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setCategoryColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              categoryColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={categoryColor}
+                            onChange={(e) => setCategoryColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{categoryColor}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: categoryColor }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2 pt-2">
