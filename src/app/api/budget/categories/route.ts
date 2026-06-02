@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const categories = await db.budgetCategory.findMany({
       where: { userId: auth.userId! },
-      orderBy: { name: "asc" },
+      orderBy: { createdAt: "asc" },
     });
     return NextResponse.json(categories);
   } catch (e) {
