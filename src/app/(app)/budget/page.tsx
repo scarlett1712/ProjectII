@@ -45,6 +45,7 @@ type Category = {
   id: string;
   name: string;
   type: "INCOME" | "EXPENSE";
+  color: string;
 };
 
 type Goal = {
@@ -69,6 +70,17 @@ type Transaction = {
   toAccount?: Account | null;
 };
 
+const presetColors = [
+  "#A172FD", // Violet
+  "#38BDF8", // Blue
+  "#F472B6", // Pink
+  "#FB923C", // Orange
+  "#10B981", // Green
+  "#F87171", // Red
+  "#C084FC", // Purple
+  "#06B6D4"  // Turquoise
+];
+
 export default function BudgetPage() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -92,6 +104,8 @@ export default function BudgetPage() {
   const [showEditAccount, setShowEditAccount] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showEditCategory, setShowEditCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showLogTransaction, setShowLogTransaction] = useState(false);
   const [transactionType, setTransactionType] = useState<"EXPENSE" | "INCOME" | "TRANSFER">("EXPENSE");
 
@@ -101,6 +115,7 @@ export default function BudgetPage() {
   
   const [categoryName, setCategoryName] = useState("");
   const [categoryType, setCategoryType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
+  const [categoryColor, setCategoryColor] = useState("#A172FD");
 
   const [txAmount, setTxAmount] = useState("");
   const [txCategory, setTxCategory] = useState("");
@@ -290,17 +305,76 @@ export default function BudgetPage() {
         body: JSON.stringify({
           name: categoryName.trim(),
           type: categoryType,
+          color: categoryColor,
         }),
       });
 
       if (res.ok) {
         setCategoryName("");
+        setCategoryColor("#A172FD");
         setShowAddCategory(false);
         triggerToast("Đã tạo danh mục phân loại mới!");
         fetchData();
       } else {
         const body = await res.json();
         triggerToast(body.error || "Không thể tạo danh mục.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Edit Category
+  const handleEditCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCategory || !categoryName.trim()) return;
+
+    try {
+      const res = await fetch("/api/budget/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingCategory.id,
+          name: categoryName.trim(),
+          color: categoryColor,
+        }),
+      });
+
+      if (res.ok) {
+        setCategoryName("");
+        setCategoryColor("#A172FD");
+        setEditingCategory(null);
+        setShowEditCategory(false);
+        triggerToast("Đã cập nhật danh mục!");
+        fetchData();
+      } else {
+        const body = await res.json();
+        triggerToast(body.error || "Không thể cập nhật danh mục.");
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Delete Category
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa danh mục này? Toàn bộ giao dịch và dự tính liên quan sẽ bị mất liên kết danh mục.")) return;
+
+    try {
+      const res = await fetch(`/api/budget/categories?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setCategoryName("");
+        setCategoryColor("#A172FD");
+        setEditingCategory(null);
+        setShowEditCategory(false);
+        triggerToast("Đã xóa danh mục.");
+        fetchData();
+      } else {
+        const body = await res.json();
+        triggerToast(body.error || "Không thể xóa danh mục.");
       }
     } catch (e) {
       console.error(e);
@@ -762,7 +836,7 @@ export default function BudgetPage() {
                       Thu nhập của tháng
                     </h3>
                     <button
-                      onClick={() => { setCategoryType("INCOME"); setShowAddCategory(true); }}
+                      onClick={() => { setCategoryType("INCOME"); setCategoryColor("#A172FD"); setShowAddCategory(true); }}
                       className="flex items-center gap-1 text-[11px] font-black text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full transition-all"
                     >
                       <Plus className="h-3 w-3" /> Danh mục mới
@@ -782,7 +856,25 @@ export default function BudgetPage() {
                       <tbody className="divide-y divide-purple-50/50 text-xs font-semibold text-gray-700">
                         {incomeCategoriesData.map((cat) => (
                           <tr key={cat.id} className="hover:bg-purple-50/20 transition-colors">
-                            <td className="py-2.5 font-bold text-gray-900">{cat.name}</td>
+                            <td className="py-2.5 font-bold text-gray-900 flex items-center gap-2 group/cell">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color || "#A172FD" }} />
+                              <span>{cat.name}</span>
+                              <button
+                                onClick={() => {
+                                  setEditingCategory(cat);
+                                  setCategoryName(cat.name);
+                                  setCategoryColor(cat.color || "#A172FD");
+                                  setCategoryType(cat.type);
+                                  setShowEditCategory(true);
+                                }}
+                                className="opacity-0 group-hover/cell:opacity-100 p-0.5 rounded hover:bg-purple-50 text-[#A172FD] transition-all"
+                                title="Chỉnh sửa danh mục"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                            </td>
                             <td className="py-2.5 text-right">
                               <input
                                 type="number"
@@ -830,7 +922,7 @@ export default function BudgetPage() {
                       Chi phí của tháng
                     </h3>
                     <button
-                      onClick={() => { setCategoryType("EXPENSE"); setShowAddCategory(true); }}
+                      onClick={() => { setCategoryType("EXPENSE"); setCategoryColor("#A172FD"); setShowAddCategory(true); }}
                       className="flex items-center gap-1 text-[11px] font-black text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-full transition-all"
                     >
                       <Plus className="h-3 w-3" /> Danh mục mới
@@ -850,7 +942,25 @@ export default function BudgetPage() {
                       <tbody className="divide-y divide-purple-50/50 text-xs font-semibold text-gray-700">
                         {expenseCategoriesData.map((cat) => (
                           <tr key={cat.id} className="hover:bg-purple-50/20 transition-colors">
-                            <td className="py-2.5 font-bold text-gray-900">{cat.name}</td>
+                            <td className="py-2.5 font-bold text-gray-900 flex items-center gap-2 group/cell">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color || "#A172FD" }} />
+                              <span>{cat.name}</span>
+                              <button
+                                onClick={() => {
+                                  setEditingCategory(cat);
+                                  setCategoryName(cat.name);
+                                  setCategoryColor(cat.color || "#A172FD");
+                                  setCategoryType(cat.type);
+                                  setShowEditCategory(true);
+                                }}
+                                className="opacity-0 group-hover/cell:opacity-100 p-0.5 rounded hover:bg-purple-50 text-[#A172FD] transition-all"
+                                title="Chỉnh sửa danh mục"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                            </td>
                             <td className="py-2.5 text-right">
                               <input
                                 type="number"
@@ -911,7 +1021,10 @@ export default function BudgetPage() {
                       <tbody className="divide-y divide-purple-50/50 font-semibold text-gray-600">
                         {transactions.filter(t => t.type === "INCOME").map((t) => (
                           <tr key={t.id} className="hover:bg-purple-50/10">
-                            <td className="px-3 py-2.5 font-bold text-gray-900">{t.category?.name || "Khác"}</td>
+                            <td className="px-3 py-2.5 font-bold text-gray-900 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.category?.color || "#A172FD" }} />
+                              <span>{t.category?.name || "Khác"}</span>
+                            </td>
                             <td className="px-3 py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
                             <td className="px-3 py-2.5 text-right font-bold text-emerald-600">+{formatVND(t.amount)}</td>
                             <td className="px-3 py-2.5">{t.toAccount?.name || "Ví"}</td>
@@ -951,11 +1064,17 @@ export default function BudgetPage() {
                       <tbody className="divide-y divide-purple-50/50 font-semibold text-gray-600">
                         {transactions.filter(t => t.type === "EXPENSE" || t.type === "TRANSFER").map((t) => (
                           <tr key={t.id} className="hover:bg-purple-50/10">
-                            <td className="px-3 py-2.5 font-bold text-gray-900">
+                            <td className="px-3 py-2.5 font-bold text-gray-900 flex items-center gap-1.5">
                               {t.type === "TRANSFER" ? (
-                                <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md text-[10px] font-black uppercase">Chuyển khoản</span>
+                                <>
+                                  <span className="w-2 h-2 rounded-full shrink-0 bg-indigo-500" />
+                                  <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md text-[10px] font-black uppercase">Chuyển khoản</span>
+                                </>
                               ) : (
-                                t.category?.name || "Khác"
+                                <>
+                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.category?.color || "#A172FD" }} />
+                                  <span>{t.category?.name || "Khác"}</span>
+                                </>
                               )}
                             </td>
                             <td className="px-3 py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
@@ -1271,9 +1390,84 @@ export default function BudgetPage() {
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
                   />
                 </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc danh mục</label>
+                  <div className="flex flex-wrap gap-2">
+                    {presetColors.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCategoryColor(c)}
+                        style={{ backgroundColor: c }}
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${
+                          categoryColor === c ? "border-[#A172FD]" : "border-transparent"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <button type="submit" className="w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
                   Lưu danh mục
                 </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+
+        {/* 2.5. Modal Edit Category */}
+        {showEditCategory && editingCategory && (
+          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" onClick={() => { setShowEditCategory(false); setEditingCategory(null); }}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-black text-purple-950">Chỉnh sửa danh mục</h3>
+                <button onClick={() => { setShowEditCategory(false); setEditingCategory(null); }} className="p-1 rounded-full hover:bg-gray-100 text-gray-400"><X className="h-5 w-5" /></button>
+              </div>
+              <form onSubmit={handleEditCategory} className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Tên danh mục</label>
+                  <input
+                    type="text"
+                    required
+                    value={categoryName}
+                    onChange={(e) => setCategoryName(e.target.value)}
+                    placeholder="Tên danh mục..."
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc danh mục</label>
+                  <div className="flex flex-wrap gap-2">
+                    {presetColors.map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCategoryColor(c)}
+                        style={{ backgroundColor: c }}
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${
+                          categoryColor === c ? "border-[#A172FD]" : "border-transparent"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCategory(editingCategory.id)}
+                    className="px-4 py-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors font-bold text-sm"
+                  >
+                    Xóa
+                  </button>
+                  <button type="submit" className="flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
+                    Lưu thay đổi
+                  </button>
+                </div>
               </form>
             </motion.div>
           </div>

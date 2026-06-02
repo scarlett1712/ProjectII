@@ -24,3 +24,22 @@ body {
   color: var(--foreground);
   font-family: var(--font-nunito), Arial, sans-serif;
 }
+
+/* Premium styled global select dropdowns */
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A172FD' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 1rem center !important;
+  background-size: 1.1rem !important;
+  padding-right: 2.75rem !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+select:focus {
+  border-color: #A172FD !important;
+  box-shadow: 0 0 0 1px #A172FD !important;
+}
