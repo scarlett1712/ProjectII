@@ -103,6 +103,27 @@ const pastelColors = [
   "#F5D0FE"  // Fuchsia Pastel
 ];
 
+// Helper to ensure readable text color for tags/categories by darkening light colors
+const getContrastTextColor = (hexColor: string) => {
+  if (!hexColor) return "#A172FD";
+  let cleanHex = hexColor.replace("#", "");
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split("").map(c => c + c).join("");
+  }
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  if (brightness > 150) {
+    const factor = 0.55;
+    const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+    const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+    const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+    return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+  }
+  return hexColor;
+};
+
 export default function BudgetPage() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -1901,8 +1922,8 @@ export default function BudgetPage() {
                                 className="inline-block px-3 py-1 rounded-full text-xs font-bold"
                                 style={{
                                   backgroundColor: `${selectedCat.color}15`,
-                                  color: selectedCat.color,
-                                  border: `1px solid ${selectedCat.color}30`,
+                                  color: getContrastTextColor(selectedCat.color),
+                                  border: `1px solid ${getContrastTextColor(selectedCat.color)}30`,
                                 }}
                               >
                                 {selectedCat.name}
@@ -1944,8 +1965,8 @@ export default function BudgetPage() {
                                   className="inline-block px-3 py-1 rounded-full text-xs font-bold"
                                   style={{
                                     backgroundColor: `${c.color}15`,
-                                    color: c.color,
-                                    border: `1px solid ${c.color}30`,
+                                    color: getContrastTextColor(c.color),
+                                    border: `1px solid ${getContrastTextColor(c.color)}30`,
                                   }}
                                 >
                                   {c.name}
@@ -2232,8 +2253,8 @@ export default function BudgetPage() {
                                 className="inline-block px-3 py-1 rounded-full text-xs font-bold"
                                 style={{
                                   backgroundColor: `${selectedCat.color}15`,
-                                  color: selectedCat.color,
-                                  border: `1px solid ${selectedCat.color}30`,
+                                  color: getContrastTextColor(selectedCat.color),
+                                  border: `1px solid ${getContrastTextColor(selectedCat.color)}30`,
                                 }}
                               >
                                 {selectedCat.name}
@@ -2275,8 +2296,8 @@ export default function BudgetPage() {
                                   className="inline-block px-3 py-1 rounded-full text-xs font-bold"
                                   style={{
                                     backgroundColor: `${c.color}15`,
-                                    color: c.color,
-                                    border: `1px solid ${c.color}30`,
+                                    color: getContrastTextColor(c.color),
+                                    border: `1px solid ${getContrastTextColor(c.color)}30`,
                                   }}
                                 >
                                   {c.name}

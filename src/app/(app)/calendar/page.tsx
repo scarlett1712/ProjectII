@@ -220,6 +220,27 @@ const getEventLayoutStyles = (dayItems: any[], day: Date, hiddenHours: number[] 
   return layoutStyles;
 };
 
+// Helper to ensure readable text color for tags/categories by darkening light colors
+const getContrastTextColor = (hexColor: string) => {
+  if (!hexColor) return "#A172FD";
+  let cleanHex = hexColor.replace("#", "");
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split("").map(c => c + c).join("");
+  }
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  if (brightness > 150) {
+    const factor = 0.55;
+    const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+    const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+    const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+    return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+  }
+  return hexColor;
+};
+
 export default function CalendarPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -1759,13 +1780,14 @@ export default function CalendarPage() {
                     >
                       {(() => {
                         const selectedTag = tags.find((t) => t.id === selectedTagId);
+                        const textColor = selectedTag ? getContrastTextColor(selectedTag.color) : "";
                         return selectedTag ? (
                           <span
                             className="inline-block px-3 py-1 rounded-full text-xs font-bold"
                             style={{
                               backgroundColor: `${selectedTag.color}15`,
-                              color: selectedTag.color,
-                              border: `1px solid ${selectedTag.color}30`,
+                              color: textColor,
+                              border: `1px solid ${textColor}30`,
                             }}
                           >
                             {selectedTag.name} {selectedTag.isSystem ? "(Mặc định)" : "(Custom)"}
@@ -1788,29 +1810,32 @@ export default function CalendarPage() {
                     {/* Dropdown Options List */}
                     {tagDropdownOpen && (
                       <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto space-y-1">
-                        {tags.map((t) => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedTagId(t.id);
-                              setNoteColor(t.color);
-                              setTagDropdownOpen(false);
-                            }}
-                            className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
-                          >
-                            <span
-                              className="inline-block px-3 py-1 rounded-full text-xs font-bold"
-                              style={{
-                                backgroundColor: `${t.color}15`,
-                                color: t.color,
-                                border: `1px solid ${t.color}30`,
+                        {tags.map((t) => {
+                          const optionTextColor = getContrastTextColor(t.color);
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedTagId(t.id);
+                                setNoteColor(t.color);
+                                setTagDropdownOpen(false);
                               }}
+                              className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
                             >
-                              {t.name} {t.isSystem ? "(Mặc định)" : "(Custom)"}
-                            </span>
-                          </button>
-                        ))}
+                              <span
+                                className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                                style={{
+                                  backgroundColor: `${t.color}15`,
+                                  color: optionTextColor,
+                                  border: `1px solid ${optionTextColor}30`,
+                                }}
+                              >
+                                {t.name} {t.isSystem ? "(Mặc định)" : "(Custom)"}
+                              </span>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
