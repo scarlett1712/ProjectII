@@ -41,6 +41,7 @@ type Account = {
   name: string;
   balance: number;
   color: string;
+  startingBalance?: number;
 };
 
 type Category = {
@@ -170,7 +171,7 @@ export default function BudgetPage() {
     setLoading(true);
     try {
       const [accRes, catRes, goalRes, txRes] = await Promise.all([
-        fetch("/api/budget/accounts"),
+        fetch(`/api/budget/accounts?year=${currentYear}&month=${currentMonth}`),
         fetch("/api/budget/categories"),
         fetch(`/api/budget/goals?year=${currentYear}&month=${currentMonth}`),
         fetch(`/api/budget/transactions?year=${currentYear}&month=${currentMonth}`),
@@ -563,7 +564,6 @@ export default function BudgetPage() {
   };
 
   // Process Accounts data for monthly overview
-  // Account Gốc (Starting Balance) = currentBalance - totalInThisMonth + totalOutThisMonth
   const processedAccounts = accounts.map((acc) => {
     const inThisMonth = transactions
       .filter((t) => t.toAccountId === acc.id)
@@ -573,18 +573,20 @@ export default function BudgetPage() {
       .filter((t) => t.fromAccountId === acc.id)
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const starting = acc.balance - inThisMonth + outThisMonth;
+    const starting = acc.startingBalance !== undefined ? acc.startingBalance : (acc.balance - inThisMonth + outThisMonth);
+    const ending = starting + inThisMonth - outThisMonth;
 
     return {
       ...acc,
       starting,
+      ending,
       incoming: inThisMonth,
       outgoing: outThisMonth,
     };
   });
 
   const totalStarting = processedAccounts.reduce((sum, a) => sum + a.starting, 0);
-  const totalCurrent = accounts.reduce((sum, a) => sum + a.balance, 0);
+  const totalEnding = processedAccounts.reduce((sum, a) => sum + a.ending, 0);
 
   // Income categories actual
   const incomeCategoriesData = categories
@@ -906,7 +908,7 @@ export default function BudgetPage() {
                             <td className="py-2.5 text-right text-gray-500">{formatVND(acc.starting)}</td>
                             <td className="py-2.5 text-right text-emerald-600">+{formatVND(acc.incoming)}</td>
                             <td className="py-2.5 text-right text-red-500">-{formatVND(acc.outgoing)}</td>
-                            <td className="py-2.5 text-right font-black text-purple-950">{formatVND(acc.balance)}</td>
+                            <td className="py-2.5 text-right font-black text-purple-950">{formatVND(acc.ending)}</td>
                           </tr>
                         ))}
                         {processedAccounts.length === 0 && (
@@ -924,7 +926,7 @@ export default function BudgetPage() {
                             <td className="py-3 text-right">{formatVND(totalStarting)}</td>
                             <td className="py-3 text-right text-emerald-600">+{formatVND(transactions.filter(t => t.type === "INCOME").reduce((s,t) => s+t.amount, 0))}</td>
                             <td className="py-3 text-right text-red-500">-{formatVND(transactions.filter(t => t.type === "EXPENSE").reduce((s,t) => s+t.amount, 0))}</td>
-                            <td className="py-3 text-right text-purple-950">{formatVND(totalCurrent)}</td>
+                            <td className="py-3 text-right text-purple-950">{formatVND(totalEnding)}</td>
                           </tr>
                         </tfoot>
                       )}

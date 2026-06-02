@@ -2,21 +2,74 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const auth = await requireUserId();
   if (auth.response) return auth.response;
 
   try {
+    const { searchParams } = new URL(req.url);
+    const yearStr = searchParams.get("year");
+    const monthStr = searchParams.get("month");
+
     const accounts = await db.budgetAccount.findMany({
       where: { userId: auth.userId! },
       orderBy: { name: "asc" },
     });
-    return NextResponse.json(accounts);
+
+    if (yearStr && monthStr) {
+      const year = Number(yearStr);
+      const month = Number(monthStr);
+      if (!isNaN(year) && !isNaN(month)) {
+        const startDate = new Date(year, month - 1, 1);
+
+        // Fetch all transactions since startDate
+        const transactions = await db.budgetTransaction.findMany({
+          where: {
+            userId: auth.userId!,
+            occurredAt: {
+              gte: startDate,
+            },
+          },
+        });
+
+        // Compute starting balance for each account
+        const accountStartingBalances = accounts.map((acc) => {
+          let inflows = 0;
+          let outflows = 0;
+
+          transactions.forEach((tx) => {
+            if (tx.type === "EXPENSE" && tx.fromAccountId === acc.id) {
+              outflows += tx.amount;
+            } else if (tx.type === "INCOME" && tx.toAccountId === acc.id) {
+              inflows += tx.amount;
+            } else if (tx.type === "TRANSFER") {
+              if (tx.fromAccountId === acc.id) {
+                outflows += tx.amount;
+              }
+              if (tx.toAccountId === acc.id) {
+                inflows += tx.amount;
+              }
+            }
+          });
+
+          const startingBalance = acc.balance - inflows + outflows;
+          return {
+            ...acc,
+            startingBalance,
+          };
+        });
+
+        return NextResponse.json(accountStartingBalances);
+      }
+    }
+
+    return NextResponse.json(accounts.map((acc) => ({ ...acc, startingBalance: acc.balance })));
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
+
 
 export async function POST(req: NextRequest) {
   const auth = await requireUserId();
