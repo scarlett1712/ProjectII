@@ -124,6 +124,53 @@ const getContrastTextColor = (hexColor: string) => {
   return hexColor;
 };
 
+// Helper to get matching tag styling based on background color brightness
+const getTagStyles = (hexColor: string) => {
+  if (!hexColor) return { backgroundColor: "#A172FD15", color: "#A172FD", border: "1px solid rgba(161, 114, 253, 0.3)" };
+  let cleanHex = hexColor.replace("#", "");
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split("").map(c => c + c).join("");
+  }
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  
+  if (brightness > 180) {
+    // Very light background
+    const factor = 0.35;
+    const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+    const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+    const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+    const textColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+    return {
+      backgroundColor: hexColor,
+      color: textColor,
+      border: `1px solid ${textColor}30`
+    };
+  } else if (brightness > 130) {
+    // Medium-light background
+    const factor = 0.45;
+    const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+    const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+    const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+    const textColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+    return {
+      backgroundColor: hexColor,
+      color: textColor,
+      border: `1px solid ${textColor}30`
+    };
+  } else {
+    // Dark background
+    return {
+      backgroundColor: hexColor,
+      color: "#FFFFFF",
+      border: "1px solid rgba(255, 255, 255, 0.15)"
+    };
+  }
+};
+
+
 export default function BudgetPage() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -987,8 +1034,21 @@ export default function BudgetPage() {
                         {incomeCategoriesData.map((cat) => (
                           <tr key={cat.id} className="hover:bg-purple-50/20 transition-colors">
                             <td className="py-2.5 font-bold text-gray-900 flex items-center gap-2 group/cell">
-                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color || "#A172FD" }} />
-                              <span>{cat.name}</span>
+                              {(() => {
+                                const styles = getTagStyles(cat.color || "#A172FD");
+                                return (
+                                  <span
+                                    className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                    style={{
+                                      backgroundColor: styles.backgroundColor,
+                                      color: styles.color,
+                                      border: styles.border,
+                                    }}
+                                  >
+                                    {cat.name}
+                                  </span>
+                                );
+                              })()}
                               <button
                                 onClick={() => {
                                   setEditingCategory(cat);
@@ -1073,8 +1133,21 @@ export default function BudgetPage() {
                         {expenseCategoriesData.map((cat) => (
                           <tr key={cat.id} className="hover:bg-purple-50/20 transition-colors">
                             <td className="py-2.5 font-bold text-gray-900 flex items-center gap-2 group/cell">
-                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cat.color || "#A172FD" }} />
-                              <span>{cat.name}</span>
+                              {(() => {
+                                const styles = getTagStyles(cat.color || "#A172FD");
+                                return (
+                                  <span
+                                    className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                    style={{
+                                      backgroundColor: styles.backgroundColor,
+                                      color: styles.color,
+                                      border: styles.border,
+                                    }}
+                                  >
+                                    {cat.name}
+                                  </span>
+                                );
+                              })()}
                               <button
                                 onClick={() => {
                                   setEditingCategory(cat);
@@ -1152,8 +1225,25 @@ export default function BudgetPage() {
                         {transactions.filter(t => t.type === "INCOME").map((t) => (
                           <tr key={t.id} className="hover:bg-purple-50/10">
                             <td className="px-3 py-2.5 font-bold text-gray-900 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.category?.color || "#A172FD" }} />
-                              <span>{t.category?.name || "Khác"}</span>
+                              {t.category ? (
+                                (() => {
+                                  const styles = getTagStyles(t.category.color);
+                                  return (
+                                    <span
+                                      className="inline-block px-3 py-1 rounded-full text-[10px] font-bold font-sans"
+                                      style={{
+                                        backgroundColor: styles.backgroundColor,
+                                        color: styles.color,
+                                        border: styles.border,
+                                      }}
+                                    >
+                                      {t.category.name}
+                                    </span>
+                                  );
+                                })()
+                              ) : (
+                                <span className="text-gray-400 font-bold">Khác</span>
+                              )}
                             </td>
                             <td className="px-3 py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
                             <td className="px-3 py-2.5 text-right font-bold text-emerald-600">+{formatVND(t.amount)}</td>
@@ -1217,13 +1307,28 @@ export default function BudgetPage() {
                               {t.type === "TRANSFER" ? (
                                 <>
                                   <span className="w-2 h-2 rounded-full shrink-0 bg-indigo-500" />
-                                  <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md text-[10px] font-black uppercase">Chuyển khoản</span>
+                                  <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md text-[10px] font-black uppercase font-sans">Chuyển khoản</span>
                                 </>
                               ) : (
-                                <>
-                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: t.category?.color || "#A172FD" }} />
-                                  <span>{t.category?.name || "Khác"}</span>
-                                </>
+                                t.category ? (
+                                  (() => {
+                                    const styles = getTagStyles(t.category.color);
+                                    return (
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-[10px] font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {t.category.name}
+                                      </span>
+                                    );
+                                  })()
+                                ) : (
+                                  <span className="text-gray-400 font-bold">Khác</span>
+                                )
                               )}
                             </td>
                             <td className="px-3 py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
@@ -1961,16 +2066,21 @@ export default function BudgetPage() {
                                 }}
                                 className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
                               >
-                                <span
-                                  className="inline-block px-3 py-1 rounded-full text-xs font-bold"
-                                  style={{
-                                    backgroundColor: `${c.color}15`,
-                                    color: getContrastTextColor(c.color),
-                                    border: `1px solid ${getContrastTextColor(c.color)}30`,
-                                  }}
-                                >
-                                  {c.name}
-                                </span>
+                                {(() => {
+                                  const styles = getTagStyles(c.color);
+                                  return (
+                                    <span
+                                      className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                      style={{
+                                        backgroundColor: styles.backgroundColor,
+                                        color: styles.color,
+                                        border: styles.border,
+                                      }}
+                                    >
+                                      {c.name}
+                                    </span>
+                                  );
+                                })()}
                               </button>
                             ))}
                           {categories.filter((c) => c.type === transactionType).length === 0 && (
@@ -2248,20 +2358,22 @@ export default function BudgetPage() {
                         {txCategory ? (
                           (() => {
                             const selectedCat = categories.find((c) => c.id === txCategory);
-                            return selectedCat ? (
-                              <span
-                                className="inline-block px-3 py-1 rounded-full text-xs font-bold"
-                                style={{
-                                  backgroundColor: `${selectedCat.color}15`,
-                                  color: getContrastTextColor(selectedCat.color),
-                                  border: `1px solid ${getContrastTextColor(selectedCat.color)}30`,
-                                }}
-                              >
-                                {selectedCat.name}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">-- Chọn phân loại --</span>
-                            );
+                            if (selectedCat) {
+                              const styles = getTagStyles(selectedCat.color);
+                              return (
+                                <span
+                                  className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                  style={{
+                                    backgroundColor: styles.backgroundColor,
+                                    color: styles.color,
+                                    border: styles.border,
+                                  }}
+                                >
+                                  {selectedCat.name}
+                                </span>
+                              );
+                            }
+                            return <span className="text-gray-400">-- Chọn phân loại --</span>;
                           })()
                         ) : (
                           <span className="text-gray-400">-- Chọn phân loại --</span>
@@ -2292,16 +2404,21 @@ export default function BudgetPage() {
                                 }}
                                 className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
                               >
-                                <span
-                                  className="inline-block px-3 py-1 rounded-full text-xs font-bold"
-                                  style={{
-                                    backgroundColor: `${c.color}15`,
-                                    color: getContrastTextColor(c.color),
-                                    border: `1px solid ${getContrastTextColor(c.color)}30`,
-                                  }}
-                                >
-                                  {c.name}
-                                </span>
+                                {(() => {
+                                  const styles = getTagStyles(c.color);
+                                  return (
+                                    <span
+                                      className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                      style={{
+                                        backgroundColor: styles.backgroundColor,
+                                        color: styles.color,
+                                        border: styles.border,
+                                      }}
+                                    >
+                                      {c.name}
+                                    </span>
+                                  );
+                                })()}
                               </button>
                             ))}
                           {categories.filter((c) => c.type === transactionType).length === 0 && (

@@ -241,6 +241,24 @@ const getContrastTextColor = (hexColor: string) => {
   return hexColor;
 };
 
+// Helper to ensure readable text color for event cards on pale backgrounds
+const getContrastTextColorForEvent = (hexColor: string) => {
+  if (!hexColor) return "#1F2937";
+  let cleanHex = hexColor.replace("#", "");
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split("").map(c => c + c).join("");
+  }
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  const factor = brightness > 150 ? 0.35 : 0.6;
+  const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+  const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+  const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+  return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+};
+
 export default function CalendarPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -1006,7 +1024,7 @@ export default function CalendarPage() {
       backgroundColor: baseColor + "1E", // 12% opacity
       border: `1px solid ${baseColor}33`,
       borderLeft: `4px solid ${baseColor}`,
-      color: "#374151",
+      color: getContrastTextColorForEvent(baseColor),
     };
   };
 
@@ -1437,12 +1455,19 @@ export default function CalendarPage() {
                                       zIndex: 20,
                                       ...getEventStyle(item)
                                     }}
-                                    className="absolute font-bold p-2 rounded-xl cursor-pointer hover:brightness-95 flex flex-col text-[9px] justify-between shadow-sm overflow-hidden select-none transition-all"
+                                    className="absolute font-bold p-2 rounded-xl cursor-pointer hover:brightness-95 flex flex-col text-[9px] justify-between shadow-sm overflow-y-auto scrollbar-none select-none transition-all"
                                   >
-                                    <span className="truncate leading-snug">{item.title}</span>
-                                    <span className="text-[7px] opacity-75 font-normal">
+                                    <div className="space-y-0.5 flex-1 min-h-0">
+                                      <p className="leading-snug break-words">📌 {item.title}</p>
+                                      {item.description && (
+                                        <p className="text-[7.5px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5">
+                                          {item.description}
+                                        </p>
+                                      )}
+                                    </div>
+                                    <p className="text-[6.5px] opacity-75 font-normal mt-1 self-start shrink-0">
                                       {format(new Date(item.startAt), "HH:mm")} - {format(new Date(item.endAt), "HH:mm")}
-                                    </span>
+                                    </p>
                                   </div>
                                 );
                               }
@@ -1550,12 +1575,19 @@ export default function CalendarPage() {
                                   zIndex: 20,
                                   ...getEventStyle(item)
                                 }}
-                                className="absolute font-bold p-3 rounded-2xl cursor-pointer hover:brightness-95 flex flex-col text-xs justify-between shadow-sm overflow-hidden select-none transition-all"
+                                className="absolute font-bold p-3 rounded-2xl cursor-pointer hover:brightness-95 flex flex-col text-xs justify-between shadow-sm overflow-y-auto scrollbar-none select-none transition-all"
                               >
-                                <span className="truncate leading-snug">{item.title}</span>
-                                <span className="text-[10px] opacity-75 font-normal">
+                                <div className="space-y-1 flex-1 min-h-0">
+                                  <p className="leading-snug break-words">📌 {item.title}</p>
+                                  {item.description && (
+                                    <p className="text-[10px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5">
+                                      {item.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <p className="text-[9px] opacity-75 font-normal mt-1 self-start shrink-0">
                                   {format(new Date(item.startAt), "HH:mm")} - {format(new Date(item.endAt), "HH:mm")}
-                                </span>
+                                </p>
                               </div>
                             );
                           }
