@@ -955,8 +955,21 @@ export default function BudgetPage() {
                         {processedAccounts.map((acc) => (
                           <tr key={acc.id} className="hover:bg-purple-50/20 transition-colors">
                             <td className="py-2.5 font-bold text-gray-900 flex items-center gap-1.5 group/cell">
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: acc.color || "#A172FD" }} />
-                              {acc.name}
+                              {(() => {
+                                const styles = getTagStyles(acc.color || "#A172FD");
+                                return (
+                                  <span
+                                    className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                    style={{
+                                      backgroundColor: styles.backgroundColor,
+                                      color: styles.color,
+                                      border: styles.border,
+                                    }}
+                                  >
+                                    {acc.name}
+                                  </span>
+                                );
+                              })()}
                               <button
                                 onClick={() => {
                                   setEditingAccount(acc);
@@ -1247,7 +1260,27 @@ export default function BudgetPage() {
                             </td>
                             <td className="px-3 py-2.5">{new Date(t.occurredAt).toLocaleDateString("vi-VN")}</td>
                             <td className="px-3 py-2.5 text-right font-bold text-emerald-600">+{formatVND(t.amount)}</td>
-                            <td className="px-3 py-2.5">{t.toAccount?.name || "Ví"}</td>
+                            <td className="px-3 py-2.5">
+                              {t.toAccount ? (
+                                (() => {
+                                  const styles = getTagStyles(t.toAccount.color || "#A172FD");
+                                  return (
+                                    <span
+                                      className="inline-block px-3 py-1 rounded-full text-[10px] font-bold font-sans"
+                                      style={{
+                                        backgroundColor: styles.backgroundColor,
+                                        color: styles.color,
+                                        border: styles.border,
+                                      }}
+                                    >
+                                      {t.toAccount.name}
+                                    </span>
+                                  );
+                                })()
+                              ) : (
+                                <span className="text-gray-400 font-bold">Ví</span>
+                              )}
+                            </td>
                             <td className="px-3 py-2.5 truncate max-w-[80px]" title={t.note || ""}>{t.note || "-"}</td>
                             <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2">
                               <button
@@ -1335,9 +1368,54 @@ export default function BudgetPage() {
                             <td className={`px-3 py-2.5 text-right font-bold ${t.type === "TRANSFER" ? "text-indigo-500" : "text-red-500"}`}>
                               {t.type === "TRANSFER" ? "" : "-"}{formatVND(t.amount)}
                             </td>
-                            <td className="px-3 py-2.5">{t.fromAccount?.name || "Ví"}</td>
-                            <td className="px-3 py-2.5 truncate max-w-[80px]" title={t.type === "TRANSFER" ? `Đến: ${t.toAccount?.name}` : t.note || ""}>
-                              {t.type === "TRANSFER" ? `➔ ${t.toAccount?.name}` : t.note || "-"}
+                            <td className="px-3 py-2.5">
+                              {t.fromAccount ? (
+                                (() => {
+                                  const styles = getTagStyles(t.fromAccount.color || "#A172FD");
+                                  return (
+                                    <span
+                                      className="inline-block px-3 py-1 rounded-full text-[10px] font-bold font-sans"
+                                      style={{
+                                        backgroundColor: styles.backgroundColor,
+                                        color: styles.color,
+                                        border: styles.border,
+                                      }}
+                                    >
+                                      {t.fromAccount.name}
+                                    </span>
+                                  );
+                                })()
+                              ) : (
+                                <span className="text-gray-400 font-bold">Ví</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2.5 truncate max-w-[120px]" title={t.type === "TRANSFER" ? `Đến: ${t.toAccount?.name}` : t.note || ""}>
+                              {t.type === "TRANSFER" ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-gray-400">➔</span>
+                                  {t.toAccount ? (
+                                    (() => {
+                                      const styles = getTagStyles(t.toAccount.color || "#A172FD");
+                                      return (
+                                        <span
+                                          className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold font-sans"
+                                          style={{
+                                            backgroundColor: styles.backgroundColor,
+                                            color: styles.color,
+                                            border: styles.border,
+                                          }}
+                                        >
+                                          {t.toAccount.name}
+                                        </span>
+                                      );
+                                    })()
+                                  ) : (
+                                    <span className="text-gray-400 font-bold">Ví</span>
+                                  )}
+                                </div>
+                              ) : (
+                                t.note || "-"
+                              )}
                             </td>
                             <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2">
                               <button
@@ -2114,17 +2192,27 @@ export default function BudgetPage() {
                           {txFromAccount ? (
                             (() => {
                               const selectedAcc = accounts.find((a) => a.id === txFromAccount);
-                              return selectedAcc ? (
-                                <div className="flex flex-col items-start leading-tight min-w-0">
-                                  <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedAcc.color || "#A172FD" }} />
-                                    <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                              if (selectedAcc) {
+                                const styles = getTagStyles(selectedAcc.color || "#A172FD");
+                                return (
+                                  <div className="flex flex-col items-start leading-tight min-w-0">
+                                    <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {selectedAcc.name}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-500 font-semibold ml-1 mt-1">{formatVND(selectedAcc.balance)}</span>
                                   </div>
-                                  <span className="text-[10px] text-gray-500 font-semibold ml-3.5">{formatVND(selectedAcc.balance)}</span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">-- Chọn tài khoản --</span>
-                              );
+                                );
+                              }
+                              return <span className="text-gray-400">-- Chọn tài khoản --</span>;
                             })()
                           ) : (
                             <span className="text-gray-400">-- Chọn tài khoản --</span>
@@ -2151,13 +2239,26 @@ export default function BudgetPage() {
                                   setTxFromAccount(a.id);
                                   setFromAccDropdownOpen(false);
                                 }}
-                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
+                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0 gap-1"
                               >
                                 <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color || "#A172FD" }} />
-                                  <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                  {(() => {
+                                    const styles = getTagStyles(a.color || "#A172FD");
+                                    return (
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {a.name}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5 ml-3.5">
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg ml-1">
                                   {formatVND(a.balance)}
                                 </span>
                               </button>
@@ -2192,17 +2293,27 @@ export default function BudgetPage() {
                           {txToAccount ? (
                             (() => {
                               const selectedAcc = accounts.find((a) => a.id === txToAccount);
-                              return selectedAcc ? (
-                                <div className="flex flex-col items-start leading-tight min-w-0">
-                                  <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedAcc.color || "#A172FD" }} />
-                                    <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                              if (selectedAcc) {
+                                const styles = getTagStyles(selectedAcc.color || "#A172FD");
+                                return (
+                                  <div className="flex flex-col items-start leading-tight min-w-0">
+                                    <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {selectedAcc.name}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-500 font-semibold ml-1 mt-1">{formatVND(selectedAcc.balance)}</span>
                                   </div>
-                                  <span className="text-[10px] text-gray-500 font-semibold ml-3.5">{formatVND(selectedAcc.balance)}</span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">-- Chọn tài khoản --</span>
-                              );
+                                );
+                              }
+                              return <span className="text-gray-400">-- Chọn tài khoản --</span>;
                             })()
                           ) : (
                             <span className="text-gray-400">-- Chọn tài khoản --</span>
@@ -2229,13 +2340,26 @@ export default function BudgetPage() {
                                   setTxToAccount(a.id);
                                   setToAccDropdownOpen(false);
                                 }}
-                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
+                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0 gap-1"
                               >
                                 <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color || "#A172FD" }} />
-                                  <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                  {(() => {
+                                    const styles = getTagStyles(a.color || "#A172FD");
+                                    return (
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {a.name}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5 ml-3.5">
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg ml-1">
                                   {formatVND(a.balance)}
                                 </span>
                               </button>
@@ -2452,17 +2576,27 @@ export default function BudgetPage() {
                           {txFromAccount ? (
                             (() => {
                               const selectedAcc = accounts.find((a) => a.id === txFromAccount);
-                              return selectedAcc ? (
-                                <div className="flex flex-col items-start leading-tight min-w-0">
-                                  <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedAcc.color || "#A172FD" }} />
-                                    <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                              if (selectedAcc) {
+                                const styles = getTagStyles(selectedAcc.color || "#A172FD");
+                                return (
+                                  <div className="flex flex-col items-start leading-tight min-w-0">
+                                    <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {selectedAcc.name}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-500 font-semibold ml-1 mt-1">{formatVND(selectedAcc.balance)}</span>
                                   </div>
-                                  <span className="text-[10px] text-gray-500 font-semibold ml-3.5">{formatVND(selectedAcc.balance)}</span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">-- Chọn tài khoản --</span>
-                              );
+                                );
+                              }
+                              return <span className="text-gray-400">-- Chọn tài khoản --</span>;
                             })()
                           ) : (
                             <span className="text-gray-400">-- Chọn tài khoản --</span>
@@ -2489,13 +2623,26 @@ export default function BudgetPage() {
                                   setTxFromAccount(a.id);
                                   setFromAccDropdownOpen(false);
                                 }}
-                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
+                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0 gap-1"
                               >
                                 <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color || "#A172FD" }} />
-                                  <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                  {(() => {
+                                    const styles = getTagStyles(a.color || "#A172FD");
+                                    return (
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {a.name}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5 ml-3.5">
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-1.5">
                                   {formatVND(a.balance)}
                                 </span>
                               </button>
@@ -2530,17 +2677,27 @@ export default function BudgetPage() {
                           {txToAccount ? (
                             (() => {
                               const selectedAcc = accounts.find((a) => a.id === txToAccount);
-                              return selectedAcc ? (
-                                <div className="flex flex-col items-start leading-tight min-w-0">
-                                  <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: selectedAcc.color || "#A172FD" }} />
-                                    <span className="font-bold text-gray-900 truncate w-full">{selectedAcc.name}</span>
+                              if (selectedAcc) {
+                                const styles = getTagStyles(selectedAcc.color || "#A172FD");
+                                return (
+                                  <div className="flex flex-col items-start leading-tight min-w-0">
+                                    <div className="flex items-center gap-1.5 min-w-0 w-full">
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {selectedAcc.name}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-500 font-semibold ml-1 mt-1">{formatVND(selectedAcc.balance)}</span>
                                   </div>
-                                  <span className="text-[10px] text-gray-500 font-semibold ml-3.5">{formatVND(selectedAcc.balance)}</span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">-- Chọn tài khoản --</span>
-                              );
+                                );
+                              }
+                              return <span className="text-gray-400">-- Chọn tài khoản --</span>;
                             })()
                           ) : (
                             <span className="text-gray-400">-- Chọn tài khoản --</span>
@@ -2567,13 +2724,26 @@ export default function BudgetPage() {
                                   setTxToAccount(a.id);
                                   setToAccDropdownOpen(false);
                                 }}
-                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0"
+                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0 gap-1"
                               >
                                 <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: a.color || "#A172FD" }} />
-                                  <span className="font-bold text-gray-800 text-sm truncate w-full">{a.name}</span>
+                                  {(() => {
+                                    const styles = getTagStyles(a.color || "#A172FD");
+                                    return (
+                                      <span
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        style={{
+                                          backgroundColor: styles.backgroundColor,
+                                          color: styles.color,
+                                          border: styles.border,
+                                        }}
+                                      >
+                                        {a.name}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-0.5 ml-3.5">
+                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg ml-1 font-semibold">
                                   {formatVND(a.balance)}
                                 </span>
                               </button>

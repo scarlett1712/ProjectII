@@ -12,6 +12,7 @@ import {
   Wallet,
   MoreHorizontal,
   ChevronRight,
+  ChevronDown,
   X,
   Check,
   AlertCircle,
@@ -106,6 +107,7 @@ export default function DashboardPage() {
   const [calRecurrence, setCalRecurrence] = useState("NONE");
   const [calRecurrenceEndStr, setCalRecurrenceEndStr] = useState("");
   const [calCompleted, setCalCompleted] = useState(false);
+  const [calTagDropdownOpen, setCalTagDropdownOpen] = useState(false);
 
   const presetColors = ["#fdfd96", "#F87171", "#93C5FD", "#A7F3D0", "#F472B6", "#C084FC", "#FB923C"];
 
@@ -411,6 +413,79 @@ export default function DashboardPage() {
     return "bg-[#A7F3D0]";
   };
 
+  const getTaskBgHex = (task: any) => {
+    if (task.completed) return "#F3F4F6";
+    const DEFAULT_YELLOWS = ["#fcd34d", "#fdfd96", "#fef3c7"];
+    if (task.noteColor && !DEFAULT_YELLOWS.includes(task.noteColor.toLowerCase())) {
+      return task.noteColor;
+    }
+    if (!task.dueAt) return "#fdfd96";
+    const diff = new Date(task.dueAt).getTime() - new Date().getTime();
+    const hours = diff / (1000 * 60 * 60);
+    if (hours < 0 || hours < 2) return "#F87171"; // critical red
+    if (hours < 24) return "#93C5FD"; // warning blue
+    return "#A7F3D0"; // normal green
+  };
+
+  const getContrastTextColorForTask = (task: any) => {
+    const bgHex = getTaskBgHex(task);
+    let cleanHex = bgHex.replace("#", "");
+    if (cleanHex.length === 3) {
+      cleanHex = cleanHex.split("").map((c: string) => c + c).join("");
+    }
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    const factor = brightness > 150 ? 0.35 : 0.6;
+    const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+    const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+    const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+    return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+  };
+
+  const getTagStyles = (hexColor: string) => {
+    if (!hexColor) return { backgroundColor: "#A172FD15", color: "#A172FD", border: "1px solid rgba(161, 114, 253, 0.3)" };
+    let cleanHex = hexColor.replace("#", "");
+    if (cleanHex.length === 3) {
+      cleanHex = cleanHex.split("").map(c => c + c).join("");
+    }
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    
+    if (brightness > 180) {
+      const factor = 0.35;
+      const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+      const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+      const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+      const textColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+      return {
+        backgroundColor: hexColor,
+        color: textColor,
+        border: `1px solid ${textColor}30`
+      };
+    } else if (brightness > 130) {
+      const factor = 0.45;
+      const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+      const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+      const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+      const textColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+      return {
+        backgroundColor: hexColor,
+        color: textColor,
+        border: `1px solid ${textColor}30`
+      };
+    } else {
+      return {
+        backgroundColor: hexColor,
+        color: "#FFFFFF",
+        border: "1px solid rgba(255, 255, 255, 0.15)"
+      };
+    }
+  };
+
   const ToggleSwitch = ({ active, onToggle }: { active: boolean; onToggle: () => void }) => (
     <div
       onClick={onToggle}
@@ -537,9 +612,9 @@ export default function DashboardPage() {
                   style={{
                     x: 0,
                     y: 0,
-                    backgroundColor: (task.noteColor && !["#fcd34d", "#fdfd96", "#fef3c7"].includes(task.noteColor.toLowerCase())) ? task.noteColor : undefined
+                    backgroundColor: getTaskBgHex(task)
                   }} // Reset offset to prevent jumps
-                  className={`relative h-44 w-40 p-4 shadow-md ${(task.noteColor && !["#fcd34d", "#fdfd96", "#fef3c7"].includes(task.noteColor.toLowerCase())) ? "" : getTaskColor(task.dueAt)} rounded-br-[40px] transition-all cursor-grab active:cursor-grabbing select-none task-card-ref`}
+                  className="relative h-44 w-40 p-4 shadow-md rounded-br-[40px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none task-card-ref transition-all"
                 >
                   {/* Circle Check Completion Button */}
                   <button
@@ -558,11 +633,30 @@ export default function DashboardPage() {
                   >
                     <Check className="h-3 w-3" />
                   </button>
-                  <p className="font-bold text-gray-900 line-clamp-2">{task.title}</p>
-                  <p className="mt-2 text-xs opacity-60">
-                    {task.dueAt ? new Date(task.dueAt).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' }) : "Không thời hạn"}
-                  </p>
-                  <div className="absolute bottom-0 right-0 h-10 w-10 rounded-tl-xl bg-black/5" />
+                  
+                  <div className="flex-1 flex flex-col justify-between mt-3 min-h-0 select-none text-left">
+                    {(() => {
+                      const contrastColor = getContrastTextColorForTask(task);
+                      return (
+                        <>
+                          <div className="space-y-1 flex-1 overflow-y-auto scrollbar-none pr-1">
+                            <p className="font-bold text-sm leading-snug break-words pr-4" style={{ color: contrastColor }}>
+                              📌 {task.title}
+                            </p>
+                            {task.description && (
+                              <p className="text-[10px] whitespace-pre-wrap break-words leading-tight mt-1" style={{ color: contrastColor, opacity: 0.9 }}>
+                                {task.description}
+                              </p>
+                            )}
+                          </div>
+                          <p className="text-[9px] font-bold mt-2 shrink-0 self-start" style={{ color: contrastColor, opacity: 0.75 }}>
+                            {task.dueAt ? new Date(task.dueAt).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' }) : "Không thời hạn"}
+                          </p>
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div className="absolute bottom-0 right-0 h-10 w-10 rounded-tl-xl bg-black/5 pointer-events-none" />
                 </motion.div>
               )) : (
                 <div className="flex h-44 w-full flex-col items-center justify-center text-[#6B7280]">
@@ -1164,22 +1258,75 @@ export default function DashboardPage() {
                 {/* Classification Tag */}
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Phân loại nhãn</label>
-                  <select
-                    value={calSelectedTagId}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setCalSelectedTagId(val);
-                      const tag = calendarTags.find(t => t.id === val);
-                      if (tag) {
-                        setCalNoteColor(tag.color);
-                      }
-                    }}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                  >
-                    {calendarTags.map(t => (
-                      <option key={t.id} value={t.id}>{t.name} ({t.isSystem ? "Mặc định" : "Custom"})</option>
-                    ))}
-                  </select>
+                  <div className="relative text-left">
+                    {/* Trigger Button */}
+                    <button
+                      type="button"
+                      onClick={() => setCalTagDropdownOpen(!calTagDropdownOpen)}
+                      className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
+                    >
+                      {(() => {
+                        const selectedTag = calendarTags.find((t) => t.id === calSelectedTagId);
+                        if (selectedTag) {
+                          const styles = getTagStyles(selectedTag.color);
+                          return (
+                            <span
+                              className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                              style={{
+                                backgroundColor: styles.backgroundColor,
+                                color: styles.color,
+                                border: styles.border,
+                              }}
+                            >
+                              {selectedTag.name} {selectedTag.isSystem ? "(Mặc định)" : "(Custom)"}
+                            </span>
+                          );
+                        }
+                        return <span className="text-gray-400">-- Chọn nhãn --</span>;
+                      })()}
+                      <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
+                    </button>
+
+                    {/* Backdrop for click-outside */}
+                    {calTagDropdownOpen && (
+                      <div
+                        className="fixed inset-0 z-[240]"
+                        onClick={() => setCalTagDropdownOpen(false)}
+                      />
+                    )}
+
+                    {/* Dropdown Options List */}
+                    {calTagDropdownOpen && (
+                      <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto space-y-1">
+                        {calendarTags.map((t) => {
+                          const styles = getTagStyles(t.color);
+                          return (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => {
+                                setCalSelectedTagId(t.id);
+                                setCalNoteColor(t.color);
+                                setCalTagDropdownOpen(false);
+                              }}
+                              className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
+                            >
+                              <span
+                                  className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                  style={{
+                                    backgroundColor: styles.backgroundColor,
+                                    color: styles.color,
+                                    border: styles.border,
+                                  }}
+                              >
+                                {t.name} {t.isSystem ? "(Mặc định)" : "(Custom)"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Event Recurrence Options */}
@@ -1299,8 +1446,11 @@ export default function DashboardPage() {
       </AnimatePresence>
 
       {/* FLOATING WHITEBOARD CANVAS TASKS */}
-      {floatingTasks.map(task => (
-        <motion.div
+      {floatingTasks.map(task => {
+        const bgHex = getTaskBgHex(task);
+        const contrastColor = getContrastTextColorForTask(task);
+        return (
+          <motion.div
           key={task.id}
           drag
           dragMomentum={false}
@@ -1344,9 +1494,9 @@ export default function DashboardPage() {
             x: taskPositions[task.id]?.x ?? 200,
             y: taskPositions[task.id]?.y ?? 100,
             zIndex: 100,
-            backgroundColor: (task.noteColor && task.noteColor.toLowerCase() !== "#fdfd96") ? task.noteColor : undefined,
+            backgroundColor: bgHex,
           }}
-          className={`h-44 w-40 p-4 shadow-xl rounded-br-[40px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none ${(task.noteColor && task.noteColor.toLowerCase() !== "#fdfd96") ? "" : "bg-[#fdfd96]"}`}
+          className="h-44 w-40 p-4 shadow-xl rounded-br-[40px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none transition-all"
         >
           {/* Complete Checklist button */}
           <button
@@ -1379,15 +1529,25 @@ export default function DashboardPage() {
           >
             <X className="h-3.5 w-3.5" />
           </button>
-          <div className="space-y-1">
-            <p className="font-bold text-gray-900 text-sm line-clamp-3 leading-snug">📌 {task.title}</p>
-            <p className="text-[10px] text-gray-500 font-bold mt-1">
+          
+          <div className="flex-1 flex flex-col justify-between mt-5 min-h-0 select-none text-left">
+            <div className="space-y-1 flex-1 overflow-y-auto scrollbar-none pr-1">
+              <p className="font-bold text-sm leading-snug break-words pr-4" style={{ color: contrastColor }}>
+                📌 {task.title}
+              </p>
+              {task.description && (
+                <p className="text-[10px] whitespace-pre-wrap break-words leading-tight mt-1" style={{ color: contrastColor, opacity: 0.9 }}>
+                  {task.description}
+                </p>
+              )}
+            </div>
+            <p className="text-[9px] font-bold mt-2 shrink-0 self-start" style={{ color: contrastColor, opacity: 0.75 }}>
               {task.dueAt ? new Date(task.dueAt).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' }) : "Không thời hạn"}
             </p>
           </div>
-          <div className="absolute bottom-0 right-0 h-10 w-10 rounded-tl-xl bg-black/5" />
+          <div className="absolute bottom-0 right-0 h-10 w-10 rounded-tl-xl bg-black/5 pointer-events-none" />
         </motion.div>
-      ))}
+      )})}
 
       {/* Toast Notification */}
       <AnimatePresence>

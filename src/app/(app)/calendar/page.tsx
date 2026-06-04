@@ -259,6 +259,49 @@ const getContrastTextColorForEvent = (hexColor: string) => {
   return `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
 };
 
+// Helper to get matching tag styling based on background color brightness
+const getTagStyles = (hexColor: string) => {
+  if (!hexColor) return { backgroundColor: "#A172FD15", color: "#A172FD", border: "1px solid rgba(161, 114, 253, 0.3)" };
+  let cleanHex = hexColor.replace("#", "");
+  if (cleanHex.length === 3) {
+    cleanHex = cleanHex.split("").map(c => c + c).join("");
+  }
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  
+  if (brightness > 180) {
+    const factor = 0.35;
+    const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+    const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+    const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+    const textColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+    return {
+      backgroundColor: hexColor,
+      color: textColor,
+      border: `1px solid ${textColor}30`
+    };
+  } else if (brightness > 130) {
+    const factor = 0.45;
+    const dr = Math.max(0, Math.min(255, Math.floor(r * factor)));
+    const dg = Math.max(0, Math.min(255, Math.floor(g * factor)));
+    const db = Math.max(0, Math.min(255, Math.floor(b * factor)));
+    const textColor = `#${dr.toString(16).padStart(2, '0')}${dg.toString(16).padStart(2, '0')}${db.toString(16).padStart(2, '0')}`;
+    return {
+      backgroundColor: hexColor,
+      color: textColor,
+      border: `1px solid ${textColor}30`
+    };
+  } else {
+    return {
+      backgroundColor: hexColor,
+      color: "#FFFFFF",
+      border: "1px solid rgba(255, 255, 255, 0.15)"
+    };
+  }
+};
+
 export default function CalendarPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -1428,18 +1471,32 @@ export default function CalendarPage() {
                                       zIndex: 30,
                                       opacity: item.completed ? 0.5 : 1
                                     }}
-                                    className="absolute p-2 rounded-xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.02] transition-transform select-none task-card-ref group/task"
+                                    className="absolute p-2 rounded-xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.02] transition-transform select-none task-card-ref group/task overflow-y-auto scrollbar-none"
                                   >
-                                    <span className={`font-bold text-gray-800 text-[9px] leading-tight break-words ${item.completed ? "line-through opacity-50" : ""}`}>
-                                      📌 {item.title}
-                                    </span>
-                                    <div className="flex items-center justify-between mt-1">
-                                      <span className="text-[7px] text-gray-500 font-semibold flex items-center gap-0.5">
-                                        <Clock className="h-2 w-2" />
-                                        {format(new Date(item.startAt), "HH:mm")}
-                                      </span>
-                                      <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${getStatusDotColor(status)}`} />
-                                    </div>
+                                    {(() => {
+                                      const contrastColor = getContrastTextColorForEvent(getTaskBgColor(item) || "#fdfd96");
+                                      return (
+                                        <>
+                                          <div className="space-y-0.5 flex-1 min-h-0">
+                                            <p className="font-bold text-[9px] leading-tight break-words" style={{ color: contrastColor }}>
+                                              📌 {item.title}
+                                            </p>
+                                            {item.description && (
+                                              <p className="text-[7.5px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5" style={{ color: contrastColor }}>
+                                                {item.description}
+                                              </p>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center justify-between mt-1 shrink-0">
+                                            <span className="text-[7px] font-semibold flex items-center gap-0.5" style={{ color: contrastColor, opacity: 0.75 }}>
+                                              <Clock className="h-2 w-2" />
+                                              {format(new Date(item.startAt), "HH:mm")}
+                                            </span>
+                                            <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${getStatusDotColor(status)}`} />
+                                          </div>
+                                        </>
+                                      );
+                                    })()}
                                   </motion.div>
                                 );
                               } else {
@@ -1458,7 +1515,7 @@ export default function CalendarPage() {
                                     className="absolute font-bold p-2 rounded-xl cursor-pointer hover:brightness-95 flex flex-col text-[9px] justify-between shadow-sm overflow-y-auto scrollbar-none select-none transition-all"
                                   >
                                     <div className="space-y-0.5 flex-1 min-h-0">
-                                      <p className="leading-snug break-words">📌 {item.title}</p>
+                                      <p className="leading-snug break-words">{item.title}</p>
                                       {item.description && (
                                         <p className="text-[7.5px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5">
                                           {item.description}
@@ -1548,18 +1605,32 @@ export default function CalendarPage() {
                                   zIndex: 30,
                                   opacity: item.completed ? 0.5 : 1
                                 }}
-                                className="absolute p-3 rounded-2xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.01] transition-transform select-none task-card-ref group/task"
+                                className="absolute p-3 rounded-2xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.01] transition-transform select-none task-card-ref group/task overflow-y-auto scrollbar-none"
                               >
-                                <span className={`font-bold text-gray-800 text-xs leading-tight break-words ${item.completed ? "line-through opacity-50" : ""}`}>
-                                  📌 {item.title}
-                                </span>
-                                <div className="flex items-center justify-between mt-2">
-                                  <span className="text-[10px] text-gray-500 font-semibold flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {format(new Date(item.startAt), "HH:mm")}
-                                  </span>
-                                  <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${getStatusDotColor(status)}`} />
-                                </div>
+                                {(() => {
+                                  const contrastColor = getContrastTextColorForEvent(getTaskBgColor(item) || "#fdfd96");
+                                  return (
+                                    <>
+                                      <div className="space-y-1 flex-1 min-h-0">
+                                        <p className="font-bold text-xs leading-tight break-words" style={{ color: contrastColor }}>
+                                          📌 {item.title}
+                                        </p>
+                                        {item.description && (
+                                          <p className="text-[10px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5" style={{ color: contrastColor }}>
+                                            {item.description}
+                                          </p>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center justify-between mt-2 shrink-0">
+                                        <span className="text-[10px] font-semibold flex items-center gap-1" style={{ color: contrastColor, opacity: 0.75 }}>
+                                          <Clock className="h-3 w-3" />
+                                          {format(new Date(item.startAt), "HH:mm")}
+                                        </span>
+                                        <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${getStatusDotColor(status)}`} />
+                                      </div>
+                                    </>
+                                  );
+                                })()}
                               </motion.div>
                             );
                           } else {
@@ -1578,7 +1649,7 @@ export default function CalendarPage() {
                                 className="absolute font-bold p-3 rounded-2xl cursor-pointer hover:brightness-95 flex flex-col text-xs justify-between shadow-sm overflow-y-auto scrollbar-none select-none transition-all"
                               >
                                 <div className="space-y-1 flex-1 min-h-0">
-                                  <p className="leading-snug break-words">📌 {item.title}</p>
+                                  <p className="leading-snug break-words">{item.title}</p>
                                   {item.description && (
                                     <p className="text-[10px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5">
                                       {item.description}
@@ -1675,18 +1746,27 @@ export default function CalendarPage() {
                 <X className="h-3.5 w-3.5" />
               </button>
 
-              <div className="space-y-1 mt-2.5 overflow-hidden flex-1">
-                <p className="font-black text-gray-900 text-xs line-clamp-2 leading-snug">
-                  📌 {task.title}
-                </p>
-                {task.description && (
-                  <p className="text-[10px] text-gray-700 font-medium line-clamp-3 italic mt-0.5 break-words">
-                    {task.description}
-                  </p>
-                )}
-                <p className="text-[8px] text-gray-500 font-bold mt-1">
-                  {task.dueAt ? new Date(task.dueAt).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' }) : "Không thời hạn"}
-                </p>
+              <div className="flex-1 flex flex-col justify-between mt-5 min-h-0 select-none">
+                {(() => {
+                  const contrastColor = getContrastTextColorForEvent(getTaskBgColor(task) || "#fdfd96");
+                  return (
+                    <>
+                      <div className="space-y-1 flex-1 overflow-y-auto scrollbar-none pr-1">
+                        <p className="font-black text-xs leading-snug break-words pr-4" style={{ color: contrastColor }}>
+                          📌 {task.title}
+                        </p>
+                        {task.description && (
+                          <p className="text-[10px] whitespace-pre-wrap break-words leading-tight mt-1" style={{ color: contrastColor, opacity: 0.9 }}>
+                            {task.description}
+                          </p>
+                        )}
+                      </div>
+                      <p className="text-[8px] font-bold mt-2 shrink-0 self-start" style={{ color: contrastColor, opacity: 0.75 }}>
+                        {task.dueAt ? new Date(task.dueAt).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' }) : "Không thời hạn"}
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Peeling corner */}
@@ -1812,21 +1892,22 @@ export default function CalendarPage() {
                     >
                       {(() => {
                         const selectedTag = tags.find((t) => t.id === selectedTagId);
-                        const textColor = selectedTag ? getContrastTextColor(selectedTag.color) : "";
-                        return selectedTag ? (
-                          <span
-                            className="inline-block px-3 py-1 rounded-full text-xs font-bold"
-                            style={{
-                              backgroundColor: `${selectedTag.color}15`,
-                              color: textColor,
-                              border: `1px solid ${textColor}30`,
-                            }}
-                          >
-                            {selectedTag.name} {selectedTag.isSystem ? "(Mặc định)" : "(Custom)"}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-- Chọn nhãn --</span>
-                        );
+                        if (selectedTag) {
+                          const styles = getTagStyles(selectedTag.color);
+                          return (
+                            <span
+                              className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                              style={{
+                                backgroundColor: styles.backgroundColor,
+                                color: styles.color,
+                                border: styles.border,
+                              }}
+                            >
+                              {selectedTag.name} {selectedTag.isSystem ? "(Mặc định)" : "(Custom)"}
+                            </span>
+                          );
+                        }
+                        return <span className="text-gray-400">-- Chọn nhãn --</span>;
                       })()}
                       <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
                     </button>
@@ -1843,7 +1924,7 @@ export default function CalendarPage() {
                     {tagDropdownOpen && (
                       <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto space-y-1">
                         {tags.map((t) => {
-                          const optionTextColor = getContrastTextColor(t.color);
+                          const styles = getTagStyles(t.color);
                           return (
                             <button
                               key={t.id}
@@ -1856,11 +1937,11 @@ export default function CalendarPage() {
                               className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
                             >
                               <span
-                                className="inline-block px-3 py-1 rounded-full text-xs font-bold"
+                                className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
                                 style={{
-                                  backgroundColor: `${t.color}15`,
-                                  color: optionTextColor,
-                                  border: `1px solid ${optionTextColor}30`,
+                                  backgroundColor: styles.backgroundColor,
+                                  color: styles.color,
+                                  border: styles.border,
                                 }}
                               >
                                 {t.name} {t.isSystem ? "(Mặc định)" : "(Custom)"}
