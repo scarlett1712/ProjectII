@@ -1531,12 +1531,12 @@ export default function DashboardPage() {
           </button>
           
           <div className="flex-1 flex flex-col justify-between mt-5 min-h-0 select-none text-left">
-            <div className="space-y-1 flex-1 overflow-y-auto scrollbar-none pr-1">
-              <p className="font-bold text-sm leading-snug break-words pr-4" style={{ color: contrastColor }}>
-                📌 {task.title}
-              </p>
+            <p className="font-bold text-sm leading-snug break-words pr-4 shrink-0" style={{ color: contrastColor }}>
+              📌 {task.title}
+            </p>
+            <div className="flex-1 overflow-y-auto note-scrollbar pr-1 mt-1">
               {task.description && (
-                <p className="text-[10px] whitespace-pre-wrap break-words leading-tight mt-1" style={{ color: contrastColor, opacity: 0.9 }}>
+                <p className="text-[10px] whitespace-pre-wrap break-words leading-tight" style={{ color: contrastColor, opacity: 0.9 }}>
                   {task.description}
                 </p>
               )}

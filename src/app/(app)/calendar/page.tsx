@@ -1471,21 +1471,23 @@ export default function CalendarPage() {
                                       zIndex: 30,
                                       opacity: item.completed ? 0.5 : 1
                                     }}
-                                    className="absolute p-2 rounded-xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.02] transition-transform select-none task-card-ref group/task overflow-y-auto scrollbar-none"
+                                    className="absolute p-2 rounded-xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.02] transition-transform select-none task-card-ref group/task"
                                   >
                                     {(() => {
                                       const contrastColor = getContrastTextColorForEvent(getTaskBgColor(item) || "#fdfd96");
                                       return (
                                         <>
-                                          <div className="space-y-0.5 flex-1 min-h-0">
-                                            <p className="font-bold text-[9px] leading-tight break-words" style={{ color: contrastColor }}>
+                                          <div className="flex-1 flex flex-col min-h-0 select-none text-left">
+                                            <p className="font-bold text-[9px] leading-tight break-words shrink-0" style={{ color: contrastColor }}>
                                               📌 {item.title}
                                             </p>
-                                            {item.description && (
-                                              <p className="text-[7.5px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5" style={{ color: contrastColor }}>
-                                                {item.description}
-                                              </p>
-                                            )}
+                                            <div className="flex-1 overflow-y-auto note-scrollbar pr-0.5 mt-0.5">
+                                              {item.description && (
+                                                <p className="text-[7.5px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight" style={{ color: contrastColor }}>
+                                                  {item.description}
+                                                </p>
+                                              )}
+                                            </div>
                                           </div>
                                           <div className="flex items-center justify-between mt-1 shrink-0">
                                             <span className="text-[7px] font-semibold flex items-center gap-0.5" style={{ color: contrastColor, opacity: 0.75 }}>
@@ -1605,21 +1607,23 @@ export default function CalendarPage() {
                                   zIndex: 30,
                                   opacity: item.completed ? 0.5 : 1
                                 }}
-                                className="absolute p-3 rounded-2xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.01] transition-transform select-none task-card-ref group/task overflow-y-auto scrollbar-none"
+                                className="absolute p-3 rounded-2xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.01] transition-transform select-none task-card-ref group/task"
                               >
                                 {(() => {
                                   const contrastColor = getContrastTextColorForEvent(getTaskBgColor(item) || "#fdfd96");
                                   return (
                                     <>
-                                      <div className="space-y-1 flex-1 min-h-0">
-                                        <p className="font-bold text-xs leading-tight break-words" style={{ color: contrastColor }}>
+                                      <div className="flex-1 flex flex-col min-h-0 select-none text-left">
+                                        <p className="font-bold text-xs leading-tight break-words shrink-0" style={{ color: contrastColor }}>
                                           📌 {item.title}
                                         </p>
-                                        {item.description && (
-                                          <p className="text-[10px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5" style={{ color: contrastColor }}>
-                                            {item.description}
-                                          </p>
-                                        )}
+                                        <div className="flex-1 overflow-y-auto note-scrollbar pr-1 mt-1">
+                                          {item.description && (
+                                            <p className="text-[10px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight" style={{ color: contrastColor }}>
+                                              {item.description}
+                                            </p>
+                                          )}
+                                        </div>
                                       </div>
                                       <div className="flex items-center justify-between mt-2 shrink-0">
                                         <span className="text-[10px] font-semibold flex items-center gap-1" style={{ color: contrastColor, opacity: 0.75 }}>
@@ -1751,12 +1755,12 @@ export default function CalendarPage() {
                   const contrastColor = getContrastTextColorForEvent(getTaskBgColor(task) || "#fdfd96");
                   return (
                     <>
-                      <div className="space-y-1 flex-1 overflow-y-auto scrollbar-none pr-1">
-                        <p className="font-black text-xs leading-snug break-words pr-4" style={{ color: contrastColor }}>
-                          📌 {task.title}
-                        </p>
+                      <p className="font-black text-xs leading-snug break-words pr-4 shrink-0" style={{ color: contrastColor }}>
+                        📌 {task.title}
+                      </p>
+                      <div className="flex-1 overflow-y-auto note-scrollbar pr-1 mt-1">
                         {task.description && (
-                          <p className="text-[10px] whitespace-pre-wrap break-words leading-tight mt-1" style={{ color: contrastColor, opacity: 0.9 }}>
+                          <p className="text-[10px] whitespace-pre-wrap break-words leading-tight" style={{ color: contrastColor, opacity: 0.9 }}>
                             {task.description}
                           </p>
                         )}
