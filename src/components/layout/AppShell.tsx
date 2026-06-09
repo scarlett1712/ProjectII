@@ -36,6 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [chatSessionId, setChatSessionId] = useState<string>("new");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -168,7 +169,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ reset: true })
       })
         .then(res => res.json())
-        .then(() => {
+        .then((data) => {
+          if (data.session) {
+            setChatSessionId(data.session.id);
+          }
           setChatMessages([
             { role: "ASSISTANT", content: "Xin chào! Mình là Star. Hôm nay bạn thế nào?" }
           ]);
@@ -359,7 +363,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content, sessionId: chatSessionId })
       });
       const data = await res.json();
       if (data.reply) {
@@ -368,6 +372,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           newMsgs.pop(); // remove loading message
           return [...newMsgs, data.reply];
         });
+      }
+      if (data.session) {
+        setChatSessionId(data.session.id);
       }
     } catch (e) {
       setChatMessages(prev => {
