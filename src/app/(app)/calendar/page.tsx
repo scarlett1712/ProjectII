@@ -321,6 +321,10 @@ export default function CalendarPage() {
     isTask: boolean;
     isRecurring: boolean;
   } | null>(null);
+  const [saveConfirm, setSaveConfirm] = useState<{
+    show: boolean;
+    payload: any;
+  } | null>(null);
   const [hiddenHours, setHiddenHours] = useState<number[]>([]);
   // isMounted as state (not ref) so the save-effect only fires AFTER setHiddenHours
   // has caused a re-render with the loaded values, preventing overwriting localStorage with [].
@@ -422,6 +426,36 @@ export default function CalendarPage() {
     "#FDA4AF", // Pastel Pink
     "#F97316", // Warm Orange
     "#06B6D4"  // Turquoise
+  ];
+
+  const boldColors = [
+    "#A172FD", // Violet
+    "#3B82F6", // Blue
+    "#EC4899", // Pink
+    "#F97316", // Orange
+    "#10B981", // Green
+    "#EF4444", // Red
+    "#8B5CF6", // Purple
+    "#06B6D4", // Turquoise
+    "#F59E0B", // Amber/Gold
+    "#6366F1", // Indigo
+    "#14B8A6", // Teal
+    "#D946EF"  // Fuchsia
+  ];
+
+  const pastelColors = [
+    "#C4B5FD", // Lavender Pastel
+    "#93C5FD", // Blue Pastel
+    "#FBCFE8", // Pink Pastel
+    "#FED7AA", // Orange Pastel
+    "#A7F3D0", // Green Pastel
+    "#FCA5A5", // Red Pastel
+    "#E9D5FF", // Purple Pastel
+    "#99F6E4", // Teal Pastel
+    "#FEF08A", // Yellow Pastel
+    "#C7D2FE", // Indigo Pastel
+    "#BAE6FD", // Light Blue Pastel
+    "#F5D0FE"  // Fuchsia Pastel
   ];
 
   // Load dragged positions from localStorage
@@ -643,41 +677,23 @@ export default function CalendarPage() {
     loadData();
   }, [currentDate]);
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
-
-    const payload: any = {
-      title: title.trim(),
-      description: description.trim(),
-      notification,
-      noteColor,
-      color: noteColor, // Ensure color is saved in DB
-      tagId: selectedTagId
-    };
-
-    if (itemType === "event") {
-      payload.startAt = new Date(startAtStr).toISOString();
-      payload.endAt = new Date(endAtStr).toISOString();
-      payload.allDay = allDay;
-      payload.recurrence = recurrence;
-      payload.recurrenceEnd = recurrenceEndStr ? new Date(recurrenceEndStr).toISOString() : null;
-    } else {
-      payload.dueAt = startAtStr ? new Date(startAtStr).toISOString() : null; // Optional deadline!
-      payload.completed = completed;
-    }
-
+  const executeSave = async (payload: any, mode: "one" | "all" | "future") => {
     try {
       let url = itemType === "event" ? "/api/calendar" : "/api/tasks";
       let method = "POST";
       
       if (editingItem) {
-        payload.id = editingItem.isRecurringInstance ? editingItem.originalId : editingItem.id;
         method = "PATCH";
         if (editingItem.isTask) {
           url = "/api/tasks";
+          payload.id = editingItem.id;
         } else {
-          url = "/api/calendar";
+          url = `/api/calendar?mode=${mode}`;
+          if (mode === "one" || mode === "future") {
+            payload.id = editingItem.id;
+          } else {
+            payload.id = editingItem.isRecurringInstance ? editingItem.originalId : editingItem.id;
+          }
         }
       }
 
@@ -703,9 +719,49 @@ export default function CalendarPage() {
         clearForm();
         showToast(editingItem ? "Đã cập nhật lịch trình!" : "Đã tạo lịch trình mới!");
         loadData();
+      } else {
+        const err = await res.json();
+        showToast(err.error || "Lỗi khi lưu.");
       }
     } catch (e) {
       console.error(e);
+      showToast("Lỗi kết nối khi lưu.");
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    const payload: any = {
+      title: title.trim(),
+      description: description.trim(),
+      notification,
+      noteColor,
+      color: noteColor, // Ensure color is saved in DB
+      tagId: selectedTagId
+    };
+
+    if (itemType === "event") {
+      payload.startAt = new Date(startAtStr).toISOString();
+      payload.endAt = new Date(endAtStr).toISOString();
+      payload.allDay = allDay;
+      payload.recurrence = recurrence;
+      payload.recurrenceEnd = recurrenceEndStr ? new Date(recurrenceEndStr).toISOString() : null;
+    } else {
+      payload.dueAt = startAtStr ? new Date(startAtStr).toISOString() : null; // Optional deadline!
+      payload.completed = completed;
+    }
+
+    const isRecurring = !!(editingItem && !editingItem.isTask && (editingItem.isRecurringInstance || (editingItem.recurrence && editingItem.recurrence !== "NONE")));
+
+    if (isRecurring) {
+      setSaveConfirm({
+        show: true,
+        payload
+      });
+    } else {
+      executeSave(payload, "all");
     }
   };
 
@@ -761,7 +817,7 @@ export default function CalendarPage() {
     }
   };
 
-  const executeDelete = async (id: string, isTask: boolean, mode: "one" | "all") => {
+  const executeDelete = async (id: string, isTask: boolean, mode: "one" | "all" | "future") => {
     try {
       const url = isTask 
         ? `/api/tasks?id=${id}` 
@@ -2042,23 +2098,64 @@ export default function CalendarPage() {
                   )}
                 </div>
 
-                {/* Pastel Note Color Selector */}
+                {/* Unified Premium Color Selector */}
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Màu sắc giấy note / sự kiện</label>
-                  <div className="flex flex-wrap gap-2">
-                    {presetColors.map(c => (
-                      <button 
-                        key={c}
-                        type="button"
-                        onClick={() => setNoteColor(c)}
-                        style={{ backgroundColor: c }}
-                        className={`w-8 h-8 rounded-full border-2 transition-all transform hover:scale-110 flex items-center justify-center ${
-                          noteColor === c ? "border-[#A172FD]" : "border-transparent"
-                        }`}
-                      >
-                        {noteColor === c && <Check className="h-4 w-4 text-gray-700" />}
-                      </button>
-                    ))}
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setNoteColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              noteColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setNoteColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              noteColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={noteColor || "#A172FD"}
+                            onChange={(e) => setNoteColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{noteColor || "#A172FD"}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: noteColor || "#A172FD" }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -2147,18 +2244,61 @@ export default function CalendarPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Màu sắc nhãn</label>
-                  <div className="flex flex-wrap gap-2">
-                    {presetColors.map(c => (
-                      <button 
-                        key={c}
-                        type="button"
-                        onClick={() => setNewTagColor(c)}
-                        style={{ backgroundColor: c }}
-                        className={`w-7 h-7 rounded-full border-2 transition-all ${
-                          newTagColor === c ? "border-[#A172FD]" : "border-transparent"
-                        }`}
-                      />
-                    ))}
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setNewTagColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              newTagColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setNewTagColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              newTagColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={newTagColor || "#A172FD"}
+                            onChange={(e) => setNewTagColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{newTagColor || "#A172FD"}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: newTagColor || "#A172FD" }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -2219,18 +2359,61 @@ export default function CalendarPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Màu sắc nhãn</label>
-                  <div className="flex flex-wrap gap-2">
-                    {presetColors.map(c => (
-                      <button 
-                        key={c}
-                        type="button"
-                        onClick={() => setEditingTag({ ...editingTag, color: c })}
-                        style={{ backgroundColor: c }}
-                        className={`w-7 h-7 rounded-full border-2 transition-all ${
-                          editingTag.color === c ? "border-[#A172FD]" : "border-transparent"
-                        }`}
-                      />
-                    ))}
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setEditingTag({ ...editingTag, color: c })}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              editingTag.color === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setEditingTag({ ...editingTag, color: c })}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              editingTag.color === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={editingTag.color || "#A172FD"}
+                            onChange={(e) => setEditingTag({ ...editingTag, color: e.target.value })}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{editingTag.color || "#A172FD"}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: editingTag.color || "#A172FD" }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -2323,7 +2506,7 @@ export default function CalendarPage() {
               </div>
               <p className="text-sm text-gray-600 mb-6 font-semibold">
                 {deleteConfirm.isRecurring 
-                  ? "Đây là một lịch trình lặp lại. Bạn muốn xóa duy nhất sự kiện này hay toàn bộ chuỗi lặp?"
+                  ? "Đây là một lịch trình lặp lại. Bạn muốn xóa sự kiện này thế nào?"
                   : `Bạn có chắc chắn muốn xóa ${deleteConfirm.isTask ? "công việc" : "lịch trình"} này không?`}
               </p>
               <div className="flex flex-col gap-2">
@@ -2334,18 +2517,27 @@ export default function CalendarPage() {
                         executeDelete(deleteConfirm.id, deleteConfirm.isTask, "one");
                         setDeleteConfirm(null);
                       }}
-                      className="w-full rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 transition-colors shadow-md text-sm"
+                      className="w-full rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 transition-colors shadow-md text-sm cursor-pointer"
                     >
                       Xóa duy nhất sự kiện này
+                    </button>
+                    <button 
+                      onClick={() => {
+                        executeDelete(deleteConfirm.id, deleteConfirm.isTask, "future");
+                        setDeleteConfirm(null);
+                      }}
+                      className="w-full rounded-xl bg-orange-500 py-3 font-bold text-white hover:bg-orange-600 transition-colors shadow-md text-sm cursor-pointer"
+                    >
+                      Xóa từ sự kiện này về sau
                     </button>
                     <button 
                       onClick={() => {
                         executeDelete(deleteConfirm.id, deleteConfirm.isTask, "all");
                         setDeleteConfirm(null);
                       }}
-                      className="w-full rounded-xl bg-red-500 py-3 font-bold text-white hover:bg-red-600 transition-colors shadow-md text-sm"
+                      className="w-full rounded-xl bg-red-500 py-3 font-bold text-white hover:bg-red-600 transition-colors shadow-md text-sm cursor-pointer"
                     >
-                      Xóa toàn bộ chuỗi lặp
+                      Xóa tất cả các sự kiện
                     </button>
                   </>
                 ) : (
@@ -2359,6 +2551,71 @@ export default function CalendarPage() {
                     Xác nhận xóa
                   </button>
                 )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CUSTOM SAVE CONFIRMATION DIALOG */}
+      <AnimatePresence>
+        {saveConfirm && saveConfirm.show && (
+          <div 
+            onClick={() => setSaveConfirm(null)}
+            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-[420px] rounded-[32px] p-6 shadow-2xl border border-gray-100 relative"
+            >
+              <button 
+                onClick={() => setSaveConfirm(null)} 
+                className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <div className="flex items-center gap-3 mb-4 mt-2">
+                <div className="p-3 bg-purple-50 text-[#A172FD] rounded-2xl">
+                  <AlertCircle className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                  Xác nhận lưu lịch trình lặp
+                </h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-6 font-semibold">
+                Đây là một lịch trình lặp lại. Bạn muốn lưu các thay đổi thế nào?
+              </p>
+              <div className="flex flex-col gap-2">
+                <button 
+                  onClick={() => {
+                    executeSave(saveConfirm.payload, "one");
+                    setSaveConfirm(null);
+                  }}
+                  className="w-full rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 transition-colors shadow-md text-sm cursor-pointer"
+                >
+                  Lưu duy nhất sự kiện này
+                </button>
+                <button 
+                  onClick={() => {
+                    executeSave(saveConfirm.payload, "future");
+                    setSaveConfirm(null);
+                  }}
+                  className="w-full rounded-xl bg-orange-500 py-3 font-bold text-white hover:bg-orange-600 transition-colors shadow-md text-sm cursor-pointer"
+                >
+                  Lưu từ sự kiện này về sau
+                </button>
+                <button 
+                  onClick={() => {
+                    executeSave(saveConfirm.payload, "all");
+                    setSaveConfirm(null);
+                  }}
+                  className="w-full rounded-xl bg-[#A172FD] py-3 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm cursor-pointer"
+                >
+                  Lưu tất cả các sự kiện
+                </button>
               </div>
             </motion.div>
           </div>

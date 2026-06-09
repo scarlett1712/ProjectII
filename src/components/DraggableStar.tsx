@@ -7,11 +7,19 @@ import { Bell, Check, X } from "lucide-react";
 
 const STAR_SIZE = 140;
 
+type PortionOption = {
+  label: string;
+  value: string;
+};
+
 type AlertPayload = {
   message: string;
   type: string;
   amountMl?: number;
   slotId?: string;
+  mealId?: string;
+  mealName?: string;
+  portions?: PortionOption[];
 };
 
 export function DraggableStar({ onClick, children }: { onClick?: () => void; children?: React.ReactNode }) {
@@ -44,9 +52,55 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
   // Listen to global notifications
   useEffect(() => {
-    const handleNotification = (e: Event) => {
+    const handleNotification = async (e: Event) => {
       const customEvent = e as CustomEvent<AlertPayload>;
-      setAlert(customEvent.detail);
+      const payload = customEvent.detail;
+      
+      if (payload.type === "meal-estimate" && payload.mealName && payload.mealId) {
+        // Show loading state first!
+        setAlert({
+          type: "meal-estimate-loading",
+          message: `Chờ Star xíu nha, đang xem món "${payload.mealName}" nên ăn lượng thế nào nè... 💖`,
+          mealId: payload.mealId,
+          mealName: payload.mealName,
+        });
+        
+        try {
+          const res = await fetch("/api/meals/suggest-portions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mealName: payload.mealName }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setAlert({
+              type: "meal-estimate",
+              message: `Món "${payload.mealName}" ngon quá bạn iu ơi! Khẩu phần hôm nay thế nào để Star tính kcal chính xác nha? 🥰`,
+              mealId: payload.mealId,
+              mealName: payload.mealName,
+              portions: data.portions,
+            });
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to fetch portions:", err);
+        }
+        
+        // Fallback standard options if fetch fails
+        setAlert({
+          type: "meal-estimate",
+          message: `Món "${payload.mealName}" thế nào bạn iu nhỉ? Chọn khẩu phần để Star tính kcal nha! 🥰`,
+          mealId: payload.mealId,
+          mealName: payload.mealName,
+          portions: [
+            { label: "Ít / Nhỏ", value: "small" },
+            { label: "Vừa / Trung bình", value: "medium" },
+            { label: "Nhiều / Lớn", value: "large" }
+          ],
+        });
+      } else {
+        setAlert(payload);
+      }
     };
 
     window.addEventListener("star-notification", handleNotification);
@@ -70,6 +124,36 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
     } catch (e) {
       console.error(e);
     } finally {
+      setAlert(null);
+    }
+  };
+
+  const handleEstimateMeal = async (mealId: string, portionLabel: string, portionValue: string) => {
+    try {
+      setAlert({
+        type: "info",
+        message: "Đang tính lượng kcal cho bạn iu nè... ✨"
+      });
+      const res = await fetch("/api/meals/estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mealId, portionLabel, portionValue }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAlert({
+          type: "info",
+          message: data.explanation || `Star đã cập nhật lượng calo của món ăn rồi nha! 💕`
+        });
+        setTimeout(() => {
+          setAlert(null);
+          window.location.reload(); // Refresh the page to sync progress charts
+        }, 3000);
+      } else {
+        setAlert(null);
+      }
+    } catch (e) {
+      console.error(e);
       setAlert(null);
     }
   };
@@ -125,23 +209,63 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
               {alert.message}
             </p>
 
-            <div className="flex gap-2 w-full">
+            <div className="flex flex-col gap-2 w-full">
               {alert.type === "water" && alert.amountMl && (
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={() => handleLogWater(alert.amountMl!)}
+                    className="flex-1 flex items-center justify-center gap-1 bg-[#A172FD] text-white py-2 rounded-xl text-xs font-bold hover:bg-[#8b5cf6] transition-colors shadow-sm cursor-pointer"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    Đã uống
+                  </button>
+                  <button
+                    onClick={() => setAlert(null)}
+                    className="flex-1 flex items-center justify-center gap-1 bg-gray-100 text-gray-600 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Đóng
+                  </button>
+                </div>
+              )}
+              
+              {alert.type === "meal-estimate" && alert.portions && alert.mealId && (
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+                    {alert.portions.map((port, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => handleEstimateMeal(alert.mealId!, port.label, port.value)}
+                        className="w-full bg-[#F5F3FF] hover:bg-[#EAE5FF] text-[#A172FD] py-2 px-3 rounded-xl text-xs font-bold transition-all border border-purple-100 text-center truncate active:scale-98 shadow-sm cursor-pointer"
+                      >
+                        {port.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setAlert(null)}
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Bỏ qua
+                  </button>
+                </div>
+              )}
+
+              {alert.type === "meal-estimate-loading" && (
+                <div className="flex items-center justify-center py-2">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#A172FD] border-t-transparent" />
+                </div>
+              )}
+              
+              {alert.type !== "water" && alert.type !== "meal-estimate" && alert.type !== "meal-estimate-loading" && (
                 <button
-                  onClick={() => handleLogWater(alert.amountMl!)}
-                  className="flex-1 flex items-center justify-center gap-1 bg-[#A172FD] text-white py-2 rounded-xl text-xs font-bold hover:bg-[#8b5cf6] transition-colors shadow-sm"
+                  onClick={() => setAlert(null)}
+                  className="w-full flex items-center justify-center gap-1 bg-gray-100 text-gray-600 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors cursor-pointer"
                 >
-                  <Check className="h-3.5 w-3.5" />
-                  Đã uống
+                  <X className="h-3.5 w-3.5" />
+                  Đóng
                 </button>
               )}
-              <button
-                onClick={() => setAlert(null)}
-                className="flex-1 flex items-center justify-center gap-1 bg-gray-100 text-gray-600 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
-              >
-                <X className="h-3.5 w-3.5" />
-                Đóng
-              </button>
             </div>
             {/* Arrow pointer */}
             <div className={

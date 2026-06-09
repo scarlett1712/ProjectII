@@ -109,6 +109,204 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Thiếu ID sự kiện." }, { status: 400 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const mode = searchParams.get("mode") || body.mode || "all";
+
+    // If updating a single occurrence of a recurring series
+    if (mode === "one" && (id.includes("_rec_") || (await db.calendarEvent.findFirst({ where: { id, userId: auth.userId! } }))?.recurrence !== "NONE")) {
+      let originalId = id;
+      let timestamp: number;
+
+      const event = await db.calendarEvent.findFirst({
+        where: {
+          id: id.includes("_rec_") ? id.split("_rec_")[0] : id,
+          userId: auth.userId!
+        }
+      });
+
+      if (!event) {
+        return NextResponse.json({ error: "Không tìm thấy sự kiện gốc." }, { status: 404 });
+      }
+
+      if (id.includes("_rec_")) {
+        const parts = id.split("_rec_");
+        originalId = parts[0];
+        timestamp = parseInt(parts[1], 10);
+      } else {
+        timestamp = new Date(event.startAt).getTime();
+      }
+
+      const instanceStart = new Date(timestamp);
+      const eventStart = new Date(event.startAt);
+      const eventEnd = new Date(event.endAt);
+      const durationMs = eventEnd.getTime() - eventStart.getTime();
+
+      // Calculate next start time based on recurrence frequency
+      let nextStart = new Date(instanceStart);
+      if (event.recurrence === "DAILY") {
+        nextStart = addDays(nextStart, 1);
+      } else if (event.recurrence === "WEEKLY") {
+        nextStart = addWeeks(nextStart, 1);
+      } else if (event.recurrence === "MONTHLY") {
+        nextStart = addMonths(nextStart, 1);
+      }
+
+      if (instanceStart.getTime() === eventStart.getTime()) {
+        // If we are modifying the very first occurrence, simply shift the parent start time!
+        const limitDate = event.recurrenceEnd ? new Date(event.recurrenceEnd) : null;
+        if (limitDate && nextStart > limitDate) {
+          // No occurrences left, delete entirely
+          await db.calendarEvent.deleteMany({
+            where: { id: originalId, userId: auth.userId! }
+          });
+        } else {
+          await db.calendarEvent.update({
+            where: { id: originalId },
+            data: {
+              startAt: nextStart,
+              endAt: new Date(nextStart.getTime() + durationMs)
+            }
+          });
+        }
+      } else {
+        // Splitting: Set the current event recurrenceEnd to the day before the modified instance.
+        const newEndLimit = new Date(instanceStart.getTime() - 1000); // 1 second before
+        await db.calendarEvent.update({
+          where: { id: originalId },
+          data: {
+            recurrenceEnd: newEndLimit
+          }
+        });
+
+        // Check if we should create a new series after the modified instance
+        const originalRecurenceEnd = event.recurrenceEnd ? new Date(event.recurrenceEnd) : addMonths(new Date(), 6);
+        if (nextStart <= originalRecurenceEnd) {
+          await db.calendarEvent.create({
+            data: {
+              userId: auth.userId!,
+              title: event.title,
+              description: event.description,
+              startAt: nextStart,
+              endAt: new Date(nextStart.getTime() + durationMs),
+              allDay: event.allDay,
+              tagId: event.tagId,
+              color: event.color,
+              notification: event.notification,
+              noteColor: event.noteColor,
+              recurrence: event.recurrence,
+              recurrenceEnd: event.recurrenceEnd
+            }
+          });
+        }
+      }
+
+      // Now create the edited occurrence as a standalone event
+      const newStartAt = data.startAt ? new Date(data.startAt) : instanceStart;
+      const newEndAt = data.endAt ? new Date(data.endAt) : new Date(instanceStart.getTime() + durationMs);
+
+      const standaloneEvent = await db.calendarEvent.create({
+        data: {
+          userId: auth.userId!,
+          title: data.title !== undefined ? data.title : event.title,
+          description: data.description !== undefined ? data.description : event.description,
+          startAt: newStartAt,
+          endAt: newEndAt,
+          allDay: data.allDay !== undefined ? Boolean(data.allDay) : event.allDay,
+          tagId: data.tagId !== undefined ? data.tagId : event.tagId,
+          color: data.color !== undefined ? data.color : event.color,
+          notification: data.notification !== undefined ? Boolean(data.notification) : event.notification,
+          noteColor: data.noteColor !== undefined ? data.noteColor : event.noteColor,
+          recurrence: "NONE",
+          recurrenceEnd: null
+        }
+      });
+
+      return NextResponse.json(standaloneEvent);
+    }
+
+    // If updating from this occurrence onward
+    if (mode === "future" && (id.includes("_rec_") || (await db.calendarEvent.findFirst({ where: { id, userId: auth.userId! } }))?.recurrence !== "NONE")) {
+      let originalId = id;
+      let timestamp: number;
+
+      const event = await db.calendarEvent.findFirst({
+        where: {
+          id: id.includes("_rec_") ? id.split("_rec_")[0] : id,
+          userId: auth.userId!
+        }
+      });
+
+      if (!event) {
+        return NextResponse.json({ error: "Không tìm thấy sự kiện gốc." }, { status: 404 });
+      }
+
+      if (id.includes("_rec_")) {
+        const parts = id.split("_rec_");
+        originalId = parts[0];
+        timestamp = parseInt(parts[1], 10);
+      } else {
+        timestamp = new Date(event.startAt).getTime();
+      }
+
+      const instanceStart = new Date(timestamp);
+      const eventStart = new Date(event.startAt);
+      const eventEnd = new Date(event.endAt);
+      const durationMs = eventEnd.getTime() - eventStart.getTime();
+
+      const newStartAt = data.startAt ? new Date(data.startAt) : instanceStart;
+      const newEndAt = data.endAt ? new Date(data.endAt) : new Date(instanceStart.getTime() + durationMs);
+
+      if (instanceStart.getTime() === eventStart.getTime()) {
+        // If we are modifying from the first instance onward, simply update the parent event directly!
+        const updatedParent = await db.calendarEvent.update({
+          where: { id: originalId },
+          data: {
+            title: data.title !== undefined ? data.title : event.title,
+            description: data.description !== undefined ? data.description : event.description,
+            startAt: newStartAt,
+            endAt: newEndAt,
+            allDay: data.allDay !== undefined ? Boolean(data.allDay) : event.allDay,
+            tagId: data.tagId !== undefined ? data.tagId : event.tagId,
+            color: data.color !== undefined ? data.color : event.color,
+            notification: data.notification !== undefined ? Boolean(data.notification) : event.notification,
+            noteColor: data.noteColor !== undefined ? data.noteColor : event.noteColor,
+            recurrence: data.recurrence !== undefined ? data.recurrence : event.recurrence,
+            recurrenceEnd: data.recurrenceEnd !== undefined ? (data.recurrenceEnd ? new Date(data.recurrenceEnd) : null) : event.recurrenceEnd
+          }
+        });
+        return NextResponse.json(updatedParent);
+      } else {
+        // Old series terminates before this instance starts
+        const newEndLimit = new Date(instanceStart.getTime() - 1000);
+        await db.calendarEvent.update({
+          where: { id: originalId },
+          data: {
+            recurrenceEnd: newEndLimit
+          }
+        });
+
+        // Spawn a new parent series for future occurrences with updated fields
+        const newSeries = await db.calendarEvent.create({
+          data: {
+            userId: auth.userId!,
+            title: data.title !== undefined ? data.title : event.title,
+            description: data.description !== undefined ? data.description : event.description,
+            startAt: newStartAt,
+            endAt: newEndAt,
+            allDay: data.allDay !== undefined ? Boolean(data.allDay) : event.allDay,
+            tagId: data.tagId !== undefined ? data.tagId : event.tagId,
+            color: data.color !== undefined ? data.color : event.color,
+            notification: data.notification !== undefined ? Boolean(data.notification) : event.notification,
+            noteColor: data.noteColor !== undefined ? data.noteColor : event.noteColor,
+            recurrence: data.recurrence !== undefined ? data.recurrence : event.recurrence,
+            recurrenceEnd: data.recurrenceEnd !== undefined ? (data.recurrenceEnd ? new Date(data.recurrenceEnd) : null) : event.recurrenceEnd
+          }
+        });
+        return NextResponse.json(newSeries);
+      }
+    }
+
+    // Default: update entire series/event
     const updatedEvent = await db.calendarEvent.update({
       where: { id, userId: auth.userId! },
       data: {
@@ -157,6 +355,33 @@ export async function DELETE(req: NextRequest) {
         await db.calendarEvent.deleteMany({
           where: { id: originalId, userId: auth.userId! },
         });
+        return NextResponse.json({ ok: true });
+      } else if (mode === "future") {
+        // Delete from this instance onward
+        const event = await db.calendarEvent.findFirst({
+          where: { id: originalId, userId: auth.userId! }
+        });
+        if (!event) {
+          return NextResponse.json({ error: "Không tìm thấy sự kiện gốc." }, { status: 404 });
+        }
+
+        const instanceStart = new Date(timestamp);
+        const eventStart = new Date(event.startAt);
+
+        if (instanceStart.getTime() === eventStart.getTime()) {
+          // Deleting from the first instance onward deletes the whole series
+          await db.calendarEvent.deleteMany({
+            where: { id: originalId, userId: auth.userId! }
+          });
+        } else {
+          // Set recurrence limit to 1 second before the selected instance
+          await db.calendarEvent.update({
+            where: { id: originalId },
+            data: {
+              recurrenceEnd: new Date(instanceStart.getTime() - 1000)
+            }
+          });
+        }
         return NextResponse.json({ ok: true });
       } else {
         // Mode is "one"

@@ -111,6 +111,36 @@ export default function DashboardPage() {
 
   const presetColors = ["#fdfd96", "#F87171", "#93C5FD", "#A7F3D0", "#F472B6", "#C084FC", "#FB923C"];
 
+  const boldColors = [
+    "#A172FD", // Violet
+    "#3B82F6", // Blue
+    "#EC4899", // Pink
+    "#F97316", // Orange
+    "#10B981", // Green
+    "#EF4444", // Red
+    "#8B5CF6", // Purple
+    "#06B6D4", // Turquoise
+    "#F59E0B", // Amber/Gold
+    "#6366F1", // Indigo
+    "#14B8A6", // Teal
+    "#D946EF"  // Fuchsia
+  ];
+
+  const pastelColors = [
+    "#C4B5FD", // Lavender Pastel
+    "#93C5FD", // Blue Pastel
+    "#FBCFE8", // Pink Pastel
+    "#FED7AA", // Orange Pastel
+    "#A7F3D0", // Green Pastel
+    "#FCA5A5", // Red Pastel
+    "#E9D5FF", // Purple Pastel
+    "#99F6E4", // Teal Pastel
+    "#FEF08A", // Yellow Pastel
+    "#C7D2FE", // Indigo Pastel
+    "#BAE6FD", // Light Blue Pastel
+    "#F5D0FE"  // Fuchsia Pastel
+  ];
+
   // Real data states
   const [meals, setMeals] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
@@ -234,7 +264,7 @@ export default function DashboardPage() {
       const [h, m] = (mealForm.time || "07:00").split(":");
       eatenAt.setHours(Number(h), Number(m), 0, 0);
 
-      await fetch("/api/meals", {
+      const res = await fetch("/api/meals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -245,10 +275,23 @@ export default function DashboardPage() {
           eatenAt: eatenAt.toISOString()
         }),
       });
+      const newMeal = await res.json();
       fetchMeals();
       setShowAddMeal(false);
       setMealForm({ name: "", grams: "", calories: "", category: "Sáng", time: "07:00" });
       showToast("Đã lưu bữa ăn mới!");
+
+      // Trigger Star AI calorie portion estimation
+      if (newMeal && newMeal.id) {
+        window.dispatchEvent(new CustomEvent("star-notification", {
+          detail: {
+            type: "meal-estimate",
+            message: `Bạn vừa ghi nhận món "${newMeal.mealName}".`,
+            mealId: newMeal.id,
+            mealName: newMeal.mealName,
+          }
+        }));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -878,22 +921,64 @@ export default function DashboardPage() {
                   </select>
                 </div>
 
-                {/* Pastel Note Color Selector */}
+                {/* Unified Premium Color Selector */}
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Màu sắc giấy note</label>
-                  <div className="flex flex-wrap gap-2">
-                    {presetColors.map(c => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setTaskFormColor(c)}
-                        style={{ backgroundColor: c }}
-                        className={`w-8 h-8 rounded-full border-2 transition-all transform hover:scale-110 flex items-center justify-center ${taskFormColor === c ? "border-[#A172FD]" : "border-transparent"
-                          }`}
-                      >
-                        {taskFormColor === c && <Check className="h-4 w-4 text-gray-700" />}
-                      </button>
-                    ))}
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setTaskFormColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              taskFormColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setTaskFormColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              taskFormColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={taskFormColor || "#fdfd96"}
+                            onChange={(e) => setTaskFormColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{taskFormColor || "#fdfd96"}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: taskFormColor || "#fdfd96" }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1400,22 +1485,64 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Pastel Note Color Selector */}
+                {/* Unified Premium Color Selector */}
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Màu sắc giấy note / sự kiện</label>
-                  <div className="flex flex-wrap gap-2">
-                    {presetColors.map(c => (
-                      <button
-                        key={c}
-                        type="button"
-                        onClick={() => setCalNoteColor(c)}
-                        style={{ backgroundColor: c }}
-                        className={`w-8 h-8 rounded-full border-2 transition-all transform hover:scale-110 flex items-center justify-center ${calNoteColor === c ? "border-[#A172FD]" : "border-transparent"
-                          }`}
-                      >
-                        {calNoteColor === c && <Check className="h-4 w-4 text-gray-700" />}
-                      </button>
-                    ))}
+                  <div className="space-y-3">
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {boldColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setCalNoteColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              calNoteColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {pastelColors.map(c => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => setCalNoteColor(c)}
+                            style={{ backgroundColor: c }}
+                            className={`w-6 h-6 rounded-full border-2 transition-all ${
+                              calNoteColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
+                          title="Chọn màu tùy ý"
+                        >
+                          <input
+                            type="color"
+                            value={calNoteColor || "#fdfd96"}
+                            onChange={(e) => setCalNoteColor(e.target.value)}
+                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          />
+                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
+                        </div>
+                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{calNoteColor || "#fdfd96"}</span>
+                        <div 
+                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
+                          style={{ backgroundColor: calNoteColor || "#fdfd96" }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

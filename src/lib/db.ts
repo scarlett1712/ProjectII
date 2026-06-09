@@ -22,3 +22,19 @@ export const db = globalForPrisma.prisma ?? createClient();
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = db;
 }
+
+if (typeof window === "undefined") {
+  const globalForWorker = globalThis as unknown as {
+    backgroundWorkerStarted?: boolean;
+  };
+  if (!globalForWorker.backgroundWorkerStarted) {
+    globalForWorker.backgroundWorkerStarted = true;
+    import("./backgroundWorker")
+      .then(({ startBackgroundWorker }) => {
+        startBackgroundWorker();
+      })
+      .catch((err) => {
+        console.error("Failed to start background worker:", err);
+      });
+  }
+}

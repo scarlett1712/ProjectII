@@ -185,11 +185,13 @@ export function MealManagementTab() {
         bodyPayload.id = editingMeal.id;
       }
 
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(bodyPayload),
       });
+
+      const newMeal = await res.json();
 
       setMealName("");
       setGrams("");
@@ -200,6 +202,18 @@ export function MealManagementTab() {
       setShowAddModal(false);
       showToast(editingMeal ? "Đã cập nhật bữa ăn!" : "Đã lưu bữa ăn mới!");
       loadMeals();
+
+      // Trigger Star AI calorie portion estimation
+      if (method === "POST" && newMeal && newMeal.id) {
+        window.dispatchEvent(new CustomEvent("star-notification", {
+          detail: {
+            type: "meal-estimate",
+            message: `Bạn vừa ghi nhận món "${newMeal.mealName}".`,
+            mealId: newMeal.id,
+            mealName: newMeal.mealName,
+          }
+        }));
+      }
     } catch (e) {
       console.error(e);
     }
