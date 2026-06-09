@@ -44,7 +44,7 @@ Hãy trả về duy nhất một cấu trúc JSON hợp lệ như sau (không k�
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gemini-2.5-flash",
+        model: "gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON." },
           { role: "user", content: prompt }

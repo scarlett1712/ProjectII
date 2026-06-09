@@ -146,7 +146,7 @@ async function callGeminiAPI(messages: any[]) {
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       messages,
       tools,
       temperature: 0.3,
