@@ -238,8 +238,13 @@ export default function ChatPage() {
     loadData(sessionId);
   };
 
-  // Filtering sessions
-  const filteredSessions = sessions.filter((s) =>
+  // Filtering sessions (and inject temporary new session if active and not saved)
+  const displaySessions = [...sessions];
+  if (currentSession && currentSession.id === "new" && !displaySessions.some((s) => s.id === "new")) {
+    displaySessions.unshift(currentSession);
+  }
+
+  const filteredSessions = displaySessions.filter((s) =>
     s.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 

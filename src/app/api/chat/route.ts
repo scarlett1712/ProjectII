@@ -302,14 +302,40 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const requestedSessionId = searchParams.get("sessionId");
 
-  // Get all sessions for sidebar
-  const sessions = await db.chatSession.findMany({
+  // Load các session kèm theo đếm số tin nhắn để dọn dẹp các session rỗng
+  const rawSessions = await db.chatSession.findMany({
     where: { userId: auth.userId! },
+    include: {
+      _count: {
+        select: { messages: true }
+      }
+    },
     orderBy: { updatedAt: "desc" },
   });
 
+  // Tìm các session rỗng (messages count = 0) và xóa chúng khỏi DB
+  const emptySessionIds = rawSessions.filter(s => s._count.messages === 0).map(s => s.id);
+  if (emptySessionIds.length > 0) {
+    try {
+      await db.chatSession.deleteMany({
+        where: { 
+          id: { in: emptySessionIds },
+          userId: auth.userId!
+        }
+      });
+    } catch (err) {
+      console.error("Failed to delete empty chat sessions:", err);
+    }
+  }
+
+  // Chỉ lấy các session có chứa tin nhắn để hiển thị trên sidebar
+  const sessions = rawSessions.filter(s => s._count.messages > 0).map(({ _count, ...s }) => s);
+
   let currentSession = null;
-  if (requestedSessionId) {
+  if (requestedSessionId === "new") {
+    // Trả về session tạm thời nếu client yêu cầu chat mới
+    currentSession = { id: "new", title: "Cuộc trò chuyện mới", updatedAt: new Date().toISOString() };
+  } else if (requestedSessionId) {
     currentSession = await db.chatSession.findFirst({
       where: { id: requestedSessionId, userId: auth.userId! },
     });
@@ -318,7 +344,7 @@ export async function GET(req: NextRequest) {
   }
 
   let messages: any[] = [];
-  if (currentSession) {
+  if (currentSession && currentSession.id !== "new") {
     messages = await db.chatMessage.findMany({
       where: { sessionId: currentSession.id, userId: auth.userId! },
       orderBy: { createdAt: "asc" },
@@ -340,10 +366,15 @@ export async function POST(req: NextRequest) {
     if (auth.response) {
       return NextResponse.json({ session: null, messages: [] });
     }
-    const session = await db.chatSession.create({
-      data: { userId: auth.userId!, title: "Cuộc trò chuyện mới" },
+    // Trả về object session tạm thời, không lưu vào database
+    return NextResponse.json({ 
+      session: { 
+        id: "new", 
+        title: "Cuộc trò chuyện mới", 
+        updatedAt: new Date().toISOString() 
+      }, 
+      messages: [] 
     });
-    return NextResponse.json({ session, messages: [] });
   }
 
   const content = String(body.content ?? "");
@@ -362,21 +393,19 @@ export async function POST(req: NextRequest) {
   }
 
   let session = null;
-  if (body.sessionId) {
+  // Chỉ tìm session trong DB nếu sessionId không phải là "new"
+  if (body.sessionId && body.sessionId !== "new") {
     session = await db.chatSession.findFirst({
       where: { id: body.sessionId, userId: auth.userId! },
     });
   }
 
+  // Nếu không tìm thấy session (hoặc sessionId là "new")
   if (!session) {
-    session =
-      (await db.chatSession.findFirst({
-        where: { userId: auth.userId! },
-        orderBy: { updatedAt: "desc" },
-      })) ??
-      (await db.chatSession.create({
-        data: { userId: auth.userId!, title: "Cuộc trò chuyện mới" },
-      }));
+    // Chắc chắn tạo một session mới trong DB khi tin nhắn đầu tiên được gửi!
+    session = await db.chatSession.create({
+      data: { userId: auth.userId!, title: "Cuộc trò chuyện mới" },
+    });
   }
 
   // Save user message
