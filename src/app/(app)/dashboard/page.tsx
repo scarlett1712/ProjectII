@@ -878,7 +878,7 @@ export default function DashboardPage() {
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} dy={10} />
                   <YAxis hide />
                   <Tooltip 
-                    formatter={(value: number, name: string) => [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value), name === 'income' ? 'Thu nhập' : 'Chi tiêu']}
+                    formatter={(value: any, name: any) => [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(value) || 0), name === 'income' ? 'Thu nhập' : 'Chi tiêu']}
                     labelFormatter={(label) => `Ngày/Kỳ: ${label}`}
                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} 
                   />
