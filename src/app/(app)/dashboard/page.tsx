@@ -18,6 +18,8 @@ import {
   AlertCircle,
   Calendar
 } from "lucide-react";
+import { format, subDays } from "date-fns";
+import { vi } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { OnboardingTour, TourStep } from "@/components/OnboardingTour";
 
@@ -68,17 +70,9 @@ import {
   XAxis,
   YAxis
 } from "recharts";
+import { TransactionModal } from "@/components/budget/TransactionModal";
 
-// Mock data for the chart
-const walletData = [
-  { name: "Sun", value: 0 },
-  { name: "Mon", value: 0 },
-  { name: "Tue", value: 0 },
-  { name: "Wed", value: 0 },
-  { name: "Thu", value: 0 },
-  { name: "Fri", value: 0 },
-  { name: "Sat", value: 0 },
-];
+// Mock data structure replaced by state in component
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -145,6 +139,18 @@ export default function DashboardPage() {
   const [meals, setMeals] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [waterData, setWaterData] = useState<any>({ goal: null, logs: [] });
+  const [walletData, setWalletData] = useState<any[]>([
+    { name: "T2", value: 0 },
+    { name: "T3", value: 0 },
+    { name: "T4", value: 0 },
+    { name: "T5", value: 0 },
+    { name: "T6", value: 0 },
+    { name: "T7", value: 0 },
+    { name: "CN", value: 0 },
+  ]);
+
+  const [budgetAccounts, setBudgetAccounts] = useState<any[]>([]);
+  const [budgetCategories, setBudgetCategories] = useState<any[]>([]);
 
   const [taskPositions, setTaskPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [editingTask, setEditingTask] = useState<any>(null);
@@ -249,12 +255,57 @@ export default function DashboardPage() {
       .catch(() => undefined);
   };
 
+  const fetchBudgetStats = () => {
+    const year = new Date().getFullYear();
+    const month = new Date().getMonth() + 1;
+    Promise.all([
+      fetch(`/api/budget/accounts?year=${year}&month=${month}`).then(r => r.json()),
+      fetch(`/api/budget/categories`).then(r => r.json()),
+      fetch(`/api/budget/transactions?year=${year}&month=${month}`).then(r => r.json())
+    ]).then(([accs, cats, txs]) => {
+      if (Array.isArray(accs)) setBudgetAccounts(accs);
+      if (Array.isArray(cats)) setBudgetCategories(cats);
+
+      let currentBalance = 0;
+      if (Array.isArray(accs)) {
+        currentBalance = accs.reduce((sum, a) => sum + (a.balance || 0), 0);
+      }
+      
+      const newData = [];
+      let runningBalance = currentBalance;
+      const today = new Date();
+      
+      for (let i = 0; i <= 6; i++) {
+        const d = subDays(today, i);
+        const dateStr = format(d, "yyyy-MM-dd");
+        const dayLabel = format(d, "E", { locale: vi });
+        
+        newData.unshift({
+          name: dayLabel,
+          value: runningBalance,
+          dateStr: dateStr
+        });
+        
+        if (Array.isArray(txs)) {
+          const dayTxs = txs.filter(t => t.date && t.date.split("T")[0] === dateStr);
+          for (const tx of dayTxs) {
+            if (tx.type === "INCOME") runningBalance -= tx.amount;
+            if (tx.type === "EXPENSE") runningBalance += tx.amount;
+          }
+        }
+      }
+      
+      setWalletData(newData);
+    }).catch(console.error);
+  };
+
   useEffect(() => {
     fetchTasks();
     fetchMeals();
     fetchProfile();
     fetchWater();
     fetchTags();
+    fetchBudgetStats();
   }, []);
 
   const handleSaveMeal = async () => {
@@ -1109,135 +1160,16 @@ export default function DashboardPage() {
       )}
 
       {/* Transaction Modal */}
-      {showAddTransaction && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md"
-          onClick={() => setShowAddTransaction(false)}
-        >
-          <motion.div
-            initial={{ y: 200, opacity: 0, scale: 0.9 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 200, opacity: 0, scale: 0.9 }}
-            className="relative w-full max-w-xl overflow-hidden rounded-[32px] bg-white p-0 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button X */}
-            <button
-              onClick={() => setShowAddTransaction(false)}
-              className="absolute top-6 right-6 p-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-gray-700 hover:text-red-500 transition-colors z-[160]"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            {/* Wallet Top Border/Flap */}
-            <div className="h-4 bg-[#A172FD]" />
-            <div className="flex justify-center">
-              <div className="h-6 w-32 rounded-b-2xl bg-[#A172FD] shadow-md" />
-            </div>
-
-            <div className="p-10">
-              <div className="mb-8 flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-[#A172FD]">Thêm giao dịch</h2>
-                <div className="flex gap-1 bg-[#F5F3FF] p-1 rounded-full">
-                  {[
-                    { id: "chi", label: "Chi tiêu" },
-                    { id: "thu", label: "Thu nhập" },
-                    { id: "chuyen", label: "Chuyển khoản" }
-                  ].map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setTransactionTab(t.id as any)}
-                      className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${transactionTab === t.id ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div>
-                  <label className="mb-2 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Số tiền</label>
-                  <div className="flex items-end gap-2 border-b-2 border-[#F5F3FF] pb-2">
-                    <span className="text-2xl font-bold text-[#A172FD]">đ</span>
-                    <input type="text" placeholder="0" className="w-full bg-transparent text-4xl font-black text-[#A172FD] outline-none" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
-                  {/* Row 1 */}
-                  <div>
-                    {transactionTab === "chuyen" ? (
-                      <>
-                        <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Từ tài khoản</label>
-                        <select className="w-full rounded-2xl bg-[#F5F3FF] px-4 py-3 text-sm font-bold text-[#4B5563] outline-none appearance-none">
-                          <option>Tiền mặt</option>
-                          <option>Ví điện tử</option>
-                          <option>Ngân hàng</option>
-                        </select>
-                      </>
-                    ) : (
-                      <>
-                        <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Phân loại</label>
-                        <div className="flex h-[44px] flex-wrap gap-2">
-                          <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#F5F3FF] text-[#A172FD] transition-colors hover:bg-[#A172FD] hover:text-white">
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  <div>
-                    <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">
-                      {transactionTab === "chuyen" ? "Tới tài khoản" : "Thời gian"}
-                    </label>
-                    {transactionTab === "chuyen" ? (
-                      <select className="w-full rounded-2xl bg-[#F5F3FF] px-4 py-3 text-sm font-bold text-[#4B5563] outline-none appearance-none">
-                        <option>Ngân hàng</option>
-                        <option>Ví điện tử</option>
-                        <option>Tiền mặt</option>
-                      </select>
-                    ) : (
-                      <input type="date" className="w-full rounded-2xl bg-[#F5F3FF] px-4 py-3 text-sm font-bold text-[#4B5563] outline-none" />
-                    )}
-                  </div>
-
-                  {/* Row 2 */}
-                  <div>
-                    <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">
-                      {transactionTab === "chuyen" ? "Thời gian" : "Nguồn tiền"}
-                    </label>
-                    {transactionTab === "chuyen" ? (
-                      <input type="date" className="w-full rounded-2xl bg-[#F5F3FF] px-4 py-3 text-sm font-bold text-[#4B5563] outline-none" />
-                    ) : (
-                      <select className="w-full rounded-2xl bg-[#F5F3FF] px-4 py-3 text-sm font-bold text-[#4B5563] outline-none appearance-none">
-                        <option>Tiền mặt</option>
-                        <option>Ví điện tử</option>
-                        <option>Ngân hàng</option>
-                      </select>
-                    )}
-                  </div>
-                  <div>
-                    <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Ghi chú</label>
-                    <input type="text" placeholder="Ghi chú gì đó..." className="w-full rounded-2xl bg-[#F5F3FF] px-4 py-3 text-sm font-bold text-[#4B5563] outline-none placeholder:text-[#9CA3AF]" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-10">
-                <button
-                  onClick={() => setShowAddTransaction(false)}
-                  className="w-full rounded-2xl bg-[#A172FD] py-4 font-bold text-white shadow-lg shadow-[#A172FD]/20 transition-transform hover:scale-[1.02] active:scale-95 text-sm"
-                >
-                  Ghi lại ngay
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
+      <TransactionModal 
+        isOpen={showAddTransaction}
+        onClose={() => setShowAddTransaction(false)}
+        onSuccess={() => {
+          showToast("Đã ghi nhận giao dịch!");
+          fetchBudgetStats();
+        }}
+        accounts={budgetAccounts}
+        categories={budgetCategories}
+      />
 
       {/* Calendar Modal */}
       <AnimatePresence>
