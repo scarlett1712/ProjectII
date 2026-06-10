@@ -9,15 +9,34 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const year = Number(searchParams.get("year"));
-    const month = Number(searchParams.get("month")); // 1-indexed (1 = January, 12 = December)
-
-    if (isNaN(year) || isNaN(month)) {
-      return NextResponse.json({ error: "Năm và tháng không hợp lệ" }, { status: 400 });
+    const yearParam = searchParams.get("year");
+    const monthParam = searchParams.get("month");
+    
+    // If no params, return all transactions
+    if (!yearParam && !monthParam) {
+      const transactions = await db.budgetTransaction.findMany({
+        where: { userId: auth.userId! },
+        include: { category: true, fromAccount: true, toAccount: true },
+        orderBy: { occurredAt: "desc" },
+      });
+      return NextResponse.json(transactions);
     }
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
+    const year = Number(yearParam);
+    if (isNaN(year)) {
+      return NextResponse.json({ error: "Năm không hợp lệ" }, { status: 400 });
+    }
+
+    let startDate, endDate;
+    if (monthParam) {
+      const month = Number(monthParam);
+      if (isNaN(month)) return NextResponse.json({ error: "Tháng không hợp lệ" }, { status: 400 });
+      startDate = new Date(year, month - 1, 1);
+      endDate = new Date(year, month, 1);
+    } else {
+      startDate = new Date(year, 0, 1);
+      endDate = new Date(year + 1, 0, 1);
+    }
 
     const transactions = await db.budgetTransaction.findMany({
       where: {

@@ -148,6 +148,7 @@ export default function DashboardPage() {
     { name: "T7", value: 0 },
     { name: "CN", value: 0 },
   ]);
+  const [walletChartView, setWalletChartView] = useState<"day" | "month" | "year">("day");
 
   const [budgetAccounts, setBudgetAccounts] = useState<any[]>([]);
   const [budgetCategories, setBudgetCategories] = useState<any[]>([]);
@@ -255,40 +256,59 @@ export default function DashboardPage() {
       .catch(() => undefined);
   };
 
-  const fetchBudgetStats = () => {
+  const fetchBudgetStats = (view = walletChartView) => {
     const year = new Date().getFullYear();
-    const month = new Date().getMonth() + 1;
     Promise.all([
-      fetch(`/api/budget/accounts?year=${year}&month=${month}`).then(r => r.json()),
-      fetch(`/api/budget/categories`).then(r => r.json()),
-      fetch(`/api/budget/transactions?year=${year}&month=${month}`).then(r => r.json())
-    ]).then(([accs, cats, txs]) => {
-      if (Array.isArray(accs)) setBudgetAccounts(accs);
-      if (Array.isArray(cats)) setBudgetCategories(cats);
-
+      fetch(`/api/budget/accounts`).then(r => r.json()),
+      fetch(`/api/budget/transactions?year=${year}`).then(r => r.json()),
+      fetch(`/api/budget/transactions?year=${year - 1}`).then(r => r.json())
+    ]).then(([accs, txsThisYear, txsLastYear]) => {
       let currentBalance = 0;
       if (Array.isArray(accs)) {
         currentBalance = accs.reduce((sum, a) => sum + (a.balance || 0), 0);
       }
       
+      const txs = [...(Array.isArray(txsThisYear) ? txsThisYear : []), ...(Array.isArray(txsLastYear) ? txsLastYear : [])];
+      
       const newData = [];
       let runningBalance = currentBalance;
       const today = new Date();
       
-      for (let i = 0; i <= 6; i++) {
-        const d = subDays(today, i);
-        const dateStr = format(d, "yyyy-MM-dd");
-        const dayLabel = format(d, "E", { locale: vi });
-        
-        newData.unshift({
-          name: dayLabel,
-          value: runningBalance,
-          dateStr: dateStr
-        });
-        
-        if (Array.isArray(txs)) {
-          const dayTxs = txs.filter(t => t.date && t.date.split("T")[0] === dateStr);
+      if (view === "day") {
+        for (let i = 0; i <= 6; i++) {
+          const d = subDays(today, i);
+          const dateStr = format(d, "yyyy-MM-dd");
+          const dayLabel = format(d, "E", { locale: vi });
+          newData.unshift({ name: dayLabel, value: runningBalance, dateStr });
+          
+          const dayTxs = txs.filter(t => t.occurredAt && t.occurredAt.split("T")[0] === dateStr);
           for (const tx of dayTxs) {
+            if (tx.type === "INCOME") runningBalance -= tx.amount;
+            if (tx.type === "EXPENSE") runningBalance += tx.amount;
+          }
+        }
+      } else if (view === "month") {
+        for (let i = 0; i <= 29; i++) {
+          const d = subDays(today, i);
+          const dateStr = format(d, "yyyy-MM-dd");
+          const dayLabel = format(d, "dd/MM");
+          newData.unshift({ name: dayLabel, value: runningBalance, dateStr });
+          
+          const dayTxs = txs.filter(t => t.occurredAt && t.occurredAt.split("T")[0] === dateStr);
+          for (const tx of dayTxs) {
+            if (tx.type === "INCOME") runningBalance -= tx.amount;
+            if (tx.type === "EXPENSE") runningBalance += tx.amount;
+          }
+        }
+      } else if (view === "year") {
+        for (let i = 0; i < 12; i++) {
+          const d = subMonths(today, i);
+          const monthStr = format(d, "yyyy-MM");
+          const monthLabel = "T" + format(d, "M");
+          newData.unshift({ name: monthLabel, value: runningBalance, dateStr: monthStr });
+          
+          const monthTxs = txs.filter(t => t.occurredAt && t.occurredAt.startsWith(monthStr));
+          for (const tx of monthTxs) {
             if (tx.type === "INCOME") runningBalance -= tx.amount;
             if (tx.type === "EXPENSE") runningBalance += tx.amount;
           }
@@ -825,9 +845,15 @@ export default function DashboardPage() {
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Biến động ví xèng</h2>
               <div className="flex rounded-full bg-[#F5F3FF] p-1 text-xs">
-                <button className="rounded-full bg-white px-3 py-1 font-bold text-[#A172FD] shadow-sm">Ngày</button>
-                <button className="px-3 py-1 font-bold text-[#4B5563] hover:text-[#A172FD]">Tháng</button>
-                <button className="px-3 py-1 font-bold text-[#4B5563] hover:text-[#A172FD]">Năm</button>
+                <button 
+                  onClick={() => { setWalletChartView("day"); fetchBudgetStats("day"); }}
+                  className={`rounded-full px-3 py-1 font-bold transition-colors ${walletChartView === "day" ? "bg-white text-[#A172FD] shadow-sm" : "text-[#4B5563] hover:text-[#A172FD]"}`}>Ngày</button>
+                <button 
+                  onClick={() => { setWalletChartView("month"); fetchBudgetStats("month"); }}
+                  className={`rounded-full px-3 py-1 font-bold transition-colors ${walletChartView === "month" ? "bg-white text-[#A172FD] shadow-sm" : "text-[#4B5563] hover:text-[#A172FD]"}`}>Tháng</button>
+                <button 
+                  onClick={() => { setWalletChartView("year"); fetchBudgetStats("year"); }}
+                  className={`rounded-full px-3 py-1 font-bold transition-colors ${walletChartView === "year" ? "bg-white text-[#A172FD] shadow-sm" : "text-[#4B5563] hover:text-[#A172FD]"}`}>Năm</button>
               </div>
             </div>
             <div className="h-64 w-full">
