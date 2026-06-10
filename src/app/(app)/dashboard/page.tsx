@@ -18,7 +18,7 @@ import {
   AlertCircle,
   Calendar
 } from "lucide-react";
-import { format, subDays } from "date-fns";
+import { format, subDays, subMonths } from "date-fns";
 import { vi } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { OnboardingTour, TourStep } from "@/components/OnboardingTour";
