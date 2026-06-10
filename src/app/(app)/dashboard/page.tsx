@@ -140,13 +140,13 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<any>(null);
   const [waterData, setWaterData] = useState<any>({ goal: null, logs: [] });
   const [walletData, setWalletData] = useState<any[]>([
-    { name: "T2", value: 0 },
-    { name: "T3", value: 0 },
-    { name: "T4", value: 0 },
-    { name: "T5", value: 0 },
-    { name: "T6", value: 0 },
-    { name: "T7", value: 0 },
-    { name: "CN", value: 0 },
+    { name: "T2", income: 0, expense: 0 },
+    { name: "T3", income: 0, expense: 0 },
+    { name: "T4", income: 0, expense: 0 },
+    { name: "T5", income: 0, expense: 0 },
+    { name: "T6", income: 0, expense: 0 },
+    { name: "T7", income: 0, expense: 0 },
+    { name: "CN", income: 0, expense: 0 },
   ]);
   const [walletChartView, setWalletChartView] = useState<"day" | "month" | "year">("day");
 
@@ -271,7 +271,6 @@ export default function DashboardPage() {
       const txs = [...(Array.isArray(txsThisYear) ? txsThisYear : []), ...(Array.isArray(txsLastYear) ? txsLastYear : [])];
       
       const newData = [];
-      let runningBalance = currentBalance;
       const today = new Date();
       
       if (view === "day") {
@@ -279,39 +278,45 @@ export default function DashboardPage() {
           const d = subDays(today, i);
           const dateStr = format(d, "yyyy-MM-dd");
           const dayLabel = format(d, "E", { locale: vi });
-          newData.unshift({ name: dayLabel, value: runningBalance, dateStr });
           
+          let income = 0;
+          let expense = 0;
           const dayTxs = txs.filter(t => t.occurredAt && t.occurredAt.split("T")[0] === dateStr);
           for (const tx of dayTxs) {
-            if (tx.type === "INCOME") runningBalance -= tx.amount;
-            if (tx.type === "EXPENSE") runningBalance += tx.amount;
+            if (tx.type === "INCOME") income += tx.amount;
+            if (tx.type === "EXPENSE") expense += tx.amount;
           }
+          newData.unshift({ name: dayLabel, income, expense, dateStr });
         }
       } else if (view === "month") {
         for (let i = 0; i <= 29; i++) {
           const d = subDays(today, i);
           const dateStr = format(d, "yyyy-MM-dd");
           const dayLabel = format(d, "dd/MM");
-          newData.unshift({ name: dayLabel, value: runningBalance, dateStr });
           
+          let income = 0;
+          let expense = 0;
           const dayTxs = txs.filter(t => t.occurredAt && t.occurredAt.split("T")[0] === dateStr);
           for (const tx of dayTxs) {
-            if (tx.type === "INCOME") runningBalance -= tx.amount;
-            if (tx.type === "EXPENSE") runningBalance += tx.amount;
+            if (tx.type === "INCOME") income += tx.amount;
+            if (tx.type === "EXPENSE") expense += tx.amount;
           }
+          newData.unshift({ name: dayLabel, income, expense, dateStr });
         }
       } else if (view === "year") {
         for (let i = 0; i < 12; i++) {
           const d = subMonths(today, i);
           const monthStr = format(d, "yyyy-MM");
           const monthLabel = "T" + format(d, "M");
-          newData.unshift({ name: monthLabel, value: runningBalance, dateStr: monthStr });
           
+          let income = 0;
+          let expense = 0;
           const monthTxs = txs.filter(t => t.occurredAt && t.occurredAt.startsWith(monthStr));
           for (const tx of monthTxs) {
-            if (tx.type === "INCOME") runningBalance -= tx.amount;
-            if (tx.type === "EXPENSE") runningBalance += tx.amount;
+            if (tx.type === "INCOME") income += tx.amount;
+            if (tx.type === "EXPENSE") expense += tx.amount;
           }
+          newData.unshift({ name: monthLabel, income, expense, dateStr: monthStr });
         }
       }
       
@@ -860,16 +865,25 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={walletData}>
                   <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#A172FD" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#A172FD" stopOpacity={0} />
+                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} dy={10} />
                   <YAxis hide />
-                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                  <Area type="monotone" dataKey="value" stroke="#A172FD" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value), name === 'income' ? 'Thu nhập' : 'Chi tiêu']}
+                    labelFormatter={(label) => `Ngày/Kỳ: ${label}`}
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} 
+                  />
+                  <Area type="monotone" name="income" dataKey="income" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
+                  <Area type="monotone" name="expense" dataKey="expense" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
