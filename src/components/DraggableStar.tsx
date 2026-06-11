@@ -236,7 +236,7 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
                       <button
                         key={idx}
                         onClick={() => handleEstimateMeal(alert.mealId!, port.label, port.value)}
-                        className="w-full bg-[#F5F3FF] hover:bg-[#EAE5FF] text-[#A172FD] py-2 px-3 rounded-xl text-xs font-bold transition-all border border-purple-100 text-center truncate active:scale-98 shadow-sm cursor-pointer"
+                        className="w-full bg-[#F5F3FF] hover:bg-[#EAE5FF] text-[#A172FD] py-2.5 px-3 rounded-xl text-xs font-bold transition-all border border-purple-100 text-center whitespace-normal break-words active:scale-98 shadow-sm cursor-pointer"
                       >
                         {port.label}
                       </button>
