@@ -220,6 +220,25 @@ export default function DashboardPage() {
       .catch(() => undefined);
   };
 
+  const logWaterQuick = async (amountMl: number) => {
+    try {
+      const res = await fetch("/api/water", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountMl }),
+      });
+      if (res.ok) {
+        showToast(`Đã ghi nhận uống thêm ${amountMl}ml nước nha! 💧`);
+        fetchWater();
+      } else {
+        showToast("Có lỗi xảy ra khi ghi nhận nước uống 🥺");
+      }
+    } catch (e) {
+      console.error(e);
+      showToast("Không kết nối được server 🥺");
+    }
+  };
+
   const fetchMeals = () => {
     fetch("/api/meals")
       .then((res) => res.json())
@@ -828,18 +847,27 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-8 grid w-full grid-cols-3 gap-2">
-              <div className="rounded-2xl bg-[#F5F3FF] p-3 text-center">
-                <p className="text-lg font-black text-[#581C87]">0g</p>
-                <p className="text-[10px] font-bold text-[#4B5563]">Protein</p>
-              </div>
-              <div className="rounded-2xl bg-[#F5F3FF] p-3 text-center">
-                <p className="text-lg font-black text-[#581C87]">0g</p>
-                <p className="text-[10px] font-bold text-[#4B5563]">Carbs</p>
-              </div>
-              <div className="rounded-2xl bg-[#F5F3FF] p-3 text-center">
-                <p className="text-lg font-black text-[#581C87]">0g</p>
-                <p className="text-[10px] font-bold text-[#4B5563]">Chất béo</p>
-              </div>
+              <button
+                onClick={() => logWaterQuick(150)}
+                className="rounded-2xl bg-[#E0F2FE] p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
+              >
+                <p className="text-lg font-black text-[#0369A1]">+150ml</p>
+                <p className="text-[10px] font-bold text-[#0284C7]">Cốc nhỏ 🥛</p>
+              </button>
+              <button
+                onClick={() => logWaterQuick(250)}
+                className="rounded-2xl bg-[#E0F2FE] p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
+              >
+                <p className="text-lg font-black text-[#0369A1]">+250ml</p>
+                <p className="text-[10px] font-bold text-[#0284C7]">Cốc vừa 🥤</p>
+              </button>
+              <button
+                onClick={() => logWaterQuick(500)}
+                className="rounded-2xl bg-[#E0F2FE] p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
+              >
+                <p className="text-lg font-black text-[#0369A1]">+500ml</p>
+                <p className="text-[10px] font-bold text-[#0284C7]">Chai lớn 🍼</p>
+              </button>
             </div>
           </section>
         </div>
