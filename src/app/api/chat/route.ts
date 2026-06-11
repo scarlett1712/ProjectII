@@ -7,13 +7,20 @@ const SYSTEM_PROMPT = `Bạn là Star AI - Bé Sao đáng yêu, trợ lý sức 
 Nhiệm vụ của bạn là:
 1. Trò chuyện thân thiện, vui vẻ, xưng hô là "Bé Sao" hoặc "Star" và gọi người dùng là "cậu", "bạn iu", "cậu iu" nha~
 2. Luôn nói chuyện bằng giọng điệu ngọt ngào, kết thúc câu bằng các từ ngữ dễ thương như "nha", "nhé", "nè", "nha~", "nhỉ" và sử dụng thật nhiều emoji như 🥰, 🥺, 🌟, 💖, 🧸, ✨.
-3. Hỗ trợ ghi lại thông tin sức khỏe bằng cách sử dụng các công cụ (tools) được cung cấp:
+3. Hỗ trợ ghi lại và đọc thông tin sức khỏe bằng cách sử dụng các công cụ (tools) được cung cấp:
    - Ghi nhận nước uống (\`log_water\`)
    - Ghi nhận bữa ăn (\`log_meal\`)
    - Thêm sự kiện lịch trình (\`add_event\`)
    - Thêm công việc/nhiệm vụ (\`add_task\`)
    - Lấy thông tin hồ sơ sức khỏe hiện tại (\`get_profile\`)
    - Cập nhật hồ sơ sức khỏe và tự động tính lại mục tiêu calo & nước hàng ngày (\`update_profile_and_recalculate_goals\`)
+   - Lấy lịch sử ăn uống (\`get_nutrition_history\`) để xem calo/món ăn những ngày qua
+   - Lấy lịch sử uống nước (\`get_water_history\`) để phân tích thói quen uống nước
+   - Xem công việc và lịch trình sắp tới (\`get_tasks_and_events\`) để chủ động nhắc nhở và lên lịch.
+
+HỌC THÓI QUEN VÀ CÁ NHÂN HÓA SÂU SẮC:
+- Khi người dùng hỏi về tình hình sức khỏe, thói quen, tiến độ của họ (Ví dụ: "dạo này tớ thế nào", "hôm nay tớ uống đủ nước chưa", "tớ ăn uống tốt không"), bạn phải chủ động gọi các công cụ đọc lịch sử (như \`get_nutrition_history\`, \`get_water_history\`, \`get_tasks_and_events\`) để phân tích.
+- Dựa trên dữ liệu thu thập được từ các tools đó, hãy so sánh với mục tiêu sức khỏe của họ (nhận được từ \`get_profile\`) để đưa ra lời khuyên cá nhân hóa thật hữu ích, ngọt ngào. Tránh trả lời chung chung!
 
 QUY TẮC ĐẶC BIỆT KHI GHI NHẬN BỮA ĂN (LOG MEAL) QUA CHAT:
 - Nếu người dùng nói họ vừa ăn món gì đó (ví dụ: "mình mới ăn phở bò" hoặc "hôm nay ăn cơm tấm"), bạn KHÔNG được tự ý đoán bừa calo rồi gọi ngay công cụ \`log_meal\`.
@@ -130,23 +137,54 @@ const tools = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_nutrition_history",
+      description: "Lấy lịch sử ăn uống và calo đã nạp của người dùng trong một số ngày gần đây.",
+      parameters: {
+        type: "object",
+        properties: {
+          days: { type: "number", description: "Số ngày gần đây muốn xem lịch sử (mặc định 7 ngày)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_water_history",
+      description: "Lấy lịch sử uống nước của người dùng trong một số ngày gần đây.",
+      parameters: {
+        type: "object",
+        properties: {
+          days: { type: "number", description: "Số ngày gần đây muốn xem lịch sử (mặc định 7 ngày)" }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_tasks_and_events",
+      description: "Xem toàn bộ danh sách công việc (tasks) chưa hoàn thành và lịch trình/sự kiện (events) sắp tới của người dùng.",
+      parameters: { type: "object", properties: {} }
+    }
+  }
 ];
 
-async function callGeminiAPI(messages: any[]) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing GEMINI_API_KEY environment variable. Vui lòng cấu hình biến này trong Settings hoặc file .env nha!");
-  }
-  const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
+async function callOpenClaw(messages: any[]) {
+  const url = `${process.env.OPENCLAW_GATEWAY_URL || "http://127.0.0.1:18789"}/v1/chat/completions`;
+  const token = process.env.OPENCLAW_TOKEN;
 
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({
-      model: "gemini-2.5-flash-lite",
+      model: "openclaw",
       messages,
       tools,
       temperature: 0.3,
@@ -155,7 +193,7 @@ async function callGeminiAPI(messages: any[]) {
 
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(`Gemini API responded with status ${res.status}: ${errorText}`);
+    throw new Error(`OpenClaw responded with status ${res.status}: ${errorText}`);
   }
   return res.json();
 }
@@ -288,6 +326,64 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
         data: { sessionId, actionType: "ADD_EVENT", payload: event },
       });
       return { success: true, title: args.title, message: `Đã thêm sự kiện "${args.title}" vào lịch trình của cậu rồi nha! 📅` };
+    }
+
+    case "get_nutrition_history": {
+      const days = Number(args.days || 7);
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() - days);
+
+      const meals = await db.mealEntry.findMany({
+        where: {
+          userId,
+          eatenAt: { gte: limitDate }
+        },
+        orderBy: { eatenAt: "desc" }
+      });
+      return { success: true, days, mealsCount: meals.length, meals };
+    }
+
+    case "get_water_history": {
+      const days = Number(args.days || 7);
+      const limitDate = new Date();
+      limitDate.setDate(limitDate.getDate() - days);
+
+      const waterLogs = await db.waterLog.findMany({
+        where: {
+          userId,
+          loggedAt: { gte: limitDate }
+        },
+        orderBy: { loggedAt: "desc" }
+      });
+      return { success: true, days, logsCount: waterLogs.length, waterLogs };
+    }
+
+    case "get_tasks_and_events": {
+      const now = new Date();
+
+      const pendingTasks = await db.taskItem.findMany({
+        where: {
+          userId,
+          completed: false
+        },
+        orderBy: { createdAt: "desc" }
+      });
+
+      const upcomingEvents = await db.calendarEvent.findMany({
+        where: {
+          userId,
+          startAt: { gte: now }
+        },
+        orderBy: { startAt: "asc" }
+      });
+
+      return {
+        success: true,
+        pendingTasksCount: pendingTasks.length,
+        pendingTasks,
+        upcomingEventsCount: upcomingEvents.length,
+        upcomingEvents
+      };
     }
 
     default:
@@ -436,7 +532,7 @@ export async function POST(req: NextRequest) {
   let assistantReply = "";
 
   try {
-    let response = await callGeminiAPI(apiMessages);
+    let response = await callOpenClaw(apiMessages);
 
     // Support tool-calling execution loop (max 4 iterations)
     let loop = 0;
@@ -468,7 +564,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Query OpenClaw again with the tool execution outputs
-      response = await callGeminiAPI(apiMessages);
+      response = await callOpenClaw(apiMessages);
     }
 
     assistantReply = response.choices?.[0]?.message?.content || "Sao đã làm xong rồi nha bạn iu! 🥰";

@@ -31,20 +31,17 @@ Hãy trả về duy nhất một cấu trúc JSON hợp lệ như sau (không k�
   "explanation": "<một câu giải thích siêu ngắn gọn, ngọt ngào bằng tiếng Việt bắt đầu bằng từ 'Bé Sao' hoặc 'Star' và kết thúc bằng một emoji phù hợp, tối đa 20 từ>"
 }`;
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("Missing GEMINI_API_KEY environment variable. Vui lòng cấu hình biến này trong Settings hoặc file .env nha!");
-    }
-    const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
+    const url = `${process.env.OPENCLAW_GATEWAY_URL || "http://127.0.0.1:18789"}/v1/chat/completions`;
+    const token = process.env.OPENCLAW_TOKEN;
 
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
+        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({
-        model: "gemini-2.5-flash-lite",
+        model: "openclaw",
         messages: [
           { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON." },
           { role: "user", content: prompt }
