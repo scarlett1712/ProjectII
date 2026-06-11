@@ -279,12 +279,17 @@ export default function DashboardPage() {
     const year = new Date().getFullYear();
     Promise.all([
       fetch(`/api/budget/accounts`).then(r => r.json()),
+      fetch(`/api/budget/categories`).then(r => r.json()),
       fetch(`/api/budget/transactions?year=${year}`).then(r => r.json()),
       fetch(`/api/budget/transactions?year=${year - 1}`).then(r => r.json())
-    ]).then(([accs, txsThisYear, txsLastYear]) => {
+    ]).then(([accs, cats, txsThisYear, txsLastYear]) => {
       let currentBalance = 0;
       if (Array.isArray(accs)) {
         currentBalance = accs.reduce((sum, a) => sum + (a.balance || 0), 0);
+        setBudgetAccounts(accs);
+      }
+      if (Array.isArray(cats)) {
+        setBudgetCategories(cats);
       }
       
       const txs = [...(Array.isArray(txsThisYear) ? txsThisYear : []), ...(Array.isArray(txsLastYear) ? txsLastYear : [])];

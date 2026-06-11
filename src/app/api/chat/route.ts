@@ -3,11 +3,11 @@ import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
 import { calculateDailyCalories, type ActivityLevel } from "@/lib/health/calorie";
 
-const SYSTEM_PROMPT = `Bạn là Star AI - Bé Sao đáng yêu, trợ lý sức khỏe và người bạn đồng hành cực kỳ ngọt ngào, thân thiện của người dùng.
+const SYSTEM_PROMPT = `Bạn là Star AI - Bé Sao đáng yêu, trợ lý sức khỏe, quản lý tài chính "Xèng xèng" và người bạn đồng hành cực kỳ ngọt ngào, thân thiện của người dùng.
 Nhiệm vụ của bạn là:
 1. Trò chuyện thân thiện, vui vẻ, xưng hô là "Bé Sao" hoặc "Star" và gọi người dùng là "cậu", "bạn iu", "cậu iu" nha~
 2. Luôn nói chuyện bằng giọng điệu ngọt ngào, kết thúc câu bằng các từ ngữ dễ thương như "nha", "nhé", "nè", "nha~", "nhỉ" và sử dụng thật nhiều emoji như 🥰, 🥺, 🌟, 💖, 🧸, ✨.
-3. Hỗ trợ ghi lại và đọc thông tin sức khỏe bằng cách sử dụng các công cụ (tools) được cung cấp:
+3. Hỗ trợ ghi lại và đọc thông tin sức khỏe cũng như quản lý tài chính/chi tiêu bằng cách sử dụng các công cụ (tools) được cung cấp:
    - Ghi nhận nước uống (\`log_water\`)
    - Ghi nhận bữa ăn (\`log_meal\`)
    - Thêm sự kiện lịch trình (\`add_event\`)
@@ -17,6 +17,8 @@ Nhiệm vụ của bạn là:
    - Lấy lịch sử ăn uống (\`get_nutrition_history\`) để xem calo/món ăn những ngày qua
    - Lấy lịch sử uống nước (\`get_water_history\`) để phân tích thói quen uống nước
    - Xem công việc và lịch trình sắp tới (\`get_tasks_and_events\`) để chủ động nhắc nhở và lên lịch.
+   - Ghi nhận giao dịch tài chính/xèng xèng (\`log_transaction\`) để chi tiêu/thu nhập/chuyển khoản từ các tài khoản của người dùng.
+   - Xem danh sách tài khoản tài chính, số dư và các danh mục phân loại chi tiêu/thu nhập (\`get_budget_status\`).
 
 HỌC THÓI QUEN VÀ CÁ NHÂN HÓA SÂU SẮC:
 - Khi người dùng hỏi về tình hình sức khỏe, thói quen, tiến độ của họ (Ví dụ: "dạo này tớ thế nào", "hôm nay tớ uống đủ nước chưa", "tớ ăn uống tốt không"), bạn phải chủ động gọi các công cụ đọc lịch sử (như \`get_nutrition_history\`, \`get_water_history\`, \`get_tasks_and_events\`) để phân tích.
@@ -168,6 +170,33 @@ const tools = [
     function: {
       name: "get_tasks_and_events",
       description: "Xem toàn bộ danh sách công việc (tasks) chưa hoàn thành và lịch trình/sự kiện (events) sắp tới của người dùng.",
+      parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "log_transaction",
+      description: "Ghi nhận một giao dịch tài chính mới (thu nhập, chi tiêu, hoặc chuyển khoản).",
+      parameters: {
+        type: "object",
+        properties: {
+          amount: { type: "number", description: "Số tiền giao dịch (VND)" },
+          type: { type: "string", enum: ["EXPENSE", "INCOME", "TRANSFER"], description: "Loại giao dịch (EXPENSE: Chi tiêu, INCOME: Thu nhập, TRANSFER: Chuyển khoản)" },
+          categoryName: { type: "string", description: "Tên danh mục phân loại (ví dụ: 'Ăn uống', 'Di chuyển', 'Lương', ...). Có thể bỏ trống đối với giao dịch chuyển khoản." },
+          fromAccountName: { type: "string", description: "Tên tài khoản nguồn chi hoặc tài khoản chuyển (ví dụ: 'ABBank', 'Ví tiền mặt', ...). Cần thiết cho chi tiêu và chuyển khoản." },
+          toAccountName: { type: "string", description: "Tên tài khoản nhận tiền (ví dụ: 'ABBank', 'Momo', ...). Cần thiết cho thu nhập và chuyển khoản." },
+          note: { type: "string", description: "Ghi chú cho giao dịch (ví dụ: 'Ăn sáng phở bò', 'Chuyển quỹ tiết kiệm', ...)" }
+        },
+        required: ["amount", "type"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_budget_status",
+      description: "Xem danh sách tài khoản tài chính, số dư và các danh mục phân loại chi tiêu/thu nhập hiện tại.",
       parameters: { type: "object", properties: {} }
     }
   }
@@ -383,6 +412,140 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
         pendingTasks,
         upcomingEventsCount: upcomingEvents.length,
         upcomingEvents
+      };
+    }
+
+    case "get_budget_status": {
+      const accounts = await db.budgetAccount.findMany({ where: { userId } });
+      const categories = await db.budgetCategory.findMany({ where: { userId } });
+      return { success: true, accounts, categories };
+    }
+
+    case "log_transaction": {
+      const { amount, type, categoryName, fromAccountName, toAccountName, note } = args;
+
+      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        return { error: "Số tiền không hợp lệ" };
+      }
+
+      const value = Number(amount);
+
+      let fromAccountId: string | null = null;
+      let toAccountId: string | null = null;
+      let categoryId: string | null = null;
+
+      // 1. Resolve fromAccount
+      if (type !== "INCOME" && fromAccountName) {
+        let acc = await db.budgetAccount.findFirst({
+          where: {
+            userId,
+            name: { equals: fromAccountName, mode: "insensitive" }
+          }
+        });
+        if (!acc) {
+          acc = await db.budgetAccount.create({
+            data: {
+              userId,
+              name: fromAccountName,
+              balance: 0,
+              color: "#A172FD"
+            }
+          });
+        }
+        fromAccountId = acc.id;
+      }
+
+      // 2. Resolve toAccount
+      if (type !== "EXPENSE" && toAccountName) {
+        let acc = await db.budgetAccount.findFirst({
+          where: {
+            userId,
+            name: { equals: toAccountName, mode: "insensitive" }
+          }
+        });
+        if (!acc) {
+          acc = await db.budgetAccount.create({
+            data: {
+              userId,
+              name: toAccountName,
+              balance: 0,
+              color: "#A172FD"
+            }
+          });
+        }
+        toAccountId = acc.id;
+      }
+
+      // 3. Resolve category
+      if (type !== "TRANSFER" && categoryName) {
+        const catType = type as "EXPENSE" | "INCOME";
+        let cat = await db.budgetCategory.findFirst({
+          where: {
+            userId,
+            name: { equals: categoryName, mode: "insensitive" },
+            type: catType
+          }
+        });
+        if (!cat) {
+          cat = await db.budgetCategory.create({
+            data: {
+              userId,
+              name: categoryName,
+              type: catType,
+              color: "#A172FD"
+            }
+          });
+        }
+        categoryId = cat.id;
+      }
+
+      // 4. Perform database transaction to record transaction and update account balances
+      const txRecord = await db.$transaction(async (tx) => {
+        const transaction = await tx.budgetTransaction.create({
+          data: {
+            userId,
+            amount: value,
+            type: type as any,
+            categoryId,
+            fromAccountId,
+            toAccountId,
+            note: note || null,
+            occurredAt: new Date()
+          }
+        });
+
+        if (type === "EXPENSE" && fromAccountId) {
+          await tx.budgetAccount.update({
+            where: { id: fromAccountId },
+            data: { balance: { decrement: value } }
+          });
+        } else if (type === "INCOME" && toAccountId) {
+          await tx.budgetAccount.update({
+            where: { id: toAccountId },
+            data: { balance: { increment: value } }
+          });
+        } else if (type === "TRANSFER" && fromAccountId && toAccountId) {
+          await tx.budgetAccount.update({
+            where: { id: fromAccountId },
+            data: { balance: { decrement: value } }
+          });
+          await tx.budgetAccount.update({
+            where: { id: toAccountId },
+            data: { balance: { increment: value } }
+          });
+        }
+
+        return transaction;
+      });
+
+      await db.chatActionLog.create({
+        data: { sessionId, actionType: "LOG_TRANSACTION", payload: txRecord }
+      });
+
+      return {
+        success: true,
+        transactionId: txRecord.id,
+        message: `Đã ghi nhận giao dịch: ${type === "EXPENSE" ? "-" : ""}${value.toLocaleString("vi-VN")}đ cho mục ${categoryName || "chuyển khoản"} từ tài khoản ${fromAccountName || "hệ thống"} rồi nha! 🥰`
       };
     }
 
