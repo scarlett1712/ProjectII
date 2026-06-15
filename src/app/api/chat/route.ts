@@ -36,7 +36,14 @@ QUY TẮC TÍNH TOÁN MỤC TIÊU SỨC KHỎE:
   BMR Nam = 10 * weightKg + 6.25 * heightCm - 5 * age + 5
   BMR Nữ = 10 * weightKg + 6.25 * heightCm - 5 * age - 161
   Mục tiêu = BMR * hệ số hoạt động.
-Khi người dùng yêu cầu tính lại mục tiêu hoặc cập nhật cân nặng/chiều cao, hãy gọi công cụ \`update_profile_and_recalculate_goals\`.`;
+Khi người dùng yêu cầu tính lại mục tiêu hoặc cập nhật cân nặng/chiều cao, hãy gọi công cụ \`update_profile_and_recalculate_goals\`.
+
+QUY TẮC ĐẶC BIỆT KHI GHI NHẬN GIAO DỊCH TÀI CHÍNH / XÈNG XÈNG (LOG TRANSACTION):
+- Khi người dùng muốn ghi nhận một giao dịch (thu nhập, chi tiêu, hoặc chuyển khoản) hoặc hỏi về tài chính/nguồn tiền/danh mục của họ, bạn BẮT BUỘC phải gọi công cụ \`get_budget_status\` trước để lấy danh sách các tài khoản tài chính hiện có (accounts) và danh mục (categories).
+- Bạn phải đối chiếu thông tin người dùng cung cấp với danh sách hiện có đó:
+  + Đối với tài khoản (nguồn tiền/tài khoản nguồn/tài khoản nhận): Hãy so sánh tên tài khoản người dùng nhắc đến với các tài khoản đang tồn tại trong danh sách (ví dụ: "momo" có thể khớp với "Ví Momo", "tech" khớp với "Techcombank", v.v.). Bạn phải sử dụng CHÍNH XÁC tên tài khoản đang tồn tại đó để truyền vào tham số \`fromAccountName\` hoặc \`toAccountName\` của công cụ \`log_transaction\`. Tránh tự ý tạo thêm tài khoản mới hoặc viết sai tên tài khoản nếu đã có tài khoản tương đương.
+  + Đối với danh mục: So sánh và sử dụng đúng tên danh mục đang tồn tại trong danh sách.
+- Nếu người dùng nhắc đến một tài khoản hoặc danh mục hoàn toàn mới chưa từng có trong danh sách hiện tại, hãy chủ động hỏi xác nhận xem người dùng có muốn tạo mới tài khoản/danh mục đó không trước khi gọi công cụ \`log_transaction\` nhé!`;
 
 function buildGuestReply(message: string) {
   const lower = message.toLowerCase();

@@ -26,6 +26,7 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isMounted, setIsMounted] = useState(false);
   const [alert, setAlert] = useState<AlertPayload | null>(null);
+  const [customPortion, setCustomPortion] = useState("");
   
   const pointerRef = useRef({
     pointerId: -1, offsetX: 0, offsetY: 0,
@@ -49,6 +50,12 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  useEffect(() => {
+    if (!alert) {
+      setCustomPortion("");
+    }
+  }, [alert]);
 
   // Listen to global notifications
   useEffect(() => {
@@ -231,7 +238,7 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
               
               {alert.type === "meal-estimate" && alert.portions && alert.mealId && (
                 <div className="flex flex-col gap-2 w-full">
-                  <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+                  <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
                     {alert.portions.map((port, idx) => (
                       <button
                         key={idx}
@@ -242,9 +249,39 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
                       </button>
                     ))}
                   </div>
+
+                  <div className="w-full flex items-center gap-2 my-0.5">
+                    <hr className="flex-1 border-gray-150" />
+                    <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap">Hoặc tự nhập khẩu phần</span>
+                    <hr className="flex-1 border-gray-150" />
+                  </div>
+
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: 1 bát cơm nhỏ, 100g thịt..."
+                      value={customPortion}
+                      onChange={(e) => setCustomPortion(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && customPortion.trim()) {
+                          handleEstimateMeal(alert.mealId!, customPortion.trim(), "custom");
+                        }
+                      }}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-xl py-2 pl-3 pr-9 text-xs text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#A172FD] focus:border-[#A172FD] pointer-events-auto"
+                    />
+                    {customPortion.trim() && (
+                      <button
+                        onClick={() => handleEstimateMeal(alert.mealId!, customPortion.trim(), "custom")}
+                        className="absolute right-1.5 p-1 text-[#A172FD] hover:text-[#8b5cf6] transition-colors rounded-lg cursor-pointer"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
                   <button
                     onClick={() => setAlert(null)}
-                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer mt-0.5"
                   >
                     Bỏ qua
                   </button>

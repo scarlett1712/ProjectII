@@ -12,18 +12,30 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = `Bạn là một trợ lý dinh dưỡng ảo tên là Star. 
-Hãy gợi ý 3 phương án khẩu phần ăn (đơn vị đo đạc) phù hợp nhất với món ăn sau: "${mealName}".
-Đơn vị khẩu phần cần linh hoạt và thực tế phù hợp với món ăn đó, ví dụ:
-- Phở/Bún: "Bát nhỏ", "Bát vừa", "Bát to"
-- Pizza: "1 lát nhỏ", "Nửa cái", "1 cái nguyên"
-- Sữa/Nước ngọt: "Hộp nhỏ 180ml", "Hộp vừa 250ml", "Hộp lớn 330ml"
-- Trái cây: "1 quả nhỏ", "1 quả vừa", "1 quả lớn" hoặc theo miếng.
+Hãy gợi ý 3 phương án khẩu phần ăn (đơn vị đo đạc) phù hợp nhất và mang tính thực tế cao cho món ăn sau: "${mealName}".
 
-Hãy trả về duy nhất một mảng JSON hợp lệ chứa đúng 3 phần tử như sau (không kèm markdown hay lời nói nào khác ngoài khối JSON):
+Quy tắc thiết kế khẩu phần ăn:
+1. Đừng sử dụng các mô tả chung chung hoặc chỉ ghi tổng khối lượng ước tính kiểu "Khẩu phần nhỏ (350g)" hay "350g". Hãy phân tích chi tiết món ăn.
+2. Nếu món ăn gồm nhiều thành phần (ví dụ có chứa các từ như "+", "và", "kèm", hoặc dấu phẩy), bạn phải bóc tách và đề xuất cụ thể cho từng thành phần tại mỗi mức độ khẩu phần:
+   - Cơm/Bún/Phở: dùng các đơn vị quen thuộc như "bát cơm nhỏ/vừa/to", "chén cơm", "bát bún/phở".
+   - Các món thịt/cá/protein: mô tả bằng số lượng lát, miếng, hoặc định lượng gam cụ thể (ví dụ: "80g thịt bò", "120g thịt kho", "1 quả trứng ốp la").
+   - Các món rau/phụ: mô tả bằng "đĩa nhỏ/vừa/to", "chén rau".
+   Ví dụ với món "Cơm + bò kho + su su luộc":
+   - "small": "1 bát cơm nhỏ + 80g bò kho + 1 đĩa su su nhỏ"
+   - "medium": "1 bát cơm vừa + 120g bò kho + 1 đĩa su su vừa"
+   - "large": "1 bát cơm to + 180g bò kho + 1 đĩa su su to"
+3. Nếu món ăn là một món đơn lẻ:
+   - Cơm rang/Mì xào/Phở/Bún: sử dụng "Bát nhỏ/vừa/to" hoặc "Đĩa nhỏ/vừa/to" (có thể kèm mô tả lượng thịt/topping nếu có).
+   - Pizza/Bánh ngọt: sử dụng "1 lát", "2 lát", "nửa cái", "1 cái".
+   - Trái cây: sử dụng "1 quả nhỏ", "1 quả vừa", "1 quả to" hoặc số lượng miếng.
+   - Nước uống: sử dụng "Ly nhỏ 200ml", "Ly vừa 350ml", "Ly lớn 500ml" hoặc "Chai/Hộp".
+4. Giữ cho các nhãn khẩu phần (label) ngắn gọn và súc tích (dưới 65 ký tự) để hiển thị vừa vặn trên các nút bấm giao diện.
+
+Hãy trả về duy nhất một mảng JSON hợp lệ chứa đúng 3 phần tử như sau (không kèm markdown hay bất kỳ lời dẫn giải nào ngoài khối JSON):
 [
-  { "label": "<tên khẩu phần tiếng Việt, ví dụ: Bát nhỏ (300g)>", "value": "small" },
-  { "label": "<tên khẩu phần tiếng Việt, ví dụ: Bát vừa (400g)>", "value": "medium" },
-  { "label": "<tên khẩu phần tiếng Việt, ví dụ: Bát lớn (500g)>", "value": "large" }
+  { "label": "<tên khẩu phần cho mức nhỏ, ví dụ: 1 bát cơm nhỏ + 80g bò kho + 1 đĩa su su nhỏ>", "value": "small" },
+  { "label": "<tên khẩu phần cho mức vừa, ví dụ: 1 bát cơm vừa + 120g bò kho + 1 đĩa su su vừa>", "value": "medium" },
+  { "label": "<tên khẩu phần cho mức lớn, ví dụ: 1 bát cơm to + 180g bò kho + 1 đĩa su su to>", "value": "large" }
 ]`;
 
     const url = `${process.env.OPENCLAW_GATEWAY_URL || "http://127.0.0.1:18789"}/v1/chat/completions`;
