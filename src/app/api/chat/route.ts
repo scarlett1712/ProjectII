@@ -45,6 +45,12 @@ QUY TẮC ĐẶC BIỆT KHI GHI NHẬN GIAO DỊCH TÀI CHÍNH / XÈNG XÈNG (LO
   + INCOME (Thu nhập): Dùng khi người dùng nhận được tiền, có lương, được cộng tiền (ví dụ: "nhận lương 10tr", "được cho 100k", "cộng 20k"). Khi đó, \`type\` bắt buộc là "INCOME", điền tài khoản nhận vào \`toAccountName\`, điền danh mục vào \`categoryName\`, và tuyệt đối không điền \`fromAccountName\` (để trống).
   + TRANSFER (Chuyển khoản): Chỉ dùng khi người dùng di chuyển tiền qua lại giữa các tài khoản của chính họ (ví dụ: "chuyển 100k từ ví Momo sang Techcombank", "rút 200k từ ATM về ví tiền mặt"). Khi đó, \`type\` bắt buộc là "TRANSFER", truyền tài khoản chuyển đi vào \`fromAccountName\`, tài khoản nhận vào \`toAccountName\`, và tuyệt đối không truyền \`categoryName\` (để trống).
 - LƯU Ý BẪY NGÔN NGỮ: Các từ có chữ "gửi" như "gửi xe", "gửi phí dịch vụ", hoặc "gửi tiền mua đồ" thực chất là chi tiêu (EXPENSE), không phải là chuyển khoản (TRANSFER). Hãy đọc kỹ ngữ cảnh để phân biệt!
+- TRUYỀN ĐẦY ĐỦ THAM SỐ VÀ KHÔNG ĐƯỢC BỎ TRỐNG:
+  + Đối với EXPENSE (Chi tiêu): Bạn BẮT BUỘC phải truyền cả \`fromAccountName\` và \`categoryName\`.
+  + Đối với INCOME (Thu nhập): Bạn BẮT BUỘC phải truyền cả \`toAccountName\` và \`categoryName\`.
+  + Đối với TRANSFER (Chuyển khoản): Bạn BẮT BUỘC phải truyền cả \`fromAccountName\` và \`toAccountName\`.
+  * Trích xuất thông minh: Hãy đọc kỹ và giải nghĩa từ viết tắt hoặc cách diễn đạt của người dùng để điền đúng tên tài khoản (ví dụ: "tk ABBank" -> "ABBank", "bằng momo" -> "Momo", "ví" -> "Ví").
+  * Nếu người dùng không nói rõ tài khoản/danh mục hoặc bạn không tự suy luận được từ ngữ cảnh, bạn KHÔNG ĐƯỢC tự ý bỏ trống tham số hay tự đoán mò để tránh ghi nhận sai (dẫn đến hiển thị "Ví" hoặc "hệ thống" sai lệch). Hãy hỏi lại người dùng thật cụ thể trước khi gọi công cụ \`log_transaction\`.
 - Đối chiếu thông tin người dùng cung cấp với danh sách hiện có (từ \`get_budget_status\`):
   + Đối với tài khoản (nguồn tiền/tài khoản nguồn/tài khoản nhận): Hãy so sánh tên tài khoản người dùng nhắc đến với các tài khoản đang tồn tại trong danh sách (ví dụ: "momo" có thể khớp với "Ví Momo", "tech" khớp với "Techcombank", v.v.). Bạn phải sử dụng CHÍNH XÁC tên tài khoản đang tồn tại đó để truyền vào tham số \`fromAccountName\` hoặc \`toAccountName\` của công cụ \`log_transaction\`. Tránh tự ý tạo thêm tài khoản mới hoặc viết sai tên tài khoản nếu đã có tài khoản tương đương.
   + Đối với danh mục: So sánh và sử dụng đúng tên danh mục đang tồn tại trong danh sách.
