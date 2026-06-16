@@ -221,6 +221,33 @@ const tools = [
 ];
 
 async function callOpenClaw(messages: any[]) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (apiKey) {
+    const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "gemini-2.5-flash-lite",
+          messages,
+          tools,
+          temperature: 0.3,
+        }),
+      });
+
+      if (res.ok) {
+        return res.json();
+      }
+      console.error("Direct Gemini API call failed, falling back to OpenClaw Gateway:", await res.text());
+    } catch (err) {
+      console.error("Direct Gemini API call error, falling back to OpenClaw Gateway:", err);
+    }
+  }
+
   const url = `${process.env.OPENCLAW_GATEWAY_URL || "http://127.0.0.1:18789"}/v1/chat/completions`;
   const token = process.env.OPENCLAW_TOKEN;
 

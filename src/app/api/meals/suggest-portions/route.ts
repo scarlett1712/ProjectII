@@ -38,24 +38,57 @@ Hãy trả về duy nhất một mảng JSON hợp lệ chứa đúng 3 phần t
   { "label": "<tên khẩu phần cho mức lớn, ví dụ: 1 bát cơm to + 180g bò kho + 1 đĩa su su to>", "value": "large" }
 ]`;
 
-    const url = `${process.env.OPENCLAW_GATEWAY_URL || "http://127.0.0.1:18789"}/v1/chat/completions`;
-    const token = process.env.OPENCLAW_TOKEN;
+    const apiKey = process.env.GEMINI_API_KEY;
+    let res: Response | null = null;
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "Authorization": `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        model: "openclaw",
-        messages: [
-          { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON arrays." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.2,
-      }),
-    });
+    if (apiKey) {
+      const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
+      try {
+        res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: "gemini-2.5-flash-lite",
+            messages: [
+              { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON arrays." },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.2,
+          }),
+        });
+        if (!res.ok) {
+          console.error("Direct Gemini portion suggestion failed, falling back to OpenClaw Gateway:", await res.text());
+          res = null;
+        }
+      } catch (err) {
+        console.error("Direct Gemini portion suggestion error, falling back to OpenClaw Gateway:", err);
+        res = null;
+      }
+    }
+
+    if (!res) {
+      const url = `${process.env.OPENCLAW_GATEWAY_URL || "http://127.0.0.1:18789"}/v1/chat/completions`;
+      const token = process.env.OPENCLAW_TOKEN;
+
+      res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          model: "openclaw",
+          messages: [
+            { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON arrays." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.2,
+        }),
+      });
+    }
 
     let portions = [
       { label: "Khẩu phần nhỏ", value: "small" },
