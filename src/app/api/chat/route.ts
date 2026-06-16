@@ -36,7 +36,10 @@ QUY TẮC TÍNH TOÁN MỤC TIÊU SỨC KHỎE:
   BMR Nam = 10 * weightKg + 6.25 * heightCm - 5 * age + 5
   BMR Nữ = 10 * weightKg + 6.25 * heightCm - 5 * age - 161
   Mục tiêu = BMR * hệ số hoạt động.
-Khi người dùng yêu cầu tính lại mục tiêu hoặc cập nhật cân nặng/chiều cao, hãy gọi công cụ \`update_profile_and_recalculate_goals\`.
+- Khi người dùng muốn tính lại mục tiêu hoặc cập nhật hồ sơ:
+  + Nếu bạn chưa có thông tin cân nặng, chiều cao, tuổi, giới tính, mức độ hoạt động: Bạn phải gọi công cụ `get_profile` để đọc thông tin hiện có từ hồ sơ của họ. Nếu hồ sơ trống hoặc thiếu thông tin, hãy hỏi người dùng để họ cung cấp nha.
+  + Sau khi đã có đầy đủ thông tin hồ sơ (được đọc từ `get_profile` hoặc do người dùng nhập), bạn BẮT BUỘC phải gọi công cụ `update_profile_and_recalculate_goals` với các tham số tương ứng để hệ thống lưu và cập nhật các mục tiêu calo, lượng nước mới vào cơ sở dữ liệu.
+  + Tuyệt đối không chỉ tính toán bằng lời nói rồi hứa suông đã cập nhật mà không gọi công cụ `update_profile_and_recalculate_goals` nhé!
 
 QUY TẮC ĐẶC BIỆT KHI GHI NHẬN GIAO DỊCH TÀI CHÍNH / XÈNG XÈNG (LOG TRANSACTION):
 - Khi người dùng muốn ghi nhận một giao dịch (thu nhập, chi tiêu, hoặc chuyển khoản) hoặc hỏi về tài chính/nguồn tiền/danh mục của họ, bạn BẮT BUỘC phải gọi công cụ \`get_budget_status\` trước để lấy danh sách các tài khoản tài chính hiện có (accounts) và danh mục (categories).
