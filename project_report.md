@@ -1,26 +1,26 @@
 # BÁO CÁO ĐỒ ÁN MÔN HỌC
-## ĐỀ TÀI: TRỢ LÝ CÁ NHÂN ĐA NĂNG TÍCH HỢP AI – STAR AI (BÉ SAO)
+## ĐỀ TÀI: NGHIÊN CỨU VÀ XÂY DỰNG HỆ THỐNG TRỢ LÝ CÁ NHÂN ĐA NĂNG TÍCH HỢP TRÍ TUỆ NHÂN TẠO – STAR AI
 
 ---
 
 ## 1. Mục Tiêu Đồ Án
 
 ### 1.1. Mục tiêu chính
-Xây dựng một nền tảng trợ lý cá nhân đa năng, lấy **Trí tuệ nhân tạo (Generative AI)** làm hạt nhân để kết nối và quản lý hai trụ cột quan trọng nhất của cuộc sống hàng ngày: **Sức khỏe cá nhân** (dinh dưỡng, calo, nước uống) và **Tài chính cá nhân** (thu chi, ví tiền, ngân sách), kết hợp cùng công cụ **Lập kế hoạch công việc và lịch trình**.
+Nghiên cứu và xây dựng một nền tảng trợ lý cá nhân đa năng, sử dụng **Trí tuệ nhân tạo (Generative AI)** làm cốt lõi để kết nối và quản lý hai lĩnh vực thiết yếu trong đời sống hằng ngày: **Sức khỏe cá nhân** (theo dõi dinh dưỡng, năng lượng nạp vào, lượng nước tiêu thụ) và **Tài chính cá nhân** (theo dõi thu chi, số dư tài khoản, thiết lập ngân sách), kết hợp với công cụ **Lập kế hoạch công việc và quản lý lịch trình**.
 
 ### 1.2. Mục tiêu cụ thể
-*   **Giao diện người dùng (UI/UX) hiện đại:** Thiết kế giao diện web hiện đại, trực quan, hỗ trợ responsive hoàn toàn trên di động. Tập trung vào trải nghiệm mượt mà, sử dụng các hiệu ứng chuyển động vi mô (micro-animations) để tăng tính tương tác.
-*   **Trợ lý ảo thông minh (Star AI - Bé Sao):** Phát triển chatbot AI có tính cách rõ ràng (ngọt ngào, đáng yêu, thân thiện), xưng hô gần gũi ("Bé Sao" - "Cậu/Bạn iu"), giúp giảm bớt cảm giác khô khan khi quản lý tài chính hay theo dõi sức khỏe.
-*   **Xử lý ngôn ngữ tự nhiên thành hành động (Function Calling):** Tích hợp khả năng gọi công cụ (Tool Use). Star AI có thể tự động hiểu câu lệnh không cấu trúc của người dùng (ví dụ: *"Tớ vừa ăn 1 bát phở bò"*, *"Chi 50k gửi xe bằng Techcombank"*) để tự động thêm dữ liệu vào cơ sở dữ liệu mà người dùng không cần bấm nút thủ công.
-*   **Tự động hóa tính toán khoa học:** Tính toán chỉ số calo mục tiêu (BMR/TDEE) theo công thức Mifflin-St Jeor và tự động gợi ý lượng nước uống hằng ngày dựa trên các chỉ số sinh học của cơ thể.
-*   **Hệ thống thông báo đẩy thời gian thực (Native Notifications):** Thiết lập daemon ngầm giúp nhắc nhở uống nước đúng giờ, báo cáo công việc đến hạn và sự kiện sắp diễn ra thông qua thông báo hệ thống Windows (Windows Toast Notifications).
+*   **Thiết kế giao diện người dùng (UI/UX) tối ưu:** Phát triển giao diện web hiện đại, trực quan, hỗ trợ hiển thị tốt trên các thiết bị di động (Responsive Web Design). Ứng dụng các chuyển động vi mô (micro-animations) nhằm tối ưu hóa trải nghiệm người dùng và tăng tính tương tác.
+*   **Xây dựng mô hình tương tác tự nhiên (Star AI):** Thiết lập một chatbot trợ lý ảo có phong cách giao tiếp thân thiện, gần gũi, giúp giảm bớt sự khô khan trong quá trình quản lý dữ liệu số liệu cá nhân.
+*   **Tích hợp cơ chế tự động hóa hành động (Function Calling):** Ứng dụng công nghệ gọi công cụ (Tool Use). Hệ thống có khả năng tự động phân tích câu lệnh phi cấu trúc bằng ngôn ngữ tự nhiên từ người dùng (ví dụ: *"Đã ăn 1 bát phở bò"*, *"Chi 50.000đ gửi xe từ tài khoản ABBank"*) để thực hiện các thao tác thêm, sửa hoặc truy vấn dữ liệu trực tiếp trong cơ sở dữ liệu mà không cần thông qua các thao tác thủ công trên giao diện.
+*   **Tính toán các chỉ số sinh học theo công thức khoa học:** Tự động hóa việc tính toán chỉ số năng lượng tiêu chuẩn (BMR/TDEE) theo công thức Mifflin-St Jeor và định lượng nhu cầu tiêu thụ nước hằng ngày dựa trên các chỉ số cơ thể của người dùng.
+*   **Hệ thống thông báo đẩy đồng bộ (Native Notifications):** Phát triển một dịch vụ chạy ngầm (Daemon) hỗ trợ giám sát và gửi thông báo nhắc nhở uống nước, nhắc lịch hẹn và công việc đến hạn trực tiếp thông qua hệ thống thông báo của hệ điều hành Windows (Windows Toast Notifications).
 
 ---
 
 ## 2. Kiến Trúc Hệ Thống
 
 ### 2.1. Sơ đồ kiến trúc tổng quát
-Hệ thống được thiết kế theo mô hình client-server hiện đại, tận dụng sức mạnh của Next.js cho cả Frontend và API Backend (Fullstack Framework).
+Hệ thống được thiết kế theo mô hình Client-Server hiện đại, sử dụng framework Next.js cho toàn bộ kiến trúc ứng dụng (Fullstack Framework).
 
 ```mermaid
 graph TD
@@ -62,94 +62,92 @@ graph TD
 ```
 
 ### 2.2. Công nghệ sử dụng
-*   **Frontend:**
-    *   **React 19 & TypeScript:** Đảm bảo mã nguồn rõ ràng, an toàn về kiểu dữ liệu và tối ưu hóa hiệu năng render.
-    *   **Tailwind CSS v4:** Công nghệ styling mới nhất giúp xây dựng giao diện nhanh chóng, nhất quán.
-    *   **Framer Motion:** Thực hiện các chuyển động mượt mà cho các popup, modal, và đặc biệt là linh vật Star di động (Draggable Star).
-    *   **Recharts:** Vẽ biểu đồ trực quan hóa dữ liệu biến động thu chi và cơ cấu danh mục tài chính.
-*   **Backend:**
-    *   **Next.js (App Router):** Hỗ trợ tối ưu hóa SEO, phân chia route rõ ràng và xây dựng serverless API gọn nhẹ.
-    *   **Prisma ORM & PostgreSQL:** Công cụ truy vấn cơ sở dữ liệu mạnh mẽ, quản lý migrate và duy trì ràng buộc dữ liệu chặt chẽ.
-    *   **NextAuth.js:** Quản lý đăng nhập, bảo mật thông tin và session người dùng.
-*   **AI Engine:**
-    *   **OpenClaw Gateway:** Proxy cổng kết nối trung gian giúp điều phối các cuộc gọi LLM và hỗ trợ cơ chế vòng lặp gọi công cụ (Function Calling loop) với số lần lặp tối đa là 4 nhằm xử lý nhiều công cụ cùng lúc.
-*   **Hệ thống chạy ngầm:**
-    *   **Node.js setInterval Worker:** Chạy nền độc lập trên máy chủ để quét lịch trình.
-    *   **PowerShell (WinRT API):** Gọi thư viện gốc của Windows để hiển thị hộp thoại thông báo toast native đẹp mắt.
+*   **Công nghệ Frontend:**
+    *   **React 19 & TypeScript:** Tăng cường tính an toàn của mã nguồn qua kiểm tra kiểu dữ liệu tĩnh và tối ưu hóa chu kỳ render.
+    *   **Tailwind CSS v4:** Sử dụng hệ thống utility-first CSS mới nhất để tối ưu dung lượng mã nguồn styling.
+    *   **Framer Motion:** Thực hiện xử lý chuyển động cho các thành phần giao diện động, bao gồm widget Star di động (Draggable Star).
+    *   **Recharts:** Công cụ trực quan hóa dữ liệu thu chi dưới dạng biểu đồ đường và biểu đồ tròn.
+*   **Công nghệ Backend:**
+    *   **Next.js (App Router):** Xây dựng hệ thống Routing và các Serverless API phục vụ client.
+    *   **Prisma ORM & PostgreSQL:** Quản lý cơ sở dữ liệu quan hệ, thực hiện truy vấn tối ưu và xử lý migration dữ liệu.
+    *   **NextAuth.js:** Cung cấp cơ chế xác thực và bảo mật phiên đăng nhập của người dùng.
+*   **Tích hợp Trí tuệ nhân tạo (AI Engine):**
+    *   **OpenClaw Gateway:** Proxy điều phối API trung gian giữa ứng dụng và mô hình ngôn ngữ lớn (LLM), hỗ trợ cơ chế thực thi công cụ lặp lại nhiều bước (Function Calling loop, tối đa 4 bước lặp) để hoàn thành các logic nghiệp vụ phức tạp.
+*   **Hệ thống chạy ngầm và thông báo:**
+    *   **Node.js setInterval Worker:** Quét cơ sở dữ liệu định kỳ mỗi 30 giây để tìm kiếm các sự kiện cần nhắc nhở.
+    *   **PowerShell (WinRT API):** Thực thi script tương tác trực tiếp với API hệ điều hành để hiển thị thông báo toast.
 
 ---
 
 ## 3. Chức Năng Chi Tiết
 
 ### 3.1. Phân hệ Frontend (FE)
-*   **Trang chủ (Dashboard):** 
-    *   Hiển thị widget tổng hợp: số nước đã uống, calo còn lại được nạp, số nhiệm vụ chưa hoàn thành.
-    *   Nút ghi nhận nhanh (Quick logs) nước uống theo các mốc 200ml, 300ml, 500ml.
-*   **Trình quản lý tài chính (Budget):**
-    *   Bảng quản lý tài khoản nguồn tiền (ví, ngân hàng) kèm theo số dư, màu sắc nhận diện.
-    *   Bảng thiết lập mục tiêu chi tiêu (Ngân sách tháng) cho từng danh mục để theo dõi chênh lệch dự kiến thực tế.
-    *   Lịch sử giao dịch chia làm 2 bảng: Thu nhập riêng biệt và Chi tiêu/Chuyển khoản riêng biệt.
-*   **Theo dõi dinh dưỡng (Nutrition):**
-    *   Tính toán calo nạp vào dựa trên các món ăn.
-    *   Tích hợp AI để bóc tách món ăn phức tạp (Ví dụ: *"Cơm sườn trứng ốp la"* -> tự phân rã thành các mức khẩu phần khác nhau để người dùng lựa chọn).
-*   **Theo dõi nước uống (Water logs):**
-    *   Biểu đồ lịch sử uống nước theo ngày.
-    *   Cấu hình các khung giờ nhắc nhở uống nước tự động.
-*   **Lịch trình & Việc cần làm (Calendar & Tasks):**
-    *   Quản lý sự kiện theo tuần/tháng, hỗ trợ sự kiện lặp lại (hằng ngày, hằng tuần, hằng tháng).
-    *   Danh sách task có thể đánh dấu hoàn thành nhanh.
-*   **Trò chuyện với Star AI (Chat Screen & Draggable Star):**
-    *   Widget Bé Sao có thể kéo thả tự do ở mọi màn hình. Nhấp vào sẽ mở giao diện chat nhanh hoặc hiển thị bong bóng gợi ý khẩu phần món ăn khi AI ước lượng dinh dưỡng.
+*   **Bảng điều khiển trung tâm (Dashboard):**
+    *   Tổng hợp các thông tin nhanh về lượng nước đã uống, lượng calo còn lại được phép nạp trong ngày và danh sách công việc chưa hoàn thành.
+    *   Cung cấp tính năng ghi nhanh (Quick logs) nước uống theo định lượng 200ml, 300ml, 500ml.
+*   **Phân hệ Quản lý Tài chính (Budget):**
+    *   Quản lý danh sách tài khoản nguồn tiền (Ví điện tử, tài khoản ngân hàng) kèm theo quản lý số dư thời gian thực.
+    *   Thiết lập hạn mức chi tiêu (Ngân sách tháng) cho từng danh mục để theo dõi chênh lệch giữa dự kiến và thực tế.
+    *   Hiển thị lịch sử giao dịch trực quan chia thành 2 danh mục: Thu nhập và Chi tiêu/Chuyển khoản.
+*   **Phân hệ Quản lý Dinh dưỡng (Nutrition):**
+    *   Ghi chép và tổng hợp năng lượng nạp vào từ thực phẩm.
+    *   Tích hợp tính năng phân tích món ăn tự động bằng AI, tự phân rã các bữa ăn phức tạp thành các tùy chọn khẩu phần định lượng khác nhau để người dùng lựa chọn dễ dàng.
+*   **Phân hệ Theo dõi Nước uống (Water logs):**
+    *   Trực quan hóa lịch sử tiêu thụ nước theo ngày thông qua biểu đồ cột.
+    *   Cung cấp cấu hình tùy chỉnh các mốc thời gian nhắc nhở uống nước hằng ngày.
+*   **Phân hệ Lịch trình & Việc cần làm (Calendar & Tasks):**
+    *   Quản lý sự kiện trên giao diện lịch biểu, hỗ trợ cấu hình sự kiện lặp lại định kỳ (Hằng ngày, hằng tuần, hằng tháng).
+    *   Quản lý danh sách công việc cần làm, hỗ trợ đặt hạn chót và trạng thái hoàn thành.
+*   **Giao diện Chatbot Star AI:**
+    *   Hỗ trợ widget Star kéo thả linh hoạt trên màn hình. Cho phép mở khung chat nhanh hoặc hiển thị các đề xuất tự động từ AI ngay trên màn hình hiện tại.
 
 ### 3.2. Phân hệ Backend (BE)
-*   **API quản lý nghiệp vụ:** Các REST endpoint quản lý CRUD cho giao dịch, nước uống, bữa ăn, lịch trình và công việc.
-*   **Hệ thống Chat và Vòng lặp Gọi công cụ (Tool Loop):**
-    *   Endpoint `/api/chat` tiếp nhận tin nhắn từ người dùng, nạp lịch sử trò chuyện (tối đa 15 tin nhắn gần nhất để tiết kiệm token) và cấu hình `SYSTEM_PROMPT`.
-    *   Backend chạy vòng lặp tối đa 4 lần để AI liên tục gọi các công cụ và trả về kết quả cho đến khi hoàn thành yêu cầu. 
-    *   *Ví dụ:* Khi người dùng bảo: *"Tớ vừa chi 50k gửi xe"* -> AI gọi `get_budget_status` (vòng 1) -> AI đối chiếu tài khoản & danh mục (vòng 2) -> AI gọi `log_transaction` (vòng 3) -> AI tạo câu trả lời dễ thương cho người dùng (vòng 4).
+*   **Hệ thống RESTful API:** Cung cấp các endpoint xử lý nghiệp vụ cho các phân hệ giao dịch, dinh dưỡng, nước uống, lịch biểu và công việc.
+*   **Cổng xử lý hội thoại và Vòng lặp Công cụ:**
+    *   Endpoint `/api/chat` tiếp nhận tin nhắn từ người dùng, nạp lịch sử hội thoại (giới hạn 15 tin nhắn gần nhất nhằm tối ưu chi phí token) và cấu hình `SYSTEM_PROMPT`.
+    *   Thiết lập cơ chế kiểm soát lỗi hội thoại và chạy vòng lặp thực thi công cụ (tối đa 4 vòng). 
+    *   *Ví dụ:* Người dùng yêu cầu *"Chi 50.000đ gửi xe từ tài khoản ABBank"* -> AI tự động gọi `get_budget_status` để kiểm tra danh mục tồn tại -> AI ánh xạ từ khóa để xác định loại giao dịch `EXPENSE` và danh mục `Tiền gửi xe` -> AI thực thi `log_transaction` -> AI tổng hợp kết quả phản hồi người dùng.
 
 ### 3.3. Mô Hình Dữ Liệu (Data Models - Prisma Schema)
-Hệ thống sử dụng cơ sở dữ liệu quan hệ PostgreSQL với các bảng chính:
-*   `User`: Lưu trữ tài khoản, email, mật khẩu băm, liên kết với các phân hệ khác.
-*   `Profile`: Lưu trữ giới tính, chiều cao, cân nặng, tuổi, mức độ hoạt động và lượng calo đề xuất.
-*   `MealEntry`: Lưu trữ thông tin bữa ăn, khối lượng (gram), calo và thời gian ăn.
-*   `WaterLog`: Lưu trữ dung tích nước uống (ml) và thời điểm uống.
-*   `WaterReminderSlot`: Lưu trữ giờ hẹn nhắc uống nước và dung tích định lượng của mỗi slot.
-*   `BudgetAccount`: Quản lý các ví/tài khoản (Ví dụ: Momo, Techcombank, Tiền mặt) và số dư hiện có.
-*   `BudgetCategory`: Quản lý các danh mục phân loại thu/chi (Ăn uống, Đi lại, Lương, v.v.).
-*   `BudgetTransaction`: Giao dịch tài chính (số tiền, loại: `INCOME`/`EXPENSE`/`TRANSFER`, liên kết với tài khoản nguồn/nhận và danh mục).
-*   `CalendarEvent` & `TaskItem`: Quản lý lịch trình (hỗ trợ trường lặp lại `recurrence`: `DAILY`/`WEEKLY`/`MONTHLY`) và công việc cần làm.
-*   `ChatSession` & `ChatMessage`: Lưu trữ phiên chat và lịch sử trò chuyện giữa người dùng và Star AI.
+*   `User`: Quản lý tài khoản người dùng, email, mật khẩu và liên kết dữ liệu.
+*   `Profile`: Lưu trữ các thông số sinh học (giới tính, chiều cao, cân nặng, tuổi, mức độ vận động) và lượng calo tiêu chuẩn.
+*   `MealEntry`: Lưu trữ thông tin nhật ký ăn uống bao gồm khối lượng thực phẩm (gram) và lượng calo tương ứng.
+*   `WaterLog` & `WaterReminderSlot`: Lưu trữ lịch sử uống nước và cấu hình các khung giờ nhắc nhở.
+*   `BudgetAccount`: Quản lý các tài khoản tài chính (tên tài khoản, số dư hiện tại, màu sắc nhận diện).
+*   `BudgetCategory`: Quản lý danh mục phân loại giao dịch (tên danh mục, loại giao dịch: `INCOME`/`EXPENSE`).
+*   `BudgetTransaction`: Nhật ký giao dịch chi tiết, liên kết trực tiếp với tài khoản nguồn, tài khoản đích và danh mục phân loại tương ứng.
+*   `CalendarEvent` & `TaskItem`: Lưu trữ thông tin lịch trình (hỗ trợ trường lặp lại `recurrence`: `DAILY`/`WEEKLY`/`MONTHLY`) và công việc.
+*   `ChatSession` & `ChatMessage`: Lưu trữ thông tin về các phiên hội thoại và nội dung tin nhắn.
 
 ---
 
-## 4. Kịch Bản Demo Ứng Dụng (Ghi nhận giao dịch tài chính)
+## 4. Kịch Bản Hoạt Động Của Hệ Thống (Ví dụ Ghi nhận giao dịch)
 
-Dưới đây là mô tả luồng hoạt động thực tế của tính năng ghi chép chi tiêu bằng giọng điệu tự nhiên qua chatbot:
+Sơ đồ mô tả quy trình xử lý tự động khi người dùng yêu cầu ghi nhận giao dịch thông qua ngôn ngữ tự nhiên:
 
 ```
 [Người dùng]: "Ghi lại cho tớ khoản chi 50k vào mục tiền gửi xe ở tk ABBank nhé"
     |
-    v (API /api/chat nhận request)
+    v (API /api/chat tiếp nhận yêu cầu)
     |
-    +---> BƯỚC 1: AI phát hiện yêu cầu tài chính -> Gọi tool "get_budget_status"
+    +---> BƯỚC 1: AI xác định yêu cầu tài chính -> Gọi tool "get_budget_status"
     |            |
-    |            +---> Trả về danh sách tài khoản hiện có: ["Ví Momo", "ABBank", "Tiền mặt"]
+    |            +---> Trả về danh sách tài khoản hiện tại: ["Ví Momo", "ABBank", "Tiền mặt"]
     |                  và các danh mục hiện có: ["Ăn uống", "Đi lại", "Tiền gửi xe"]
     |
-    +---> BƯỚC 2: AI phân tích ngôn ngữ tự nhiên:
-    |            * Số tiền: 50.000đ
-    |            * Từ khóa "khoản chi" -> Giao dịch EXPENSE
-    |            * Từ khóa "ở tk ABBank" -> Khớp chính xác với tài khoản "ABBank" trong DB
-    |            * Từ khóa "tiền gửi xe" -> Khớp chính xác danh mục "Tiền gửi xe" trong DB
-    |            * Gọi tool "log_transaction(amount: 50000, type: 'EXPENSE', fromAccountName: 'ABBank', categoryName: 'Tiền gửi xe')"
+    +---> BƯỚC 2: AI phân tích ngữ nghĩa ngôn ngữ tự nhiên:
+    |            * Số tiền giao dịch: 50.000đ
+    |            * Hành động "khoản chi" -> Gán loại giao dịch (type) là "EXPENSE"
+    |            * Trích xuất "ở tk ABBank" -> Khớp với tài khoản "ABBank" trong cơ sở dữ liệu
+    |            * Trích xuất "tiền gửi xe" -> Khớp với danh mục "Tiền gửi xe" trong cơ sở dữ liệu
+    |            * Thực thi gọi công cụ "log_transaction(amount: 50000, type: 'EXPENSE', fromAccountName: 'ABBank', categoryName: 'Tiền gửi xe')"
     |
-    +---> BƯỚC 3: Backend thực hiện Transaction trong DB:
-    |            * Tạo bản ghi BudgetTransaction mới.
-    |            * Tự động trừ số dư tài khoản ABBank đi 50.000đ.
+    +---> BƯỚC 3: Backend xử lý cơ sở dữ liệu (Database Transaction):
+    |            * Khởi tạo bản ghi giao dịch BudgetTransaction mới.
+    |            * Trừ số dư tương ứng của tài khoản ABBank đi 50.000đ.
     |
-    v (Trả về kết quả thành công)
-[Bé Sao]: "Đã ghi nhận giao dịch: -50.000đ cho mục Tiền gửi xe từ tài khoản ABBank rồi nha! 🥰💖"
+    v (Trả về trạng thái xử lý thành công)
+[Star AI]: "Đã ghi nhận giao dịch chi tiêu: -50.000đ cho danh mục Tiền gửi xe từ tài khoản ABBank thành công rồi nha! 🥰💖"
 ```
 
 ---
@@ -157,37 +155,37 @@ Dưới đây là mô tả luồng hoạt động thực tế của tính năng 
 ## 5. Đánh Giá Ưu Điểm & Nhược Điểm
 
 ### 5.1. Ưu điểm
-*   **Trải nghiệm người dùng đồng nhất:** Tích hợp cả 3 nhu cầu thiết yếu hàng ngày (Sức khỏe, Tài chính, Lịch trình) vào một nơi, giúp người dùng không cần cài đặt nhiều ứng dụng rời rạc.
-*   **Chatbot AI có tính nhân văn:** Cách xưng hô đáng yêu và việc sử dụng emoji hợp lý của Bé Sao tạo động lực tốt cho người dùng tương tác mỗi ngày, biến việc ghi chép số liệu khô khan thành thói quen vui vẻ.
-*   **Tối giản hóa thao tác (Zero-click entry):** Nhờ Function Calling mạnh mẽ, người dùng chỉ cần mô tả bằng câu nói, AI sẽ tự điền tất cả các trường dữ liệu phức tạp.
-*   **Chạy ngầm ổn định:** Cơ chế Background Worker gửi thông báo trực tiếp lên Windows giúp người dùng luôn duy trì thói quen uống nước và hoàn thành công việc đúng hạn mà không cần mở tab trình duyệt 24/7.
+*   **Tính toàn diện cao:** Tích hợp thành công ba tính năng cốt lõi (Theo dõi sức khỏe, Quản lý tài chính cá nhân, Lập lịch biểu) trên cùng một hệ thống giúp tối ưu hóa tài nguyên phần cứng và đơn giản hóa thao tác cho người dùng.
+*   **Trải nghiệm tương tác tự nhiên:** Chatbot AI sử dụng phong cách giao tiếp gần gũi, tạo cảm giác thân thiện và tăng động lực duy trì thói quen theo dõi chỉ số cá nhân hằng ngày.
+*   **Tối giản hóa thao tác nhờ AI:** Giảm thiểu tối đa việc nhập liệu truyền thống thông qua cơ chế phân tích ngôn ngữ tự nhiên và tự thực thi gọi công cụ (Function Calling).
+*   **Hoạt động nền đáng tin cậy:** Hệ thống daemon chạy ngầm tương tác trực tiếp với API của hệ điều hành, đảm bảo thông báo nhắc nhở luôn được gửi đến người dùng đúng thời điểm ngay cả khi đóng trình duyệt.
 
 ### 5.2. Nhược điểm
-*   **Phụ thuộc vào kết nối mạng:** Vì mọi tác vụ phân tích ngôn ngữ tự nhiên đều chạy qua OpenClaw Gateway đến mô hình LLM lớn, ứng dụng sẽ bị hạn chế tính năng thông minh khi mất kết nối mạng.
-*   **Độ trễ phản hồi (Latency):** Do mô hình AI cần thời gian suy nghĩ và gọi các công cụ tuần tự (qua nhiều vòng lặp), thời gian phản hồi tin nhắn chat dao động từ 1.5 - 3 giây.
-*   **Bẫy ngôn ngữ tiếng Việt:** Đôi khi các cấu trúc câu quá phức tạp hoặc có nhiều nghĩa ẩn dụ vẫn có thể khiến AI phân loại nhầm (Ví dụ: *"gửi tiền tiết kiệm"* dễ bị nhầm từ *"gửi"* thành chuyển khoản).
+*   **Phụ thuộc vào hạ tầng mạng:** Các tính năng phân tích thông minh yêu cầu kết nối liên tục tới OpenClaw Gateway và mô hình ngôn ngữ lớn (LLM), hoạt động sẽ bị giới hạn khi không có Internet.
+*   **Độ trễ phản hồi (Latency):** Do mô hình LLM cần thời gian xử lý phân tích và thực hiện vòng lặp gọi API tuần tự, thời gian phản hồi trung bình dao động từ 1.5 đến 3 giây.
+*   **Thách thức xử lý ngữ nghĩa tiếng Việt:** Các cấu trúc câu đa nghĩa, từ viết tắt hoặc lối nói ẩn dụ trong tiếng Việt đôi khi có thể gây nhầm lẫn cho mô hình trong quá trình phân loại nghiệp vụ (Ví dụ: từ "gửi" trong "gửi tiết kiệm" hoặc "gửi xe" dễ bị nhầm lẫn giữa chi tiêu và chuyển khoản).
 
 ---
 
-## 6. Hướng Phát Triển Trong Tương Lai
+## 6. Định Hướng Phát Triển
 
-### 6.1. Phát triển phiên bản Mobile App (iOS / Android)
-Xây dựng ứng dụng di động native bằng **React Native** hoặc **Flutter**, tận dụng lại toàn bộ hệ thống API sẵn có của Next.js:
-*   Hỗ trợ widget trên màn hình khóa điện thoại để hiển thị nhanh chỉ số calo/nước.
-*   Tích hợp ghi âm giọng nói (Speech-to-Text) giúp người dùng ghi chép chi tiêu/ăn uống bằng cách nói trực tiếp vào điện thoại khi đang đi ngoài đường.
-*   Sử dụng Notification đẩy trên điện thoại (FCM/APNs) thay thế cho Windows Toast Notifications.
+### 6.1. Xây dựng ứng dụng di động (Mobile App)
+Chuyển đổi nền tảng sang ứng dụng di động native bằng **React Native** hoặc **Flutter** nhằm tối ưu hóa khả năng tiếp cận:
+*   Hỗ trợ các widget hiển thị chỉ số calo và nước uống trực tiếp trên màn hình chính và màn hình khóa điện thoại.
+*   Tích hợp tính năng nhận diện giọng nói (Speech-to-Text) cho phép người dùng ghi nhận nhanh các chỉ số khi đang di chuyển.
+*   Chuyển đổi hệ thống thông báo sang cơ chế đẩy từ máy chủ (FCM/APNs).
 
-### 6.2. Phát triển Chrome Extension riêng cho Star AI (Bé Sao)
-Biến Star AI thành một tiện ích mở rộng trên trình duyệt Google Chrome:
-*   **Tiện ích thường trực:** Một biểu tượng Bé Sao nhỏ luôn nằm ở góc trình duyệt hoặc thanh công cụ.
-*   **Tính năng ghi nhanh:** Người dùng đang đọc báo, xem video, làm việc... chỉ cần bấm vào tiện ích là có thể chat nhanh để ghi chép chi tiêu, thêm task hoặc note lịch mà không cần phải chuyển sang tab ứng dụng chính.
-*   **Nhắc nhở thông minh:** Tự động hiện popup nhắc nhở uống nước hoặc thông báo công việc ngay trên tab trình duyệt đang hoạt động.
+### 6.2. Phát triển Chrome Extension riêng cho Star AI
+Phát triển một tiện ích mở rộng trên trình duyệt Google Chrome để tối ưu hóa hiệu quả sử dụng trên máy tính:
+*   **Tiện ích thường trực:** Đặt biểu tượng Star AI nhỏ thường trực ở góc màn hình trình duyệt.
+*   **Tương tác nhanh không cần chuyển tab:** Người dùng có thể gọi nhanh Star AI để ghi chép chi tiêu, cập nhật công việc hoặc xem lịch biểu ngay khi đang làm việc trên các trang web khác mà không cần truy cập trực tiếp vào ứng dụng chính.
+*   **Popup cảnh báo:** Tự động hiển thị popup nhắc nhở uống nước hoặc thông báo công việc trên tab làm việc hiện tại của trình duyệt.
 
-### 6.3. Tự động hóa tài chính nâng cao
-*   Tích hợp API đọc lịch sử biến động số dư ngân hàng hoặc đọc SMS biến động số dư từ điện thoại để Bé Sao tự động phân tích và đề xuất ghi nhận giao dịch mà người dùng không cần phải gõ tay.
+### 6.3. Tự động hóa tích hợp tài chính
+*   Nghiên cứu tích hợp các giải pháp đọc lịch sử biến động số dư ngân hàng qua API mở hoặc quét SMS thông báo biến động số dư trên điện thoại nhằm tự động hóa hoàn toàn luồng ghi chép tài chính cá nhân.
 
 ---
 
 ## 7. Kết Luận
 
-Đồ án **Star AI (Bé Sao)** đã giải quyết thành công bài toán tối ưu hóa quản lý cá nhân bằng cách kết hợp khoa học dữ liệu sức khỏe, quản lý tài chính và công nghệ trí tuệ nhân tạo hiện đại. Việc ứng dụng **Function Calling** mang lại một phương thức tương tác người-máy vô cùng tự nhiên và triển vọng. Mặc dù vẫn còn một vài hạn chế về độ trễ phản hồi của mô hình LLM, ứng dụng hoàn toàn đáp ứng được nhu cầu thực tế và sở hữu nhiều tiềm năng mở rộng sang các nền tảng di động và extension trình duyệt trong tương lai.
+Đề tài **Nghiên cứu và xây dựng hệ thống trợ lý cá nhân đa năng Star AI** đã hoàn thành các mục tiêu đặt ra. Ứng dụng giải quyết tốt bài toán quản lý cá nhân bằng cách kết hợp khoa học dữ liệu sức khỏe, quản lý tài chính và công nghệ trí tuệ nhân tạo hiện đại. Việc ứng dụng cơ chế **Function Calling** mang lại một phương thức tương tác người-máy vô cùng tự nhiên và hiệu quả. Mặc dù vẫn còn một vài giới hạn về mặt độ trễ xử lý của mô hình AI, ứng dụng hoàn toàn có đủ khả năng ứng dụng thực tế và sở hữu tiềm năng mở rộng cao trên nền tảng di động cũng như các tiện ích mở rộng trình duyệt trong tương lai.
