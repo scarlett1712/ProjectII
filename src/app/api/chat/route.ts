@@ -227,27 +227,31 @@ async function callOpenClaw(messages: any[]) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (apiKey) {
     const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "gemini-2.5-flash-lite",
-          messages,
-          tools,
-          temperature: 0.3,
-        }),
-      });
+    const fallbackModels = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.1-flash-lite"];
 
-      if (res.ok) {
-        return res.json();
+    for (const model of fallbackModels) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            tools,
+            temperature: 0.3,
+          }),
+        });
+
+        if (res.ok) {
+          return res.json();
+        }
+        console.warn(`Direct Gemini call with model ${model} failed (status ${res.status}):`, await res.text());
+      } catch (err) {
+        console.error(`Direct Gemini call with model ${model} error:`, err);
       }
-      console.error("Direct Gemini API call failed, falling back to OpenClaw Gateway:", await res.text());
-    } catch (err) {
-      console.error("Direct Gemini API call error, falling back to OpenClaw Gateway:", err);
     }
   }
 

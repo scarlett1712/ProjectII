@@ -115,29 +115,33 @@ Hãy trả về duy nhất một cấu trúc JSON hợp lệ như sau (không k�
 
     if (apiKey) {
       const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
-      try {
-        res = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gemini-2.5-flash-lite",
-            messages: [
-              { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON." },
-              { role: "user", content: prompt }
-            ],
-            temperature: 0.2,
-          }),
-        });
-        if (!res.ok) {
-          console.error("Direct Gemini calorie estimation failed, falling back to OpenClaw Gateway:", await res.text());
-          res = null;
+      const fallbackModels = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.1-flash-lite"];
+
+      for (const model of fallbackModels) {
+        try {
+          const tempRes = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON." },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.2,
+            }),
+          });
+          if (tempRes.ok) {
+            res = tempRes;
+            break;
+          }
+          console.warn(`Direct Gemini calorie estimation with model ${model} failed (status ${tempRes.status}):`, await tempRes.text());
+        } catch (err) {
+          console.error(`Direct Gemini calorie estimation with model ${model} error:`, err);
         }
-      } catch (err) {
-        console.error("Direct Gemini calorie estimation error, falling back to OpenClaw Gateway:", err);
-        res = null;
       }
     }
 

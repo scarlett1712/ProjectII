@@ -43,29 +43,33 @@ Hãy trả về duy nhất một mảng JSON hợp lệ chứa đúng 3 phần t
 
     if (apiKey) {
       const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
-      try {
-        res = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${apiKey}`,
-          },
-          body: JSON.stringify({
-            model: "gemini-2.5-flash-lite",
-            messages: [
-              { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON arrays." },
-              { role: "user", content: prompt }
-            ],
-            temperature: 0.2,
-          }),
-        });
-        if (!res.ok) {
-          console.error("Direct Gemini portion suggestion failed, falling back to OpenClaw Gateway:", await res.text());
-          res = null;
+      const fallbackModels = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.1-flash-lite"];
+
+      for (const model of fallbackModels) {
+        try {
+          const tempRes = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: "system", content: "You are a helpful nutrition assistant that always replies in valid JSON arrays." },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.2,
+            }),
+          });
+          if (tempRes.ok) {
+            res = tempRes;
+            break;
+          }
+          console.warn(`Direct Gemini portions suggestion with model ${model} failed (status ${tempRes.status}):`, await tempRes.text());
+        } catch (err) {
+          console.error(`Direct Gemini portions suggestion with model ${model} error:`, err);
         }
-      } catch (err) {
-        console.error("Direct Gemini portion suggestion error, falling back to OpenClaw Gateway:", err);
-        res = null;
       }
     }
 
