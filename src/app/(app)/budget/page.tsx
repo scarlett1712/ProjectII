@@ -1223,16 +1223,16 @@ export default function BudgetPage() {
                 {/* 1. Chi tiết Thu Nhập */}
                 <div className="bg-white rounded-[32px] p-6 shadow-sm border border-purple-50">
                   <h3 className="text-sm font-black text-purple-950 mb-4">Chi tiết các khoản thu</h3>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-100 scrollbar-track-transparent">
                     <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-purple-50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                          <th className="px-3 py-2">Danh mục</th>
-                          <th className="px-3 py-2">Ngày</th>
-                          <th className="px-3 py-2 text-right">Xèng</th>
-                          <th className="px-3 py-2">TK nhận</th>
-                          <th className="px-3 py-2">Chi tiết</th>
-                          <th className="px-3 py-2 text-center">Tác vụ</th>
+                      <thead className="sticky top-0 bg-white z-10 shadow-[0_1px_0_0_rgba(243,232,255,1)]">
+                        <tr className="text-[10px] font-black text-gray-400 uppercase tracking-wider bg-white">
+                          <th className="px-3 py-2.5 bg-white">Danh mục</th>
+                          <th className="px-3 py-2.5 bg-white">Ngày</th>
+                          <th className="px-3 py-2.5 bg-white text-right">Xèng</th>
+                          <th className="px-3 py-2.5 bg-white">TK nhận</th>
+                          <th className="px-3 py-2.5 bg-white">Chi tiết</th>
+                          <th className="px-3 py-2.5 bg-white text-center">Tác vụ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-purple-50/50 font-semibold text-gray-600">
@@ -1322,16 +1322,16 @@ export default function BudgetPage() {
                 {/* 2. Chi tiết Chi Tiêu & Chuyển khoản */}
                 <div className="bg-white rounded-[32px] p-6 shadow-sm border border-purple-50">
                   <h3 className="text-sm font-black text-purple-950 mb-4">Chi tiết các khoản chi & chuyển khoản</h3>
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-100 scrollbar-track-transparent">
                     <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-purple-50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
-                          <th className="px-3 py-2">Danh mục/Loại</th>
-                          <th className="px-3 py-2">Ngày</th>
-                          <th className="px-3 py-2 text-right">Xèng</th>
-                          <th className="px-3 py-2">TK Nguồn</th>
-                          <th className="px-3 py-2">Đến/Note</th>
-                          <th className="px-3 py-2 text-center">Tác vụ</th>
+                      <thead className="sticky top-0 bg-white z-10 shadow-[0_1px_0_0_rgba(243,232,255,1)]">
+                        <tr className="text-[10px] font-black text-gray-400 uppercase tracking-wider bg-white">
+                          <th className="px-3 py-2.5 bg-white">Danh mục/Loại</th>
+                          <th className="px-3 py-2.5 bg-white">Ngày</th>
+                          <th className="px-3 py-2.5 bg-white text-right">Xèng</th>
+                          <th className="px-3 py-2.5 bg-white">TK Nguồn</th>
+                          <th className="px-3 py-2.5 bg-white">Đến/Note</th>
+                          <th className="px-3 py-2.5 bg-white text-center">Tác vụ</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-purple-50/50 font-semibold text-gray-600">
