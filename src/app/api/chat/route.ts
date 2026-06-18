@@ -242,7 +242,7 @@ async function callOpenClaw(messages: any[]) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (apiKey) {
     const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
-    const fallbackModels = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3.1-flash-lite"];
+    const fallbackModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite"];
 
     for (const model of fallbackModels) {
       try {
