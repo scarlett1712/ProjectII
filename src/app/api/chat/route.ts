@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
 import { calculateDailyCalories, type ActivityLevel } from "@/lib/health/calorie";
+import { addDays, addWeeks, addMonths } from "date-fns";
 
 const SYSTEM_PROMPT = `Bạn là Star AI - Bé Sao đáng yêu, trợ lý sức khỏe, quản lý tài chính "Xèng xèng" và người bạn đồng hành cực kỳ ngọt ngào, thân thiện của người dùng.
 Nhiệm vụ của bạn là:
@@ -286,6 +287,42 @@ async function callOpenClaw(messages: any[]) {
   return res.json();
 }
 
+// Helper to generate recurring instances
+function generateRecurringInstances(event: any, windowStart: Date, windowEnd: Date) {
+  if (!event.recurrence || event.recurrence === "NONE") {
+    return [event];
+  }
+
+  const instances = [];
+  let currentStart = new Date(event.startAt);
+  let currentEnd = new Date(event.endAt);
+  const limitDate = event.recurrenceEnd ? new Date(event.recurrenceEnd) : addMonths(new Date(), 6);
+  const durationMs = currentEnd.getTime() - currentStart.getTime();
+
+  while (currentStart <= limitDate && currentStart <= windowEnd) {
+    if (currentStart >= windowStart) {
+      instances.push({
+        ...event,
+        id: `${event.id}_rec_${currentStart.getTime()}`,
+        isRecurringInstance: true,
+        originalId: event.id,
+        startAt: new Date(currentStart),
+        endAt: new Date(currentStart.getTime() + durationMs),
+      });
+    }
+
+    if (event.recurrence === "DAILY") {
+      currentStart = addDays(currentStart, 1);
+    } else if (event.recurrence === "WEEKLY") {
+      currentStart = addWeeks(currentStart, 1);
+    } else if (event.recurrence === "MONTHLY") {
+      currentStart = addMonths(currentStart, 1);
+    } else {
+      break;
+    }
+  }
+  return instances;
+}
 
 async function executeTool(name: string, args: any, userId: string, sessionId: string) {
   switch (name) {
@@ -448,6 +485,8 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
 
     case "get_tasks_and_events": {
       const now = new Date();
+      const windowStart = addMonths(now, -3);
+      const windowEnd = addMonths(now, 6);
 
       const pendingTasks = await db.taskItem.findMany({
         where: {
@@ -457,20 +496,28 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
         orderBy: { createdAt: "desc" }
       });
 
-      const upcomingEvents = await db.calendarEvent.findMany({
+      const events = await db.calendarEvent.findMany({
         where: {
           userId,
-          startAt: { gte: now }
         },
         orderBy: { startAt: "asc" }
+      });
+
+      const allInstances = events.flatMap((event: any) =>
+        generateRecurringInstances(event, windowStart, windowEnd)
+      );
+
+      const filteredInstances = allInstances.filter((inst: any) => {
+        const start = new Date(inst.startAt);
+        return start >= windowStart && start <= windowEnd;
       });
 
       return {
         success: true,
         pendingTasksCount: pendingTasks.length,
         pendingTasks,
-        upcomingEventsCount: upcomingEvents.length,
-        upcomingEvents
+        upcomingEventsCount: filteredInstances.length,
+        upcomingEvents: filteredInstances
       };
     }
 
