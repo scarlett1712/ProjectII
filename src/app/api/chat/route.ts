@@ -198,8 +198,15 @@ const tools = [
     type: "function",
     function: {
       name: "get_tasks_and_events",
-      description: "Xem toàn bộ danh sách công việc (tasks) chưa hoàn thành và lịch trình/sự kiện (events) sắp tới của người dùng.",
-      parameters: { type: "object", properties: {} }
+      description: "Xem danh sách công việc (tasks) chưa hoàn thành và lịch trình/sự kiện (events) của người dùng. Có thể lọc theo từ khóa tìm kiếm hoặc khoảng thời gian.",
+      parameters: {
+        type: "object",
+        properties: {
+          search: { type: "string", description: "Từ khóa tìm kiếm sự kiện hoặc công việc (ví dụ: 'Sắn', 'đi làm',...)" },
+          startDate: { type: "string", description: "Thời gian bắt đầu lọc, định dạng ISO String (ví dụ: '2026-06-01T00:00:00.000Z')" },
+          endDate: { type: "string", description: "Thời gian kết thúc lọc, định dạng ISO String (ví dụ: '2026-06-30T23:59:59.000Z')" }
+        }
+      }
     }
   },
   {
@@ -484,14 +491,21 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
     }
 
     case "get_tasks_and_events": {
+      const { search, startDate, endDate } = args;
       const now = new Date();
-      const windowStart = addMonths(now, -3);
-      const windowEnd = addMonths(now, 6);
+      const windowStart = startDate ? new Date(startDate) : addMonths(now, -3);
+      const windowEnd = endDate ? new Date(endDate) : addMonths(now, 6);
 
       const pendingTasks = await db.taskItem.findMany({
         where: {
           userId,
-          completed: false
+          completed: false,
+          ...(search ? {
+            OR: [
+              { title: { contains: search, mode: "insensitive" } },
+              { description: { contains: search, mode: "insensitive" } }
+            ]
+          } : {})
         },
         orderBy: { createdAt: "desc" }
       });
@@ -499,6 +513,12 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
       const events = await db.calendarEvent.findMany({
         where: {
           userId,
+          ...(search ? {
+            OR: [
+              { title: { contains: search, mode: "insensitive" } },
+              { description: { contains: search, mode: "insensitive" } }
+            ]
+          } : {})
         },
         orderBy: { startAt: "asc" }
       });
