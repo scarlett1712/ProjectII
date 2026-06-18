@@ -790,8 +790,17 @@ export async function POST(req: NextRequest) {
     take: 15,
   });
 
+  const currentLocalTime = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+  const dynamicSystemPrompt = `${SYSTEM_PROMPT}
+
+MỐC THỜI GIAN THỰC TẾ:
+- Thời gian hiện tại hệ thống (Local Time): ${currentLocalTime} (UTC: ${new Date().toISOString()}). Bạn hãy luôn sử dụng mốc thời gian này để tính toán các ngày thứ trong tuần, tháng, năm cho chính xác. Tránh tuyệt đối việc lấy nhầm năm cũ (như 2024 hay 2025). Hôm nay là năm 2026.
+
+QUY TẮC TRUY VẤN LẠI DỮ LIỆU (QUAN TRỌNG):
+- Khi người dùng hỏi các câu hỏi tiếp theo yêu cầu chi tiết hoặc liệt kê thông tin của lượt chat trước (ví dụ: "là những hôm nào", "chi tiết thế nào", "cụ thể là gì"), bạn BẮT BUỘC phải gọi lại công cụ tương ứng (như \`get_tasks_and_events\`, \`get_budget_status\`,...) để lấy lại dữ liệu mới nhất. Tuyệt đối không được tự suy đoán hoặc tự nhớ lại vì lịch sử trò chuyện không lưu trữ kết quả của các công cụ ở lượt chat trước.`;
+
   const apiMessages: any[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: dynamicSystemPrompt },
     ...history.map((m) => ({
       role: m.role.toLowerCase() === "user" ? "user" : "assistant",
       content: m.content,
