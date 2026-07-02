@@ -20,6 +20,7 @@ Nhiệm vụ của bạn là:
    - Xem công việc và lịch trình sắp tới (\`get_tasks_and_events\`) để chủ động nhắc nhở và lên lịch.
    - Ghi nhận giao dịch tài chính/xèng xèng (\`log_transaction\`) để chi tiêu/thu nhập/chuyển khoản từ các tài khoản của người dùng.
    - Xem danh sách tài khoản tài chính, số dư và các danh mục phân loại chi tiêu/thu nhập (\`get_budget_status\`).
+   - Xem lịch sử giao dịch chi tiết (\`get_transaction_history\`) để phân tích, liệt kê, hoặc tổng hợp các khoản chi tiêu, thu nhập, chuyển khoản trong một khoảng thời gian.
 
 HỌC THÓI QUEN VÀ CÁ NHÂN HÓA SÂU SẮC:
 - Khi người dùng hỏi về tình hình sức khỏe, thói quen, tiến độ của họ (Ví dụ: "dạo này tớ thế nào", "hôm nay tớ uống đủ nước chưa", "tớ ăn uống tốt không"), bạn phải chủ động gọi các công cụ đọc lịch sử (như \`get_nutrition_history\`, \`get_water_history\`, \`get_tasks_and_events\`) để phân tích.
@@ -59,6 +60,7 @@ QUY TẮC ĐẶC BIỆT KHI GHI NHẬN GIAO DỊCH TÀI CHÍNH / XÈNG XÈNG (LO
   + Đối với tài khoản (nguồn tiền/tài khoản nguồn/tài khoản nhận): Hãy so sánh tên tài khoản người dùng nhắc đến với các tài khoản đang tồn tại trong danh sách (ví dụ: "momo" có thể khớp với "Ví Momo", "tech" khớp với "Techcombank", v.v.). Bạn phải sử dụng CHÍNH XÁC tên tài khoản đang tồn tại đó để truyền vào tham số \`fromAccountName\` hoặc \`toAccountName\` của công cụ \`log_transaction\`. Tránh tự ý tạo thêm tài khoản mới hoặc viết sai tên tài khoản nếu đã có tài khoản tương đương.
   + Đối với danh mục: So sánh và sử dụng đúng tên danh mục đang tồn tại trong danh sách.
 - Nếu người dùng nhắc đến một tài khoản hoặc danh mục hoàn toàn mới chưa từng có trong danh sách hiện tại, hãy chủ động hỏi xác nhận xem người dùng có muốn tạo mới tài khoản/danh mục đó không trước khi gọi công cụ \`log_transaction\` nhé!
+- Khi người dùng hỏi về các khoản chi tiêu/thu nhập/giao dịch cụ thể trong tháng, tuần, ngày, hoặc khoảng thời gian nào đó (ví dụ: "tháng 7 này tớ đã tiêu gì", "tuần này tiêu bao nhiêu tiền"), bạn BẮT BUỘC phải gọi công cụ \`get_transaction_history\` để lấy danh sách giao dịch chi tiết. Dựa trên dữ liệu từ \`get_transaction_history\`, hãy phân tích, liệt kê rõ các khoản chi tiêu kèm theo ngày tháng, số tiền, tài khoản và ghi chú, rồi phản hồi cho bạn iu bằng giọng điệu dễ thương, ngọt ngào nha!
 
 QUY TẮC HỖ TRỢ ĐA DẠNG VÀ TRÁNH TỪ CHỐI (CRITICAL):
 - Bạn là một người bạn đồng hành cực kỳ đa tài, thân thiện và linh hoạt. Tuyệt đối KHÔNG ĐƯỢC từ chối các yêu cầu ngoài phạm vi sức khỏe hay tài chính bằng cách nói rằng bạn "chỉ là trợ lý sức khỏe/tài chính", "không có khả năng", "không có công cụ" hoặc "chỉ là AI".
@@ -234,6 +236,22 @@ const tools = [
       name: "get_budget_status",
       description: "Xem danh sách tài khoản tài chính, số dư và các danh mục phân loại chi tiêu/thu nhập hiện tại.",
       parameters: { type: "object", properties: {} }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_transaction_history",
+      description: "Xem lịch sử giao dịch tài chính/xèng xèng (thu nhập, chi tiêu, chuyển khoản) của người dùng. Có thể lọc theo khoảng thời gian (startDate, endDate) hoặc loại giao dịch.",
+      parameters: {
+        type: "object",
+        properties: {
+          startDate: { type: "string", description: "Thời gian bắt đầu lọc, định dạng ISO String (ví dụ: '2026-07-01T00:00:00.000Z')" },
+          endDate: { type: "string", description: "Thời gian kết thúc lọc, định dạng ISO String (ví dụ: '2026-07-31T23:59:59.000Z')" },
+          type: { type: "string", enum: ["EXPENSE", "INCOME", "TRANSFER"], description: "Lọc theo loại giao dịch (EXPENSE: Chi tiêu, INCOME: Thu nhập, TRANSFER: Chuyển khoản)" },
+          limit: { type: "number", description: "Số lượng giao dịch tối đa muốn lấy (mặc định là 50)" }
+        }
+      }
     }
   }
 ];
@@ -547,6 +565,40 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
       return { success: true, accounts, categories };
     }
 
+    case "get_transaction_history": {
+      const { startDate, endDate, type, limit } = args;
+      const now = new Date();
+      const windowStart = startDate ? new Date(startDate) : addMonths(now, -1);
+      const windowEnd = endDate ? new Date(endDate) : now;
+      const takeLimit = limit ? Number(limit) : 50;
+
+      const transactions = await db.budgetTransaction.findMany({
+        where: {
+          userId,
+          occurredAt: {
+            gte: windowStart,
+            lte: windowEnd,
+          },
+          ...(type ? { type: type as any } : {}),
+        },
+        include: {
+          category: true,
+          fromAccount: true,
+          toAccount: true,
+        },
+        orderBy: { occurredAt: "desc" },
+        take: takeLimit,
+      });
+
+      return {
+        success: true,
+        startDate: windowStart.toISOString(),
+        endDate: windowEnd.toISOString(),
+        count: transactions.length,
+        transactions,
+      };
+    }
+
     case "log_transaction": {
       const { amount, type, categoryName, fromAccountName, toAccountName, note } = args;
 
@@ -817,7 +869,7 @@ MỐC THỜI GIAN THỰC TẾ:
 - Thời gian hiện tại hệ thống (Local Time): ${currentLocalTime} (UTC: ${new Date().toISOString()}). Bạn hãy luôn sử dụng mốc thời gian này để tính toán các ngày thứ trong tuần, tháng, năm cho chính xác. Tránh tuyệt đối việc lấy nhầm năm cũ (như 2024 hay 2025). Hôm nay là năm 2026.
 
 QUY TẮC TRUY VẤN LẠI DỮ LIỆU (QUAN TRỌNG):
-- Khi người dùng hỏi các câu hỏi tiếp theo yêu cầu chi tiết hoặc liệt kê thông tin của lượt chat trước (ví dụ: "là những hôm nào", "chi tiết thế nào", "cụ thể là gì"), bạn BẮT BUỘC phải gọi lại công cụ tương ứng (như \`get_tasks_and_events\`, \`get_budget_status\`,...) để lấy lại dữ liệu mới nhất. Tuyệt đối không được tự suy đoán hoặc tự nhớ lại vì lịch sử trò chuyện không lưu trữ kết quả của các công cụ ở lượt chat trước.`;
+- Khi người dùng hỏi các câu hỏi tiếp theo yêu cầu chi tiết hoặc liệt kê thông tin của lượt chat trước (ví dụ: "là những hôm nào", "chi tiết thế nào", "cụ thể là gì"), bạn BẮT BUỘC phải gọi lại công cụ tương ứng (như \`get_tasks_and_events\`, \`get_budget_status\`, \`get_transaction_history\`,...) để lấy lại dữ liệu mới nhất. Tuyệt đối không được tự suy đoán hoặc tự nhớ lại vì lịch sử trò chuyện không lưu trữ kết quả của các công cụ ở lượt chat trước.`;
 
   const apiMessages: any[] = [
     { role: "system", content: dynamicSystemPrompt },
