@@ -743,7 +743,7 @@ export default function DashboardPage() {
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Deadline!!!</h2>
             </div>
-            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 min-h-[176px]">
+            <div className="flex flex-col sm:flex-row sm:flex-nowrap items-center justify-center gap-2.5 lg:gap-3.5 min-h-[176px] overflow-x-auto sm:overflow-visible py-1">
               {inlineTasks.length > 0 ? inlineTasks.map((task, i) => (
                 <motion.div
                   key={task.id}
@@ -782,7 +782,7 @@ export default function DashboardPage() {
                     y: 0,
                     backgroundColor: getTaskBgHex(task)
                   }} // Reset offset to prevent jumps
-                  className="relative h-44 w-44 sm:w-36 lg:w-40 p-4 shadow-md rounded-br-[40px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none task-card-ref transition-all"
+                  className="relative h-44 w-44 sm:w-[130px] lg:w-[135px] xl:w-[145px] shrink-0 p-3 sm:p-3.5 shadow-md rounded-br-[36px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none task-card-ref transition-all"
                 >
                   {/* Circle Check Completion Button */}
                   <button
@@ -796,35 +796,35 @@ export default function DashboardPage() {
                       fetchTasks();
                       showToast(`Đã hoàn thành: "${task.title}"!`);
                     }}
-                    className="absolute top-3 right-3 p-1 rounded-full bg-black/5 hover:bg-green-500 hover:text-white text-gray-700 transition-colors z-10"
+                    className="absolute top-2.5 right-2.5 p-1 rounded-full bg-black/5 hover:bg-green-500 hover:text-white text-gray-700 transition-colors z-10"
                     title="Hoàn thành"
                   >
                     <Check className="h-3 w-3" />
                   </button>
                   
-                  <div className="flex-1 flex flex-col justify-between mt-3 min-h-0 select-none text-left">
+                  <div className="flex-1 flex flex-col justify-between mt-2 min-h-0 select-none text-left">
                     {(() => {
                       const contrastColor = getContrastTextColorForTask(task);
                       return (
                         <>
                           <div className="space-y-1 flex-1 overflow-y-auto scrollbar-none pr-1">
-                            <p className="font-bold text-sm leading-snug break-words pr-4" style={{ color: contrastColor }}>
+                            <p className="font-bold text-xs sm:text-sm leading-snug break-words pr-3 line-clamp-2" style={{ color: contrastColor }}>
                               📌 {task.title}
                             </p>
                             {task.description && (
-                              <p className="text-[10px] whitespace-pre-wrap break-words leading-tight mt-1" style={{ color: contrastColor, opacity: 0.9 }}>
+                              <p className="text-[10px] whitespace-pre-wrap break-words leading-tight mt-1 line-clamp-2" style={{ color: contrastColor, opacity: 0.9 }}>
                                 {task.description}
                               </p>
                             )}
                           </div>
-                          <p className="text-[9px] font-bold mt-2 shrink-0 self-start" style={{ color: contrastColor, opacity: 0.75 }}>
+                          <p className="text-[8.5px] font-bold mt-1.5 shrink-0 self-start" style={{ color: contrastColor, opacity: 0.75 }}>
                             {task.dueAt ? new Date(task.dueAt).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' }) : "Không thời hạn"}
                           </p>
                         </>
                       );
                     })()}
                   </div>
-                  <div className="absolute bottom-0 right-0 h-10 w-10 rounded-tl-xl bg-black/5 pointer-events-none" />
+                  <div className="absolute bottom-0 right-0 h-8 w-8 rounded-tl-xl bg-black/5 pointer-events-none" />
                 </motion.div>
               )) : (
                 <div className="flex h-44 w-full flex-col items-center justify-center text-[#6B7280]">
