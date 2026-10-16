@@ -739,100 +739,111 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 pb-10">
         {/* Row 1: Deadlines & Nutrition/Water */}
         <div className="col-span-1 xl:col-span-8">
-          <section id="tour-deadlines" className="min-h-full rounded-[32px] bg-white p-5 sm:p-6 shadow-sm flex flex-col justify-between">
-            <div className="mb-4 sm:mb-5 flex items-center justify-between">
+          <section id="tour-deadlines" className="@container min-h-full rounded-[32px] bg-white p-5 sm:p-6 shadow-sm flex flex-col">
+            <div className="mb-3 sm:mb-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Deadline!!!</h2>
             </div>
-            <div className="flex flex-col sm:flex-row sm:flex-nowrap items-center justify-center gap-2 sm:gap-3 w-full py-1">
-              {inlineTasks.length > 0 ? inlineTasks.map((task, i) => (
-                <motion.div
-                  key={task.id}
-                  drag
-                  dragMomentum={false}
-                  dragElastic={0}
-                  onDragStart={() => {
-                    draggedTaskIdRef.current = task.id;
-                  }}
-                  onDragEnd={(e, info) => {
-                    handleInlineTaskDragEnd(e, info, task, '.dashboard-container');
-                    setTimeout(() => {
-                      draggedTaskIdRef.current = null;
-                    }, 50);
-                  }}
-                  onTap={(e) => {
-                    if ((e.target as HTMLElement).closest('button')) return;
-                    if (draggedTaskIdRef.current === task.id) return;
-                    setTaskForm({
-                      title: task.title,
-                      dueAt: task.dueAt ? task.dueAt.slice(0, 16) : "",
-                      description: task.description || ""
-                    });
-                    setNotify(task.notification || false);
-                    setTaskFormTagId(task.tagId || "");
-                    setTaskFormColor(task.noteColor || task.color || "#fdfd96");
-                    setTaskRecurrence(task.recurrence || "NONE");
-                    setTaskRecurrenceEnd(task.recurrenceEnd ? task.recurrenceEnd.slice(0, 16) : "");
-                    setEditingTask(task);
-                    setShowAddNote(true);
-                  }}
-                  initial={{ rotate: -2, scale: 0.95 }}
-                  whileHover={{ rotate: 0, scale: 1 }}
-                  style={{
-                    x: 0,
-                    y: 0,
-                    backgroundColor: getTaskBgHex(task)
-                  }} // Reset offset to prevent jumps
-                  className="relative h-40 w-44 sm:w-auto sm:flex-1 sm:max-w-[136px] shrink-0 sm:shrink p-3 shadow-md rounded-br-[32px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none task-card-ref transition-all"
-                >
-                  {/* Circle Check Completion Button */}
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      await fetch("/api/tasks", {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ id: task.id, completed: true })
-                      });
-                      fetchTasks();
-                      showToast(`Đã hoàn thành: "${task.title}"!`);
-                    }}
-                    className="absolute top-2 right-2 p-1 rounded-full bg-black/5 hover:bg-green-500 hover:text-white text-gray-700 transition-colors z-10"
-                    title="Hoàn thành"
-                  >
-                    <Check className="h-3 w-3" />
-                  </button>
-                  
-                  <div className="flex-1 flex flex-col justify-between mt-1.5 min-h-0 select-none text-left">
-                    {(() => {
-                      const contrastColor = getContrastTextColorForTask(task);
-                      return (
-                        <>
-                          <div className="space-y-1 flex-1 overflow-y-auto scrollbar-none pr-1">
-                            <p className="font-bold text-xs sm:text-sm leading-snug break-words pr-3 line-clamp-2" style={{ color: contrastColor }}>
-                              📌 {task.title}
-                            </p>
-                            {task.description && (
-                              <p className="text-[9.5px] whitespace-pre-wrap break-words leading-tight mt-0.5 line-clamp-2" style={{ color: contrastColor, opacity: 0.9 }}>
-                                {task.description}
+            <div className="flex-1 flex items-center justify-center w-full my-auto py-2">
+              {inlineTasks.length > 0 ? (
+                <div className={`grid gap-3 sm:gap-4 justify-items-center items-center w-fit mx-auto ${
+                  inlineTasks.length === 1
+                    ? "grid-cols-1"
+                    : inlineTasks.length === 2
+                    ? "grid-cols-1 @[320px]:grid-cols-2"
+                    : inlineTasks.length === 3
+                    ? "grid-cols-1 @[320px]:grid-cols-2 @[520px]:grid-cols-3"
+                    : "grid-cols-1 @[320px]:grid-cols-2 @[640px]:grid-cols-4"
+                }`}>
+                  {inlineTasks.map((task, i) => (
+                    <motion.div
+                      key={task.id}
+                      drag
+                      dragMomentum={false}
+                      dragElastic={0}
+                      onDragStart={() => {
+                        draggedTaskIdRef.current = task.id;
+                      }}
+                      onDragEnd={(e, info) => {
+                        handleInlineTaskDragEnd(e, info, task, '.dashboard-container');
+                        setTimeout(() => {
+                          draggedTaskIdRef.current = null;
+                        }, 50);
+                      }}
+                      onTap={(e) => {
+                        if ((e.target as HTMLElement).closest('button')) return;
+                        if (draggedTaskIdRef.current === task.id) return;
+                        setTaskForm({
+                          title: task.title,
+                          dueAt: task.dueAt ? task.dueAt.slice(0, 16) : "",
+                          description: task.description || ""
+                        });
+                        setNotify(task.notification || false);
+                        setTaskFormTagId(task.tagId || "");
+                        setTaskFormColor(task.noteColor || task.color || "#fdfd96");
+                        setTaskRecurrence(task.recurrence || "NONE");
+                        setTaskRecurrenceEnd(task.recurrenceEnd ? task.recurrenceEnd.slice(0, 16) : "");
+                        setEditingTask(task);
+                        setShowAddNote(true);
+                      }}
+                      initial={{ rotate: -2, scale: 0.95 }}
+                      whileHover={{ rotate: 0, scale: 1 }}
+                      style={{
+                        x: 0,
+                        y: 0,
+                        backgroundColor: getTaskBgHex(task)
+                      }} // Reset offset to prevent jumps
+                      className="relative h-40 w-36 sm:w-[144px] shrink-0 p-3 shadow-md rounded-br-[32px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none task-card-ref transition-all"
+                    >
+                      {/* Circle Check Completion Button */}
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await fetch("/api/tasks", {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: task.id, completed: true })
+                          });
+                          fetchTasks();
+                          showToast(`Đã hoàn thành: "${task.title}"!`);
+                        }}
+                        className="absolute top-2 right-2 p-1 rounded-full bg-black/5 hover:bg-green-500 hover:text-white text-gray-700 transition-colors z-10"
+                        title="Hoàn thành"
+                      >
+                        <Check className="h-3 w-3" />
+                      </button>
+                      
+                      <div className="flex-1 flex flex-col justify-between mt-1.5 min-h-0 select-none text-left">
+                        {(() => {
+                          const contrastColor = getContrastTextColorForTask(task);
+                          return (
+                            <>
+                              <div className="space-y-1 flex-1 overflow-y-auto scrollbar-none pr-1">
+                                <p className="font-bold text-xs sm:text-sm leading-snug break-words pr-3 line-clamp-2" style={{ color: contrastColor }}>
+                                  📌 {task.title}
+                                </p>
+                                {task.description && (
+                                  <p className="text-[9.5px] whitespace-pre-wrap break-words leading-tight mt-0.5 line-clamp-2" style={{ color: contrastColor, opacity: 0.9 }}>
+                                    {task.description}
+                                  </p>
+                                )}
+                              </div>
+                              <p className="text-[8.5px] font-bold mt-1 shrink-0 self-start" style={{ color: contrastColor, opacity: 0.75 }}>
+                                {task.dueAt ? new Date(task.dueAt).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' }) : "Không thời hạn"}
                               </p>
-                            )}
-                          </div>
-                          <p className="text-[8.5px] font-bold mt-1 shrink-0 self-start" style={{ color: contrastColor, opacity: 0.75 }}>
-                            {task.dueAt ? new Date(task.dueAt).toLocaleString("vi-VN", { dateStyle: 'short', timeStyle: 'short' }) : "Không thời hạn"}
-                          </p>
-                        </>
-                      );
-                    })()}
-                  </div>
-                  <div className="absolute bottom-0 right-0 h-7 w-7 rounded-tl-xl bg-black/5 pointer-events-none" />
-                </motion.div>
-              )) : (
+                            </>
+                          );
+                        })()}
+                      </div>
+                      <div className="absolute bottom-0 right-0 h-7 w-7 rounded-tl-xl bg-black/5 pointer-events-none" />
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
                 <div className="flex h-40 w-full flex-col items-center justify-center text-[#6B7280]">
                   <StickyNote className="mb-2 h-10 w-10 opacity-20" />
                   <p className="text-xs font-medium">Yayyyy không có deadline dí</p>
                 </div>
               )}
-
             </div>
           </section>
         </div>
