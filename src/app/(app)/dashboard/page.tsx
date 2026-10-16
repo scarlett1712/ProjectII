@@ -85,6 +85,8 @@ export default function DashboardPage() {
   const [notify, setNotify] = useState(true);
   const [taskFormTagId, setTaskFormTagId] = useState("");
   const [taskFormColor, setTaskFormColor] = useState("#fdfd96");
+  const [taskRecurrence, setTaskRecurrence] = useState("NONE");
+  const [taskRecurrenceEnd, setTaskRecurrenceEnd] = useState("");
 
   // Calendar event creator states
   const [showCalendarModal, setShowCalendarModal] = useState(false);
@@ -426,7 +428,9 @@ export default function DashboardPage() {
         notification: notify,
         tagId: taskFormTagId || null,
         noteColor: taskFormColor,
-        color: taskFormColor
+        color: taskFormColor,
+        recurrence: taskRecurrence,
+        recurrenceEnd: taskRecurrenceEnd ? new Date(taskRecurrenceEnd).toISOString() : null
       };
 
       if (editingTask) {
@@ -444,6 +448,8 @@ export default function DashboardPage() {
       setShowAddNote(false);
       setEditingTask(null);
       setTaskForm({ title: "", dueAt: "", description: "" });
+      setTaskRecurrence("NONE");
+      setTaskRecurrenceEnd("");
       showToast(editingTask ? "Đã cập nhật công việc!" : "Đã thêm công việc mới!");
     } catch (err) {
       console.error(err);
@@ -460,7 +466,9 @@ export default function DashboardPage() {
       notification: calNotification,
       noteColor: calNoteColor,
       color: calNoteColor,
-      tagId: calSelectedTagId || null
+      tagId: calSelectedTagId || null,
+      recurrence: calRecurrence,
+      recurrenceEnd: calRecurrenceEndStr ? new Date(calRecurrenceEndStr).toISOString() : null
     };
 
     if (itemType === "event") {
@@ -471,8 +479,6 @@ export default function DashboardPage() {
       payload.startAt = new Date(calStartAtStr).toISOString();
       payload.endAt = new Date(calEndAtStr).toISOString();
       payload.allDay = calAllDay;
-      payload.recurrence = calRecurrence;
-      payload.recurrenceEnd = calRecurrenceEndStr ? new Date(calRecurrenceEndStr).toISOString() : null;
     } else {
       payload.dueAt = calStartAtStr ? new Date(calStartAtStr).toISOString() : null;
       payload.completed = calCompleted;
@@ -764,6 +770,8 @@ export default function DashboardPage() {
                     setNotify(task.notification || false);
                     setTaskFormTagId(task.tagId || "");
                     setTaskFormColor(task.noteColor || task.color || "#fdfd96");
+                    setTaskRecurrence(task.recurrence || "NONE");
+                    setTaskRecurrenceEnd(task.recurrenceEnd ? task.recurrenceEnd.slice(0, 16) : "");
                     setEditingTask(task);
                     setShowAddNote(true);
                   }}
@@ -1039,6 +1047,54 @@ export default function DashboardPage() {
                       }
                     }} />
                   </div>
+                </div>
+
+                {/* Recurrence Options */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
+                    <select
+                      value={taskRecurrence}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setTaskRecurrence(val);
+                        if (val !== "NONE" && !taskRecurrenceEnd) {
+                          const defaultEnd = new Date();
+                          defaultEnd.setMonth(defaultEnd.getMonth() + 1);
+                          defaultEnd.setHours(23, 59, 0, 0);
+                          const offset = defaultEnd.getTimezoneOffset();
+                          const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
+                          setTaskRecurrenceEnd(local.toISOString().slice(0, 16));
+                        }
+                      }}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                    >
+                      <option value="NONE">Không lặp</option>
+                      <option value="DAILY">Hàng ngày</option>
+                      <option value="WEEKLY">Hàng tuần</option>
+                      <option value="MONTHLY">Hàng tháng</option>
+                    </select>
+                  </div>
+                  {taskRecurrence !== "NONE" && (
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
+                      <input
+                        type="datetime-local"
+                        value={taskRecurrenceEnd}
+                        onChange={e => {
+                          let val = e.target.value;
+                          if (val && val.includes("T")) {
+                            const [date, time] = val.split("T");
+                            if (time === "00:00") {
+                              val = `${date}T23:59`;
+                            }
+                          }
+                          setTaskRecurrenceEnd(val);
+                        }}
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Classification Tag */}
@@ -1452,55 +1508,53 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Event Recurrence Options */}
-                {itemType === "event" && (
-                  <div className="grid grid-cols-2 gap-4">
+                {/* Recurrence Options */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
+                    <select
+                      value={calRecurrence}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setCalRecurrence(val);
+                        if (val !== "NONE" && !calRecurrenceEndStr) {
+                          const defaultEnd = new Date();
+                          defaultEnd.setMonth(defaultEnd.getMonth() + 1);
+                          defaultEnd.setHours(23, 59, 0, 0);
+                          const offset = defaultEnd.getTimezoneOffset();
+                          const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
+                          setCalRecurrenceEndStr(local.toISOString().slice(0, 16));
+                        }
+                      }}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                    >
+                      <option value="NONE">Không lặp</option>
+                      <option value="DAILY">Hàng ngày</option>
+                      <option value="WEEKLY">Hàng tuần</option>
+                      <option value="MONTHLY">Hàng tháng</option>
+                    </select>
+                  </div>
+                  {calRecurrence !== "NONE" && (
                     <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
-                      <select
-                        value={calRecurrence}
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
+                      <input
+                        type="datetime-local"
+                        value={calRecurrenceEndStr}
                         onChange={e => {
-                          const val = e.target.value;
-                          setCalRecurrence(val);
-                          if (val !== "NONE" && !calRecurrenceEndStr) {
-                            const defaultEnd = new Date();
-                            defaultEnd.setMonth(defaultEnd.getMonth() + 1);
-                            defaultEnd.setHours(23, 59, 0, 0);
-                            const offset = defaultEnd.getTimezoneOffset();
-                            const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
-                            setCalRecurrenceEndStr(local.toISOString().slice(0, 16));
+                          let val = e.target.value;
+                          if (val && val.includes("T")) {
+                            const [date, time] = val.split("T");
+                            if (time === "00:00") {
+                              val = `${date}T23:59`;
+                            }
                           }
+                          setCalRecurrenceEndStr(val);
                         }}
                         className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      >
-                        <option value="NONE">Không lặp</option>
-                        <option value="DAILY">Hàng ngày</option>
-                        <option value="WEEKLY">Hàng tuần</option>
-                        <option value="MONTHLY">Hàng tháng</option>
-                      </select>
+                      />
                     </div>
-                    {calRecurrence !== "NONE" && (
-                      <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
-                        <input
-                          type="datetime-local"
-                          value={calRecurrenceEndStr}
-                          onChange={e => {
-                            let val = e.target.value;
-                            if (val && val.includes("T")) {
-                              const [date, time] = val.split("T");
-                              if (time === "00:00") {
-                                val = `${date}T23:59`;
-                              }
-                            }
-                            setCalRecurrenceEndStr(val);
-                          }}
-                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Options: Notification & Note Color */}
                 <div className="flex items-center justify-between py-2 border-y border-gray-50">
@@ -1649,6 +1703,8 @@ export default function DashboardPage() {
             setNotify(task.notification || false);
             setTaskFormTagId(task.tagId || "");
             setTaskFormColor(task.noteColor || task.color || "#fdfd96");
+            setTaskRecurrence(task.recurrence || "NONE");
+            setTaskRecurrenceEnd(task.recurrenceEnd ? task.recurrenceEnd.slice(0, 16) : "");
             setEditingTask(task);
             setShowAddNote(true);
           }} // Use onTap to prevent opening after dragging

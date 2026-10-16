@@ -1,18 +1,64 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
+import { addMonths, addDays, addWeeks } from "date-fns";
 
-export async function GET() {
+// Helper to generate recurring task instances
+function generateRecurringTaskInstances(task: any, windowStart: Date, windowEnd: Date) {
+  if (!task.recurrence || task.recurrence === "NONE") {
+    return [task];
+  }
+
+  const instances = [];
+  let currentStart = new Date(task.dueAt || task.createdAt);
+  const limitDate = task.recurrenceEnd ? new Date(task.recurrenceEnd) : addMonths(new Date(), 6);
+
+  while (currentStart <= limitDate) {
+    if (currentStart >= windowStart && currentStart <= windowEnd) {
+      instances.push({
+        ...task,
+        id: `${task.id}_rec_${currentStart.getTime()}`,
+        isRecurringInstance: true,
+        originalId: task.id,
+        dueAt: new Date(currentStart),
+      });
+    }
+
+    if (task.recurrence === "DAILY") {
+      currentStart = addDays(currentStart, 1);
+    } else if (task.recurrence === "WEEKLY") {
+      currentStart = addWeeks(currentStart, 1);
+    } else if (task.recurrence === "MONTHLY") {
+      currentStart = addMonths(currentStart, 1);
+    } else {
+      break;
+    }
+  }
+  return instances;
+}
+
+export async function GET(req: NextRequest) {
   const auth = await requireUserId();
   if (auth.response) return auth.response;
 
   try {
+    const { searchParams } = new URL(req.url);
+    const startParam = searchParams.get("start");
+    const endParam = searchParams.get("end");
+
+    const windowStart = startParam ? new Date(startParam) : addMonths(new Date(), -3);
+    const windowEnd = endParam ? new Date(endParam) : addMonths(new Date(), 6);
+
     const tasks = await db.taskItem.findMany({
       where: { userId: auth.userId! },
       orderBy: { createdAt: "desc" },
-      take: 100,
     });
-    return NextResponse.json(tasks);
+
+    const allInstances = tasks.flatMap((task: any) =>
+      generateRecurringTaskInstances(task, windowStart, windowEnd)
+    );
+
+    return NextResponse.json(allInstances);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Lỗi máy chủ khi lấy danh sách nhiệm vụ." }, { status: 500 });
@@ -35,6 +81,8 @@ export async function POST(req: NextRequest) {
         color: body.color ?? null,
         notification: Boolean(body.notification),
         noteColor: body.noteColor ?? null,
+        recurrence: body.recurrence ?? null,
+        recurrenceEnd: body.recurrenceEnd ? new Date(body.recurrenceEnd) : null,
       },
     });
     return NextResponse.json(task);
@@ -56,7 +104,161 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Thiếu ID nhiệm vụ." }, { status: 400 });
     }
 
-    // Prepare update data dynamically based on request body
+    const { searchParams } = new URL(req.url);
+    const mode = searchParams.get("mode") || body.mode || "all";
+
+    // Mode: "one" - editing or completing a single instance of a recurring series
+    if (mode === "one" && (id.includes("_rec_") || (await db.taskItem.findFirst({ where: { id, userId: auth.userId! } }))?.recurrence !== "NONE")) {
+      let originalId = id;
+      let timestamp: number;
+
+      const task = await db.taskItem.findFirst({
+        where: {
+          id: id.includes("_rec_") ? id.split("_rec_")[0] : id,
+          userId: auth.userId!
+        }
+      });
+
+      if (!task) {
+        return NextResponse.json({ error: "Không tìm thấy nhiệm vụ gốc." }, { status: 404 });
+      }
+
+      if (id.includes("_rec_")) {
+        const parts = id.split("_rec_");
+        originalId = parts[0];
+        timestamp = parseInt(parts[1], 10);
+      } else {
+        timestamp = task.dueAt ? new Date(task.dueAt).getTime() : new Date(task.createdAt).getTime();
+      }
+
+      const instanceStart = new Date(timestamp);
+      const taskStart = new Date(task.dueAt || task.createdAt);
+
+      let nextStart = new Date(instanceStart);
+      if (task.recurrence === "DAILY") {
+        nextStart = addDays(nextStart, 1);
+      } else if (task.recurrence === "WEEKLY") {
+        nextStart = addWeeks(nextStart, 1);
+      } else if (task.recurrence === "MONTHLY") {
+        nextStart = addMonths(nextStart, 1);
+      }
+
+      if (instanceStart.getTime() === taskStart.getTime()) {
+        const limitDate = task.recurrenceEnd ? new Date(task.recurrenceEnd) : null;
+        if (limitDate && nextStart > limitDate) {
+          await db.taskItem.deleteMany({
+            where: { id: originalId, userId: auth.userId! }
+          });
+        } else {
+          await db.taskItem.update({
+            where: { id: originalId },
+            data: { dueAt: nextStart }
+          });
+        }
+      } else {
+        const newEndLimit = new Date(instanceStart.getTime() - 1000);
+        await db.taskItem.update({
+          where: { id: originalId },
+          data: { recurrenceEnd: newEndLimit }
+        });
+
+        const originalRecurrenceEnd = task.recurrenceEnd ? new Date(task.recurrenceEnd) : addMonths(new Date(), 6);
+        if (nextStart <= originalRecurrenceEnd) {
+          await db.taskItem.create({
+            data: {
+              userId: auth.userId!,
+              title: task.title,
+              description: task.description,
+              dueAt: nextStart,
+              tagId: task.tagId,
+              color: task.color,
+              notification: task.notification,
+              noteColor: task.noteColor,
+              recurrence: task.recurrence,
+              recurrenceEnd: task.recurrenceEnd
+            }
+          });
+        }
+      }
+
+      const newDueAt = data.dueAt !== undefined ? (data.dueAt ? new Date(data.dueAt) : null) : instanceStart;
+      const standaloneTask = await db.taskItem.create({
+        data: {
+          userId: auth.userId!,
+          title: data.title !== undefined ? data.title : task.title,
+          description: data.description !== undefined ? data.description : task.description,
+          dueAt: newDueAt,
+          completed: data.completed !== undefined ? Boolean(data.completed) : false,
+          tagId: data.tagId !== undefined ? (data.tagId ? data.tagId : null) : task.tagId,
+          color: data.color !== undefined ? data.color : task.color,
+          notification: data.notification !== undefined ? Boolean(data.notification) : task.notification,
+          noteColor: data.noteColor !== undefined ? data.noteColor : task.noteColor,
+          recurrence: "NONE",
+          recurrenceEnd: null
+        }
+      });
+      return NextResponse.json(standaloneTask);
+    }
+
+    // Mode: "future" - modifying from this instance forward
+    if (mode === "future" && id.includes("_rec_")) {
+      const parts = id.split("_rec_");
+      const originalId = parts[0];
+      const timestamp = parseInt(parts[1], 10);
+      const instanceStart = new Date(timestamp);
+
+      const task = await db.taskItem.findFirst({
+        where: { id: originalId, userId: auth.userId! }
+      });
+      if (!task) {
+        return NextResponse.json({ error: "Không tìm thấy nhiệm vụ gốc." }, { status: 404 });
+      }
+
+      const taskStart = new Date(task.dueAt || task.createdAt);
+      if (instanceStart.getTime() === taskStart.getTime()) {
+        const updatedParent = await db.taskItem.update({
+          where: { id: originalId },
+          data: {
+            title: data.title !== undefined ? data.title : task.title,
+            description: data.description !== undefined ? data.description : task.description,
+            dueAt: data.dueAt ? new Date(data.dueAt) : task.dueAt,
+            tagId: data.tagId !== undefined ? (data.tagId ? data.tagId : null) : task.tagId,
+            color: data.color !== undefined ? data.color : task.color,
+            notification: data.notification !== undefined ? Boolean(data.notification) : task.notification,
+            noteColor: data.noteColor !== undefined ? data.noteColor : task.noteColor,
+            recurrence: data.recurrence !== undefined ? data.recurrence : task.recurrence,
+            recurrenceEnd: data.recurrenceEnd !== undefined ? (data.recurrenceEnd ? new Date(data.recurrenceEnd) : null) : task.recurrenceEnd
+          }
+        });
+        return NextResponse.json(updatedParent);
+      } else {
+        const newEndLimit = new Date(instanceStart.getTime() - 1000);
+        await db.taskItem.update({
+          where: { id: originalId },
+          data: { recurrenceEnd: newEndLimit }
+        });
+
+        const newStartAt = data.dueAt ? new Date(data.dueAt) : instanceStart;
+        const newSeries = await db.taskItem.create({
+          data: {
+            userId: auth.userId!,
+            title: data.title !== undefined ? data.title : task.title,
+            description: data.description !== undefined ? data.description : task.description,
+            dueAt: newStartAt,
+            tagId: data.tagId !== undefined ? (data.tagId ? data.tagId : null) : task.tagId,
+            color: data.color !== undefined ? data.color : task.color,
+            notification: data.notification !== undefined ? Boolean(data.notification) : task.notification,
+            noteColor: data.noteColor !== undefined ? data.noteColor : task.noteColor,
+            recurrence: data.recurrence !== undefined ? data.recurrence : task.recurrence,
+            recurrenceEnd: data.recurrenceEnd !== undefined ? (data.recurrenceEnd ? new Date(data.recurrenceEnd) : null) : task.recurrenceEnd
+          }
+        });
+        return NextResponse.json(newSeries);
+      }
+    }
+
+    // Default / mode === "all": update entire task / series
+    const targetId = id.includes("_rec_") ? id.split("_rec_")[0] : id;
     const updateData: any = {};
     if (data.title !== undefined) updateData.title = data.title;
     if (data.description !== undefined) updateData.description = data.description;
@@ -66,14 +268,16 @@ export async function PATCH(req: NextRequest) {
     if (data.color !== undefined) updateData.color = data.color;
     if (data.notification !== undefined) updateData.notification = Boolean(data.notification);
     if (data.noteColor !== undefined) updateData.noteColor = data.noteColor;
+    if (data.recurrence !== undefined) updateData.recurrence = data.recurrence;
+    if (data.recurrenceEnd !== undefined) updateData.recurrenceEnd = data.recurrenceEnd ? new Date(data.recurrenceEnd) : null;
 
     await db.taskItem.updateMany({
-      where: { id, userId: auth.userId! },
+      where: { id: targetId, userId: auth.userId! },
       data: updateData,
     });
 
     const updatedTask = await db.taskItem.findFirst({
-      where: { id, userId: auth.userId! }
+      where: { id: targetId, userId: auth.userId! }
     });
 
     return NextResponse.json(updatedTask);
@@ -90,11 +294,97 @@ export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const mode = searchParams.get("mode") || "all";
 
     if (!id) {
       return NextResponse.json({ error: "Thiếu ID nhiệm vụ." }, { status: 400 });
     }
 
+    if (id.includes("_rec_")) {
+      const parts = id.split("_rec_");
+      const originalId = parts[0];
+      const timestamp = parseInt(parts[1], 10);
+      const instanceStart = new Date(timestamp);
+
+      const task = await db.taskItem.findFirst({
+        where: { id: originalId, userId: auth.userId! }
+      });
+
+      if (!task) {
+        return NextResponse.json({ error: "Không tìm thấy nhiệm vụ gốc." }, { status: 404 });
+      }
+
+      const taskStart = new Date(task.dueAt || task.createdAt);
+
+      if (mode === "one") {
+        let nextStart = new Date(instanceStart);
+        if (task.recurrence === "DAILY") nextStart = addDays(nextStart, 1);
+        else if (task.recurrence === "WEEKLY") nextStart = addWeeks(nextStart, 1);
+        else if (task.recurrence === "MONTHLY") nextStart = addMonths(nextStart, 1);
+
+        if (instanceStart.getTime() === taskStart.getTime()) {
+          const limitDate = task.recurrenceEnd ? new Date(task.recurrenceEnd) : null;
+          if (limitDate && nextStart > limitDate) {
+            await db.taskItem.deleteMany({
+              where: { id: originalId, userId: auth.userId! }
+            });
+          } else {
+            await db.taskItem.update({
+              where: { id: originalId },
+              data: { dueAt: nextStart }
+            });
+          }
+        } else {
+          const newEndLimit = new Date(instanceStart.getTime() - 1000);
+          await db.taskItem.update({
+            where: { id: originalId },
+            data: { recurrenceEnd: newEndLimit }
+          });
+
+          const originalRecurrenceEnd = task.recurrenceEnd ? new Date(task.recurrenceEnd) : addMonths(new Date(), 6);
+          if (nextStart <= originalRecurrenceEnd) {
+            await db.taskItem.create({
+              data: {
+                userId: auth.userId!,
+                title: task.title,
+                description: task.description,
+                dueAt: nextStart,
+                tagId: task.tagId,
+                color: task.color,
+                notification: task.notification,
+                noteColor: task.noteColor,
+                recurrence: task.recurrence,
+                recurrenceEnd: task.recurrenceEnd
+              }
+            });
+          }
+        }
+        return NextResponse.json({ ok: true });
+      }
+
+      if (mode === "future") {
+        if (instanceStart.getTime() === taskStart.getTime()) {
+          await db.taskItem.deleteMany({
+            where: { id: originalId, userId: auth.userId! }
+          });
+        } else {
+          const newEndLimit = new Date(instanceStart.getTime() - 1000);
+          await db.taskItem.update({
+            where: { id: originalId },
+            data: { recurrenceEnd: newEndLimit }
+          });
+        }
+        return NextResponse.json({ ok: true });
+      }
+
+      // mode === "all"
+      await db.taskItem.deleteMany({
+        where: { id: originalId, userId: auth.userId! }
+      });
+      return NextResponse.json({ ok: true });
+    }
+
+    // Standard non-recurring delete
     await db.taskItem.deleteMany({
       where: { id, userId: auth.userId! },
     });

@@ -685,8 +685,12 @@ export default function CalendarPage() {
       if (editingItem) {
         method = "PATCH";
         if (editingItem.isTask) {
-          url = "/api/tasks";
-          payload.id = editingItem.id;
+          url = `/api/tasks?mode=${mode}`;
+          if (mode === "one" || mode === "future") {
+            payload.id = editingItem.id;
+          } else {
+            payload.id = editingItem.isRecurringInstance ? editingItem.originalId : editingItem.id;
+          }
         } else {
           url = `/api/calendar?mode=${mode}`;
           if (mode === "one" || mode === "future") {
@@ -746,14 +750,14 @@ export default function CalendarPage() {
       payload.startAt = new Date(startAtStr).toISOString();
       payload.endAt = new Date(endAtStr).toISOString();
       payload.allDay = allDay;
-      payload.recurrence = recurrence;
-      payload.recurrenceEnd = recurrenceEndStr ? new Date(recurrenceEndStr).toISOString() : null;
     } else {
       payload.dueAt = startAtStr ? new Date(startAtStr).toISOString() : null; // Optional deadline!
       payload.completed = completed;
     }
+    payload.recurrence = recurrence;
+    payload.recurrenceEnd = recurrenceEndStr ? new Date(recurrenceEndStr).toISOString() : null;
 
-    const isRecurring = !!(editingItem && !editingItem.isTask && (editingItem.isRecurringInstance || (editingItem.recurrence && editingItem.recurrence !== "NONE")));
+    const isRecurring = !!(editingItem && (editingItem.isRecurringInstance || (editingItem.recurrence && editingItem.recurrence !== "NONE")));
 
     if (isRecurring) {
       setSaveConfirm({
@@ -820,7 +824,7 @@ export default function CalendarPage() {
   const executeDelete = async (id: string, isTask: boolean, mode: "one" | "all" | "future") => {
     try {
       const url = isTask 
-        ? `/api/tasks?id=${id}` 
+        ? `/api/tasks?id=${id}&mode=${mode}` 
         : `/api/calendar?id=${id}&mode=${mode}`;
       const res = await fetch(url, { method: "DELETE" });
       if (res.ok) {
@@ -840,7 +844,7 @@ export default function CalendarPage() {
 
   const handleDeleteClick = (id: string, isTask: boolean) => {
     const item = items.find(i => i.id === id);
-    const isRecurring = !!(item && !isTask && item.recurrence && item.recurrence !== "NONE");
+    const isRecurring = !!(item && (item.isRecurringInstance || (item.recurrence && item.recurrence !== "NONE")));
     setDeleteConfirm({
       show: true,
       id,
@@ -2032,56 +2036,54 @@ export default function CalendarPage() {
                   </div>
                 </div>
 
-                {/* Event Recurrence Options */}
-                {itemType === "event" && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
-                      <select 
-                        value={recurrence} 
-                        onChange={e => {
-                          const val = e.target.value;
-                          setRecurrence(val);
-                          if (val !== "NONE" && !recurrenceEndStr) {
-                            // Set default to 1 month from now at 23:59
-                            const defaultEnd = new Date();
-                            defaultEnd.setMonth(defaultEnd.getMonth() + 1);
-                            defaultEnd.setHours(23, 59, 0, 0);
-                            const offset = defaultEnd.getTimezoneOffset();
-                            const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
-                            setRecurrenceEndStr(local.toISOString().slice(0, 16));
-                          }
-                        }} 
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      >
-                        <option value="NONE">Không lặp</option>
-                        <option value="DAILY">Hàng ngày</option>
-                        <option value="WEEKLY">Hàng tuần</option>
-                        <option value="MONTHLY">Hàng tháng</option>
-                      </select>
-                    </div>
-                    {recurrence !== "NONE" && (
-                      <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
-                        <input 
-                          type="datetime-local" 
-                          value={recurrenceEndStr} 
-                          onChange={e => {
-                            let val = e.target.value;
-                            if (val && val.includes("T")) {
-                              const [date, time] = val.split("T");
-                              if (time === "00:00") {
-                                val = `${date}T23:59`;
-                              }
-                            }
-                            setRecurrenceEndStr(val);
-                          }} 
-                          className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]" 
-                        />
-                      </div>
-                    )}
+                {/* Recurrence Options */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
+                    <select 
+                      value={recurrence} 
+                      onChange={e => {
+                        const val = e.target.value;
+                        setRecurrence(val);
+                        if (val !== "NONE" && !recurrenceEndStr) {
+                          // Set default to 1 month from now at 23:59
+                          const defaultEnd = new Date();
+                          defaultEnd.setMonth(defaultEnd.getMonth() + 1);
+                          defaultEnd.setHours(23, 59, 0, 0);
+                          const offset = defaultEnd.getTimezoneOffset();
+                          const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
+                          setRecurrenceEndStr(local.toISOString().slice(0, 16));
+                        }
+                      }} 
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                    >
+                      <option value="NONE">Không lặp</option>
+                      <option value="DAILY">Hàng ngày</option>
+                      <option value="WEEKLY">Hàng tuần</option>
+                      <option value="MONTHLY">Hàng tháng</option>
+                    </select>
                   </div>
-                )}
+                  {recurrence !== "NONE" && (
+                    <div>
+                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
+                      <input 
+                        type="datetime-local" 
+                        value={recurrenceEndStr} 
+                        onChange={e => {
+                          let val = e.target.value;
+                          if (val && val.includes("T")) {
+                            const [date, time] = val.split("T");
+                            if (time === "00:00") {
+                              val = `${date}T23:59`;
+                            }
+                          }
+                          setRecurrenceEndStr(val);
+                        }} 
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]" 
+                      />
+                    </div>
+                  )}
+                </div>
 
                 {/* Options: Notification & Note Color */}
                 <div className="flex items-center justify-between py-2 border-y border-gray-50">
