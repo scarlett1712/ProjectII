@@ -355,6 +355,23 @@ export default function DashboardPage() {
     fetchWater();
     fetchTags();
     fetchBudgetStats();
+
+    const handleWaterRefresh = () => fetchWater();
+    const handleMealRefresh = () => fetchMeals();
+    const handleToast = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) showToast(customEvent.detail);
+    };
+
+    window.addEventListener("refresh-water-data", handleWaterRefresh);
+    window.addEventListener("refresh-meal-data", handleMealRefresh);
+    window.addEventListener("show-app-toast", handleToast);
+
+    return () => {
+      window.removeEventListener("refresh-water-data", handleWaterRefresh);
+      window.removeEventListener("refresh-meal-data", handleMealRefresh);
+      window.removeEventListener("show-app-toast", handleToast);
+    };
   }, []);
 
   const handleSaveMeal = async () => {
@@ -647,14 +664,14 @@ export default function DashboardPage() {
   const floatingTasks = tasks.filter(t => !t.completed && taskPositions[t.id]);
 
   return (
-    <div className="relative space-y-8 min-h-[80vh] dashboard-container">
+    <div className="relative space-y-6 sm:space-y-8 min-h-[80vh] dashboard-container">
       {/* Quick Actions Row */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Chào mừng trở lại!</h2>
           <p className="text-xs text-gray-500">Hôm nay bạn muốn ghi nhận gì nào?</p>
         </div>
-        <div id="tour-quick-actions" className="flex items-center gap-2 bg-white/60 p-2 rounded-2xl border border-white/20 shadow-sm">
+        <div id="tour-quick-actions" className="flex items-center gap-2 bg-white/60 p-2 rounded-2xl border border-white/20 shadow-sm self-start sm:self-auto">
           <span className="text-xs font-bold text-[#A172FD] px-2">Ghi nhanh:</span>
           <button
             onClick={() => {
@@ -713,10 +730,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8 overflow-y-auto pr-4 pb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-10">
         {/* Row 1: Deadlines & Nutrition/Water */}
-        <div className="col-span-8">
-          <section id="tour-deadlines" className="h-full rounded-[32px] bg-white p-8 shadow-sm">
+        <div className="col-span-1 lg:col-span-8">
+          <section id="tour-deadlines" className="h-full rounded-[32px] bg-white p-5 sm:p-8 shadow-sm">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Deadline!!!</h2>
             </div>
@@ -812,12 +829,12 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        <div className="col-span-4">
-          <section id="tour-energy-water" className="h-full rounded-[32px] bg-white p-8 shadow-sm">
+        <div className="col-span-1 lg:col-span-4">
+          <section id="tour-energy-water" className="h-full rounded-[32px] bg-white p-5 sm:p-8 shadow-sm">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Năng lượng & Nước</h2>
             </div>
-            <div className="flex items-center justify-center gap-6">
+            <div className="flex items-center justify-around sm:justify-center gap-4 sm:gap-6">
               {/* Calories Chart */}
               <div className="flex flex-col items-center">
                 <p className="mb-4 text-[10px] font-bold text-[#4B5563] uppercase tracking-wider">Calories</p>
@@ -878,8 +895,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Row 2: Wallet & Meals */}
-        <div className="col-span-8">
-          <section id="tour-wallet-chart" className="h-full rounded-[32px] bg-white p-8 shadow-sm">
+        <div className="col-span-1 lg:col-span-8">
+          <section id="tour-wallet-chart" className="h-full rounded-[32px] bg-white p-5 sm:p-8 shadow-sm">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Biến động ví xèng</h2>
               <div className="flex rounded-full bg-[#F5F3FF] p-1 text-xs">
@@ -923,8 +940,8 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        <div className="col-span-4">
-          <section className="h-full rounded-[32px] bg-white p-8 shadow-sm min-h-[300px]">
+        <div className="col-span-1 lg:col-span-4">
+          <section className="h-full rounded-[32px] bg-white p-5 sm:p-8 shadow-sm min-h-[300px]">
             <h2 className="mb-6 text-xl font-bold text-[#A172FD]">Đã măm măm</h2>
             <div className="space-y-4">
               {todayMeals.slice(0, 3).length > 0 ? todayMeals.slice(0, 3).map((meal, i) => (

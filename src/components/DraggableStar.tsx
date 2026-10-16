@@ -25,6 +25,7 @@ type AlertPayload = {
 export function DraggableStar({ onClick, children }: { onClick?: () => void; children?: React.ReactNode }) {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [alert, setAlert] = useState<AlertPayload | null>(null);
   const [customPortion, setCustomPortion] = useState("");
   
@@ -35,12 +36,14 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
   useEffect(() => {
     setIsMounted(true);
+    setIsMobile(window.innerWidth < 850);
     setPosition({
       x: Math.max(10, window.innerWidth - STAR_SIZE - 14),
       y: Math.max(10, window.innerHeight - STAR_SIZE - 12),
     });
     
     function onResize() {
+      setIsMobile(window.innerWidth < 850);
       setPosition((prev) => ({
         x: Math.min(Math.max(10, prev.x), Math.max(10, window.innerWidth - STAR_SIZE - 10)),
         y: Math.min(Math.max(10, prev.y), Math.max(10, window.innerHeight - STAR_SIZE - 10)),
@@ -126,8 +129,9 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amountMl }),
       });
-      // Refresh the page to sync water progress
-      window.location.reload();
+      // Dispatch custom events so active components update without page reload
+      window.dispatchEvent(new CustomEvent("refresh-water-data", { detail: { amountMl } }));
+      window.dispatchEvent(new CustomEvent("show-app-toast", { detail: `Đã ghi nhận uống thêm ${amountMl}ml nước nha! 💧` }));
     } catch (e) {
       console.error(e);
     } finally {
@@ -148,14 +152,17 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
       });
       const data = await res.json();
       if (data.success) {
+        const msg = data.explanation || "Star đã cập nhật lượng calo của món ăn rồi nha! 💕";
         setAlert({
           type: "info",
-          message: data.explanation || `Star đã cập nhật lượng calo của món ăn rồi nha! 💕`
+          message: msg
         });
+        // Dispatch custom events so active components update without page reload
+        window.dispatchEvent(new CustomEvent("refresh-meal-data", { detail: data }));
+        window.dispatchEvent(new CustomEvent("show-app-toast", { detail: msg }));
         setTimeout(() => {
           setAlert(null);
-          window.location.reload(); // Refresh the page to sync progress charts
-        }, 3000);
+        }, 2500);
       } else {
         setAlert(null);
       }
@@ -185,16 +192,16 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
       <motion.div
         className="fixed z-[250] pointer-events-none"
-      animate={isAlerting ? {
-        left: "calc(50vw - 70px)",
-        top: "calc(50vh - 70px)",
-      } : {
-        left: position.x,
-        top: position.y,
-      }}
-      transition={{ type: "spring", stiffness: 120, damping: 18 }}
-      style={{ width: STAR_SIZE, height: STAR_SIZE }}
-    >
+        animate={isAlerting ? {
+          left: "calc(50vw - 70px)",
+          top: isMobile ? "calc(26vh - 60px)" : "calc(50vh - 70px)",
+        } : {
+          left: position.x,
+          top: position.y,
+        }}
+        transition={{ type: "spring", stiffness: 120, damping: 18 }}
+        style={{ width: STAR_SIZE, height: STAR_SIZE }}
+      >
       {/* Alert / Notification Speech Bubble */}
       <AnimatePresence>
         {isAlerting && alert && (
@@ -202,10 +209,10 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
             initial={{ opacity: 0, y: 15, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.9 }}
-            className={`absolute w-72 bg-white rounded-3xl p-5 shadow-[0_15px_40px_rgba(139,92,246,0.25)] border border-purple-100 pointer-events-auto text-center space-y-4 flex flex-col items-center ${
-              isAlerting 
-                ? "left-full top-1/2 -translate-y-1/2 ml-[250px]" 
-                : "bottom-full mb-6 left-1/2 -translate-x-1/2"
+            className={`absolute bg-white rounded-3xl p-5 shadow-[0_15px_40px_rgba(139,92,246,0.25)] border border-purple-100 pointer-events-auto text-center space-y-4 flex flex-col items-center ${
+              isMobile
+                ? "top-full mt-6 left-1/2 -translate-x-1/2 w-[88vw] max-w-sm"
+                : "left-full top-1/2 -translate-y-1/2 ml-[250px] w-72"
             }`}
           >
             <div className="bg-purple-100 text-[#A172FD] p-2.5 rounded-2xl">
@@ -307,7 +314,9 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
             {/* Arrow pointer */}
             <div className={
               isAlerting 
-                ? "absolute right-full top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-l border-b border-purple-100 rotate-45 -mr-2"
+                ? (isMobile 
+                    ? "absolute bottom-full left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-l border-t border-purple-100 rotate-45 -mb-2"
+                    : "absolute right-full top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-l border-b border-purple-100 rotate-45 -mr-2")
                 : "absolute top-full left-1/2 -translate-x-1/2 w-4 h-4 bg-white border-r border-b border-purple-100 rotate-45 -mt-2"
             } />
           </motion.div>

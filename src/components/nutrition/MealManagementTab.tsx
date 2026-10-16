@@ -143,6 +143,9 @@ export function MealManagementTab() {
   useEffect(() => {
     loadMeals();
     loadProfile();
+    const handleRefresh = () => loadMeals();
+    window.addEventListener("refresh-meal-data", handleRefresh);
+    return () => window.removeEventListener("refresh-meal-data", handleRefresh);
   }, []);
 
   useEffect(() => {

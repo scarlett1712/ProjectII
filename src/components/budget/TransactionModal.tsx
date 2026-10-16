@@ -10,6 +10,7 @@ export interface TransactionModalProps {
   onSuccess?: () => void;
   accounts: any[];
   categories: any[];
+  initialTab?: "EXPENSE" | "INCOME" | "TRANSFER";
 }
 
 const getContrastTextColor = (hexColor: string) => {
@@ -69,7 +70,7 @@ const formatVND = (amount: number) => {
   return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 };
 
-const AccountSelector = ({ selectedId, onSelect, accounts, isOpen, setIsOpen }: any) => {
+const AccountSelector = ({ selectedId, onSelect, accounts, isOpen, setIsOpen, dropUp = false }: any) => {
   return (
     <div className="relative w-full">
       <button
@@ -85,7 +86,7 @@ const AccountSelector = ({ selectedId, onSelect, accounts, isOpen, setIsOpen }: 
               return (
                 <div className="flex items-center gap-1.5 min-w-0 w-full">
                   <span
-                    className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                    className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans truncate max-w-full"
                     style={{
                       backgroundColor: styles.backgroundColor,
                       color: styles.color,
@@ -110,7 +111,9 @@ const AccountSelector = ({ selectedId, onSelect, accounts, isOpen, setIsOpen }: 
       )}
 
       {isOpen && (
-        <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1">
+        <div className={`absolute z-[250] w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin ${
+          dropUp ? "bottom-full mb-1.5" : "mt-1.5 top-full"
+        }`}>
           {accounts.map((a: any) => (
             <button
               key={a.id}
@@ -126,7 +129,7 @@ const AccountSelector = ({ selectedId, onSelect, accounts, isOpen, setIsOpen }: 
                   const styles = getTagStyles(a.color || "#A172FD");
                   return (
                     <span
-                      className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                      className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans truncate max-w-full"
                       style={{
                         backgroundColor: styles.backgroundColor,
                         color: styles.color,
@@ -148,6 +151,7 @@ const AccountSelector = ({ selectedId, onSelect, accounts, isOpen, setIsOpen }: 
               Chưa có tài khoản nào.
             </div>
           )}
+          <div className="h-2" />
         </div>
       )}
     </div>
@@ -217,8 +221,8 @@ const CategorySelector = ({ selectedId, onSelect, categories, isOpen, setIsOpen 
   );
 };
 
-export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categories }: TransactionModalProps) {
-  const [transactionTab, setTransactionTab] = useState<"EXPENSE" | "INCOME" | "TRANSFER">("EXPENSE");
+export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categories, initialTab = "EXPENSE" }: TransactionModalProps) {
+  const [transactionTab, setTransactionTab] = useState<"EXPENSE" | "INCOME" | "TRANSFER">(initialTab || "EXPENSE");
   
   const [txAmountStr, setTxAmountStr] = useState("");
   const [txCategory, setTxCategory] = useState("");
@@ -231,6 +235,16 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
   const [fromAccDropdownOpen, setFromAccDropdownOpen] = useState(false);
   const [toAccDropdownOpen, setToAccDropdownOpen] = useState(false);
+
+  // Sync initialTab when modal opens or initialTab prop changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setTransactionTab(initialTab || "EXPENSE");
+      setCatDropdownOpen(false);
+      setFromAccDropdownOpen(false);
+      setToAccDropdownOpen(false);
+    }
+  }, [isOpen, initialTab]);
 
   // Close dropdowns when changing tabs
   const handleTabChange = (tab: "EXPENSE" | "INCOME" | "TRANSFER") => {
@@ -327,14 +341,14 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md"
+        className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
           initial={{ y: 200, opacity: 0, scale: 0.9 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 200, opacity: 0, scale: 0.9 }}
-          className="relative w-full max-w-xl overflow-visible rounded-[32px] bg-white p-0 shadow-2xl"
+          className="relative w-full max-w-xl rounded-[32px] bg-white p-0 shadow-2xl my-auto max-h-[92vh] overflow-y-auto scrollbar-thin"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close button X */}
@@ -351,10 +365,10 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
             <div className="h-6 w-32 rounded-b-2xl bg-[#A172FD] shadow-md" />
           </div>
 
-          <div className="p-10 pt-6">
-            <div className="mb-8 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-[#A172FD]">Thêm giao dịch</h2>
-              <div className="flex gap-1 bg-[#F5F3FF] p-1 rounded-full">
+          <div className="p-6 sm:p-10 pt-4 sm:pt-6">
+            <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-[#A172FD]">Thêm giao dịch</h2>
+              <div className="flex flex-wrap gap-1 bg-[#F5F3FF] p-1 rounded-full self-start sm:self-auto">
                 {[
                   { id: "EXPENSE", label: "Chi tiêu" },
                   { id: "INCOME", label: "Thu nhập" },
@@ -363,7 +377,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
                   <button
                     key={t.id}
                     onClick={() => handleTabChange(t.id as any)}
-                    className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${transactionTab === t.id ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
+                    className={`rounded-full px-3.5 sm:px-4 py-1.5 text-xs font-bold transition-all ${transactionTab === t.id ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
                   >
                     {t.label}
                   </button>
@@ -381,7 +395,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
                     value={txAmountStr}
                     onChange={handleAmountChange}
                     placeholder="0" 
-                    className="w-full bg-transparent text-4xl font-black text-[#A172FD] outline-none" 
+                    className="w-full bg-transparent text-3xl sm:text-4xl font-black text-[#A172FD] outline-none" 
                   />
                 </div>
                 <div className="flex gap-2 mt-3">
@@ -390,12 +404,12 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-x-8 sm:gap-y-6">
                 {/* Row 1 */}
                 <div className="relative">
                   {transactionTab === "TRANSFER" ? (
                     <>
-                      <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Từ tài khoản</label>
+                      <label className="mb-2 sm:mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Từ tài khoản</label>
                       <AccountSelector 
                         selectedId={txFromAccount} 
                         onSelect={setTxFromAccount} 
@@ -409,7 +423,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
                     </>
                   ) : (
                     <>
-                      <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Phân loại</label>
+                      <label className="mb-2 sm:mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Phân loại</label>
                       <CategorySelector 
                         selectedId={txCategory} 
                         onSelect={setTxCategory} 
@@ -424,7 +438,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
                   )}
                 </div>
                 <div className="relative">
-                  <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                  <label className="mb-2 sm:mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">
                     {transactionTab === "TRANSFER" ? "Tới tài khoản" : "Thời gian"}
                   </label>
                   {transactionTab === "TRANSFER" ? (
@@ -450,7 +464,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
 
                 {/* Row 2 */}
                 <div className="relative">
-                  <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">
+                  <label className="mb-2 sm:mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">
                     {transactionTab === "TRANSFER" ? "Thời gian" : "Nguồn tiền"}
                   </label>
                   {transactionTab === "TRANSFER" ? (
@@ -465,6 +479,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
                       selectedId={transactionTab === "INCOME" ? txToAccount : txFromAccount} 
                       onSelect={transactionTab === "INCOME" ? setTxToAccount : setTxFromAccount} 
                       accounts={accounts} 
+                      dropUp={true}
                       isOpen={transactionTab === "INCOME" ? toAccDropdownOpen : fromAccDropdownOpen} 
                       setIsOpen={(v: boolean) => {
                         if (transactionTab === "INCOME") {
@@ -479,7 +494,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
                   )}
                 </div>
                 <div>
-                  <label className="mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Ghi chú</label>
+                  <label className="mb-2 sm:mb-3 block text-xs font-bold text-[#6B7280] uppercase tracking-wider">Ghi chú</label>
                   <input 
                     type="text" 
                     value={txNote}

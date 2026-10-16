@@ -40,16 +40,22 @@ export function WaterReminderTab() {
 
   useEffect(() => {
     loadData();
+    const handleRefresh = () => loadData();
+    window.addEventListener("refresh-water-data", handleRefresh);
+    return () => window.removeEventListener("refresh-water-data", handleRefresh);
   }, []);
 
   async function logWater(amountMl: number) {
     try {
-      await fetch("/api/water", {
+      const res = await fetch("/api/water", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amountMl }),
       });
-      loadData();
+      if (res.ok) {
+        loadData();
+        window.dispatchEvent(new CustomEvent("show-app-toast", { detail: `Đã ghi nhận uống thêm ${amountMl}ml nước! 💧` }));
+      }
     } catch (e) {
       console.error(e);
     }
@@ -69,6 +75,7 @@ export function WaterReminderTab() {
       });
       if (res.ok) {
         loadData();
+        window.dispatchEvent(new CustomEvent("show-app-toast", { detail: "Đã xóa bản ghi uống nước." }));
       }
     } catch (e) {
       console.error(e);
@@ -89,6 +96,7 @@ export function WaterReminderTab() {
       });
       setShowGoalModal(false);
       loadData();
+      window.dispatchEvent(new CustomEvent("show-app-toast", { detail: "Đã cập nhật mục tiêu & giờ uống nước! 🎯" }));
     } catch (e) {
       console.error(e);
     }

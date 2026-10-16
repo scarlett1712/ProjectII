@@ -2036,6 +2036,7 @@ export default function BudgetPage() {
           onSuccess={() => fetchData()}
           accounts={accounts}
           categories={categories}
+          initialTab={transactionType}
         />
 
         {/* 4. Modal Edit Transaction (Edit Expense / Income / Transfer) */}
@@ -2242,7 +2243,7 @@ export default function BudgetPage() {
 
                         {/* Dropdown Options List */}
                         {fromAccDropdownOpen && (
-                          <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1">
+                          <div className="absolute z-[250] bottom-full mb-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin">
                             {accounts.map((a) => (
                               <button
                                 key={a.id}
@@ -2258,7 +2259,7 @@ export default function BudgetPage() {
                                     const styles = getTagStyles(a.color || "#A172FD");
                                     return (
                                       <span
-                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans truncate max-w-full"
                                         style={{
                                           backgroundColor: styles.backgroundColor,
                                           color: styles.color,
@@ -2280,6 +2281,7 @@ export default function BudgetPage() {
                                 Chưa có tài khoản nào.
                               </div>
                             )}
+                            <div className="h-2" />
                           </div>
                         )}
                       </div>
@@ -2311,7 +2313,7 @@ export default function BudgetPage() {
                                   <div className="flex flex-col items-start leading-tight min-w-0">
                                     <div className="flex items-center gap-1.5 min-w-0 w-full">
                                       <span
-                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans truncate max-w-full"
                                         style={{
                                           backgroundColor: styles.backgroundColor,
                                           color: styles.color,
@@ -2343,7 +2345,7 @@ export default function BudgetPage() {
 
                         {/* Dropdown Options List */}
                         {toAccDropdownOpen && (
-                          <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1">
+                          <div className="absolute z-[250] bottom-full mb-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin">
                             {accounts.map((a) => (
                               <button
                                 key={a.id}
@@ -2359,7 +2361,7 @@ export default function BudgetPage() {
                                     const styles = getTagStyles(a.color || "#A172FD");
                                     return (
                                       <span
-                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
+                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans truncate max-w-full"
                                         style={{
                                           backgroundColor: styles.backgroundColor,
                                           color: styles.color,

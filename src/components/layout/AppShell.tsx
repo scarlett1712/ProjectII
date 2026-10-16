@@ -54,6 +54,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationLog[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
 
+  // Global Toast state
+  const [globalToast, setGlobalToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleGlobalToast = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      if (customEvent.detail) {
+        setGlobalToast(customEvent.detail);
+        setTimeout(() => setGlobalToast(null), 3200);
+      }
+    };
+    window.addEventListener("show-app-toast", handleGlobalToast);
+    return () => window.removeEventListener("show-app-toast", handleGlobalToast);
+  }, []);
+
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem("star-notification-logs");
@@ -519,20 +534,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-8 transition-all duration-300 flex flex-col">
+          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-4 sm:p-6 md:p-8 transition-all duration-300 flex flex-col">
             <div className={`mx-auto w-full flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? "max-w-7xl" : "max-w-6xl"}`}>
               
               {/* Global Top Header Bar */}
-              <header className="flex items-center justify-between mb-8 pb-4 border-b border-purple-100/50">
-                <div>
-                  <h1 className="text-2xl font-black text-[#581C87] capitalize">
+              <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 mb-6 md:mb-8 pb-4 border-b border-purple-100/50">
+                <div className="flex flex-row items-baseline gap-2 flex-wrap min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-black text-[#581C87] capitalize shrink-0">
                     {pathname.startsWith("/dashboard") ? "Trang chủ" :
                      pathname.startsWith("/nutrition") ? "Măm măm" :
                      pathname.startsWith("/calendar") ? "Lịch lịch" :
                      pathname.startsWith("/budget") ? "Xèng xèng" :
                      pathname.startsWith("/chat") ? "Star Chat" : "Little Star"}
                   </h1>
-                  <p className="text-xs text-gray-500">
+                  <span className="text-gray-300 hidden sm:inline">•</span>
+                  <p className="text-xs text-gray-500 truncate">
                     {pathname.startsWith("/dashboard") ? "Năng lượng bùng nổ nào!!" :
                      pathname.startsWith("/nutrition") ? "Ăn uống điều độ, uống nước đủ đầy" :
                      pathname.startsWith("/calendar") ? "Sắp xếp lịch trình & quản lý công việc" :
@@ -540,7 +556,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                      pathname.startsWith("/chat") ? "Trò chuyện cùng trợ lý Star" : "Trợ lý sức khỏe của bạn"}
                   </p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                   {/* Notification permission prompt button */}
                   {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && (
                     <button
@@ -566,14 +582,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   )}
 
                   {/* Global Search Bar */}
-                  <div className="relative">
+                  <div className="relative flex-1 md:w-64">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-400" />
                     <input 
                       type="text" 
                       placeholder="Tìm kiếm mọi thứ..." 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="rounded-full bg-white px-10 py-2 text-sm text-purple-950 placeholder:text-gray-400 font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#A172FD]/20 w-64 border border-purple-100"
+                      className="w-full rounded-full bg-white pl-9 pr-4 py-2 text-sm text-purple-950 placeholder:text-gray-400 font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#A172FD]/20 border border-purple-100"
                     />
                     
                     {/* Search results dropdown */}
@@ -583,7 +599,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          className="absolute top-full right-0 mt-2 w-80 max-h-80 overflow-y-auto bg-white/95 rounded-2xl border border-purple-100 shadow-2xl p-2 z-[200] backdrop-blur-md"
+                          className="absolute top-full left-0 md:left-auto md:right-0 mt-2 w-full md:w-80 max-h-80 overflow-y-auto bg-white/95 rounded-2xl border border-purple-100 shadow-2xl p-2 z-[200] backdrop-blur-md"
                         >
                           {searchLoading ? (
                             <p className="text-xs text-gray-400 p-3 text-center">Đang tìm kiếm...</p>
@@ -628,7 +644,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       {showNotifDropdown && (
                         <>
                           <div className="fixed inset-0 z-[190]" onClick={() => setShowNotifDropdown(false)} />
-                          <div className="absolute right-0 top-full mt-2 w-80 overflow-hidden rounded-3xl border border-purple-100 bg-white/95 p-4 shadow-2xl backdrop-blur-md z-[200]">
+                          <div className="absolute right-0 top-full mt-2 w-[calc(100vw-3rem)] max-w-xs sm:w-80 overflow-hidden rounded-3xl border border-purple-100 bg-white/95 p-4 shadow-2xl backdrop-blur-md z-[200]">
                             <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-3">
                               <p className="text-sm font-black text-gray-800">Thông báo</p>
                               <div className="flex gap-2">
@@ -903,6 +919,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </AnimatePresence>
         </DraggableStar>
+
+        {/* Global Toast Notification */}
+        <AnimatePresence>
+          {globalToast && (
+            <motion.div
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.9 }}
+              className="fixed bottom-6 right-6 z-[300] flex items-center gap-3 rounded-2xl bg-white/95 border border-purple-100 p-4 shadow-[0_10px_30px_rgba(161,114,253,0.25)] backdrop-blur-md"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-[#A172FD]">
+                <Bell className="h-4 w-4 animate-bounce" />
+              </div>
+              <p className="text-sm font-bold text-gray-800">{globalToast}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </StarBackground>
   );
