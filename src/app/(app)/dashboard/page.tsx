@@ -736,9 +736,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 pb-10">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 pb-10">
         {/* Row 1: Deadlines & Nutrition/Water */}
-        <div className="col-span-1 lg:col-span-8">
+        <div className="col-span-1 xl:col-span-8">
           <section id="tour-deadlines" className="min-h-full rounded-[32px] bg-white p-5 sm:p-6 shadow-sm flex flex-col justify-between">
             <div className="mb-4 sm:mb-5 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Deadline!!!</h2>
@@ -837,23 +837,23 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        <div className="col-span-1 lg:col-span-4">
-          <section id="tour-energy-water" className="h-full rounded-[32px] bg-white p-5 sm:p-8 shadow-sm">
-            <div className="mb-6 flex items-center justify-between">
+        <div className="col-span-1 xl:col-span-4">
+          <section id="tour-energy-water" className="min-h-full rounded-[32px] bg-white p-5 sm:p-6 shadow-sm overflow-hidden flex flex-col justify-between">
+            <div className="mb-4 sm:mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Năng lượng & Nước</h2>
             </div>
-            <div className="flex items-center justify-around sm:justify-center gap-4 sm:gap-6">
+            <div className="flex items-center justify-around sm:justify-center gap-2 sm:gap-4 md:gap-6 flex-wrap sm:flex-nowrap">
               {/* Calories Chart */}
               <div className="flex flex-col items-center">
-                <p className="mb-4 text-[10px] font-bold text-[#4B5563] uppercase tracking-wider">Calories</p>
-                <div className="relative flex h-28 w-28 items-center justify-center">
-                  <svg className="h-full w-full -rotate-90">
+                <p className="mb-3 text-[10px] font-bold text-[#4B5563] uppercase tracking-wider">Calories</p>
+                <div className="relative flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center shrink-0">
+                  <svg className="h-full w-full -rotate-90" viewBox="0 0 112 112">
                     <circle cx="56" cy="56" r="48" stroke="#F5F3FF" strokeWidth="8" fill="transparent" />
                     <circle cx="56" cy="56" r="48" stroke="#A172FD" strokeWidth="8" fill="transparent"
                       strokeDasharray={301} strokeDashoffset={301 - (301 * caloriePercent) / 100} strokeLinecap="round" />
                   </svg>
                   <div className="absolute text-center">
-                    <p className="text-xl font-black text-[#581C87]">{totalCalories}</p>
+                    <p className="text-lg sm:text-xl font-black text-[#581C87]">{totalCalories}</p>
                     <p className="text-[8px] font-bold text-[#4B5563]">kcal</p>
                   </div>
                 </div>
@@ -861,49 +861,49 @@ export default function DashboardPage() {
 
               {/* Water Chart */}
               <div className="flex flex-col items-center">
-                <p className="mb-4 text-[10px] font-bold text-[#4B5563] uppercase tracking-wider">Nước</p>
-                <div className="relative flex h-28 w-28 items-center justify-center">
-                  <svg className="h-full w-full -rotate-90">
+                <p className="mb-3 text-[10px] font-bold text-[#4B5563] uppercase tracking-wider">Nước</p>
+                <div className="relative flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center shrink-0">
+                  <svg className="h-full w-full -rotate-90" viewBox="0 0 112 112">
                     <circle cx="56" cy="56" r="48" stroke="#E0F2FE" strokeWidth="8" fill="transparent" />
                     <circle cx="56" cy="56" r="48" stroke="#38BDF8" strokeWidth="8" fill="transparent"
                       strokeDasharray={301} strokeDashoffset={301 - (301 * waterPercent) / 100} strokeLinecap="round" />
                   </svg>
                   <div className="absolute text-center">
-                    <p className="text-xl font-black text-[#0369A1]">{totalWater}</p>
+                    <p className="text-lg sm:text-xl font-black text-[#0369A1]">{totalWater}</p>
                     <p className="text-[8px] font-bold text-[#4B5563]">ml</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 grid w-full grid-cols-3 gap-2">
+            <div className="mt-6 sm:mt-8 grid w-full grid-cols-3 gap-1.5 sm:gap-2">
               <button
                 onClick={() => logWaterQuick(150)}
-                className="rounded-2xl bg-[#E0F2FE] p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
+                className="rounded-2xl bg-[#E0F2FE] p-2 sm:p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
               >
-                <p className="text-lg font-black text-[#0369A1]">+150ml</p>
-                <p className="text-[10px] font-bold text-[#0284C7]">Cốc nhỏ 🥛</p>
+                <p className="text-base sm:text-lg font-black text-[#0369A1]">+150ml</p>
+                <p className="text-[9px] sm:text-[10px] font-bold text-[#0284C7] truncate">Cốc nhỏ 🥛</p>
               </button>
               <button
                 onClick={() => logWaterQuick(250)}
-                className="rounded-2xl bg-[#E0F2FE] p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
+                className="rounded-2xl bg-[#E0F2FE] p-2 sm:p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
               >
-                <p className="text-lg font-black text-[#0369A1]">+250ml</p>
-                <p className="text-[10px] font-bold text-[#0284C7]">Cốc vừa 🥤</p>
+                <p className="text-base sm:text-lg font-black text-[#0369A1]">+250ml</p>
+                <p className="text-[9px] sm:text-[10px] font-bold text-[#0284C7] truncate">Cốc vừa 🥤</p>
               </button>
               <button
                 onClick={() => logWaterQuick(500)}
-                className="rounded-2xl bg-[#E0F2FE] p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
+                className="rounded-2xl bg-[#E0F2FE] p-2 sm:p-3 text-center transition-all hover:scale-[1.05] hover:bg-[#BAE6FD] active:scale-[0.95]"
               >
-                <p className="text-lg font-black text-[#0369A1]">+500ml</p>
-                <p className="text-[10px] font-bold text-[#0284C7]">Chai lớn 🍼</p>
+                <p className="text-base sm:text-lg font-black text-[#0369A1]">+500ml</p>
+                <p className="text-[9px] sm:text-[10px] font-bold text-[#0284C7] truncate">Chai lớn 🍼</p>
               </button>
             </div>
           </section>
         </div>
 
         {/* Row 2: Wallet & Meals */}
-        <div className="col-span-1 lg:col-span-8">
+        <div className="col-span-1 xl:col-span-8">
           <section id="tour-wallet-chart" className="h-full rounded-[32px] bg-white p-5 sm:p-8 shadow-sm">
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Biến động ví xèng</h2>
@@ -948,7 +948,7 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        <div className="col-span-1 lg:col-span-4">
+        <div className="col-span-1 xl:col-span-4">
           <section className="h-full rounded-[32px] bg-white p-5 sm:p-8 shadow-sm min-h-[300px]">
             <h2 className="mb-6 text-xl font-bold text-[#A172FD]">Đã măm măm</h2>
             <div className="space-y-4">
