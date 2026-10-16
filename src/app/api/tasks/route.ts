@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         title: body.title,
         description: body.description ?? null,
         dueAt: body.dueAt ? new Date(body.dueAt) : null,
-        tagId: body.tagId ?? null,
+        tagId: body.tagId ? body.tagId : null,
         color: body.color ?? null,
         notification: Boolean(body.notification),
         noteColor: body.noteColor ?? null,
@@ -62,7 +62,7 @@ export async function PATCH(req: NextRequest) {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.dueAt !== undefined) updateData.dueAt = data.dueAt ? new Date(data.dueAt) : null;
     if (data.completed !== undefined) updateData.completed = Boolean(data.completed);
-    if (data.tagId !== undefined) updateData.tagId = data.tagId;
+    if (data.tagId !== undefined) updateData.tagId = data.tagId ? data.tagId : null;
     if (data.color !== undefined) updateData.color = data.color;
     if (data.notification !== undefined) updateData.notification = Boolean(data.notification);
     if (data.noteColor !== undefined) updateData.noteColor = data.noteColor;

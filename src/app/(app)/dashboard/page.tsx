@@ -83,7 +83,7 @@ export default function DashboardPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [transactionTab, setTransactionTab] = useState<"chi" | "thu" | "chuyen">("chi");
   const [notify, setNotify] = useState(true);
-  const [taskFormTagId, setTaskFormTagId] = useState("system-task");
+  const [taskFormTagId, setTaskFormTagId] = useState("");
   const [taskFormColor, setTaskFormColor] = useState("#fdfd96");
 
   // Calendar event creator states
@@ -424,7 +424,7 @@ export default function DashboardPage() {
         dueAt: taskForm.dueAt ? new Date(taskForm.dueAt).toISOString() : null, // Optional deadline!
         description: taskForm.description || "",
         notification: notify,
-        tagId: taskFormTagId,
+        tagId: taskFormTagId || null,
         noteColor: taskFormColor,
         color: taskFormColor
       };
@@ -460,7 +460,7 @@ export default function DashboardPage() {
       notification: calNotification,
       noteColor: calNoteColor,
       color: calNoteColor,
-      tagId: calSelectedTagId
+      tagId: calSelectedTagId || null
     };
 
     if (itemType === "event") {
@@ -762,7 +762,7 @@ export default function DashboardPage() {
                       description: task.description || ""
                     });
                     setNotify(task.notification || false);
-                    setTaskFormTagId(task.tagId || "system-task");
+                    setTaskFormTagId(task.tagId || "");
                     setTaskFormColor(task.noteColor || task.color || "#fdfd96");
                     setEditingTask(task);
                     setShowAddNote(true);
@@ -1052,10 +1052,13 @@ export default function DashboardPage() {
                       const tag = calendarTags.find(t => t.id === val);
                       if (tag) {
                         setTaskFormColor(tag.color);
+                      } else {
+                        setTaskFormColor("#fdfd96");
                       }
                     }}
                     className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
                   >
+                    <option value="">-- Không gán nhãn --</option>
                     {calendarTags.map(t => (
                       <option key={t.id} value={t.id}>{t.name} ({t.isSystem ? "Mặc định" : "Custom"})</option>
                     ))}
@@ -1303,7 +1306,7 @@ export default function DashboardPage() {
                     type="button"
                     onClick={() => {
                       setItemType("task");
-                      setCalSelectedTagId("system-task");
+                      setCalSelectedTagId("");
                       setCalNotification(calStartAtStr !== "");
                     }}
                     className={`py-2 rounded-lg text-center transition-all ${itemType === "task" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280]"}`}
@@ -1389,7 +1392,7 @@ export default function DashboardPage() {
                             </span>
                           );
                         }
-                        return <span className="text-gray-400">-- Chọn nhãn --</span>;
+                        return <span className="text-gray-400 font-bold text-xs">-- Không gán nhãn --</span>;
                       })()}
                       <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
                     </button>
@@ -1405,6 +1408,19 @@ export default function DashboardPage() {
                     {/* Dropdown Options List */}
                     {calTagDropdownOpen && (
                       <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto space-y-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCalSelectedTagId("");
+                            setCalNoteColor("#fdfd96");
+                            setCalTagDropdownOpen(false);
+                          }}
+                          className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
+                        >
+                          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans bg-gray-100 text-gray-500 border border-gray-200">
+                            -- Không gán nhãn --
+                          </span>
+                        </button>
                         {calendarTags.map((t) => {
                           const styles = getTagStyles(t.color);
                           return (
@@ -1631,7 +1647,7 @@ export default function DashboardPage() {
               description: task.description || ""
             });
             setNotify(task.notification || false);
-            setTaskFormTagId(task.tagId || "system-task");
+            setTaskFormTagId(task.tagId || "");
             setTaskFormColor(task.noteColor || task.color || "#fdfd96");
             setEditingTask(task);
             setShowAddNote(true);

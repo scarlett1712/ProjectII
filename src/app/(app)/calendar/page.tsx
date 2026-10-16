@@ -397,7 +397,7 @@ export default function CalendarPage() {
   const [startAtStr, setStartAtStr] = useState("");
   const [endAtStr, setEndAtStr] = useState("");
   const [allDay, setAllDay] = useState(false);
-  const [selectedTagId, setSelectedTagId] = useState("system-event");
+  const [selectedTagId, setSelectedTagId] = useState("");
   const [notification, setNotification] = useState(false);
   const [noteColor, setNoteColor] = useState("#fdfd96"); // Yellow default
   const [recurrence, setRecurrence] = useState("NONE");
@@ -663,7 +663,7 @@ export default function CalendarPage() {
         isTask: true,
         startAt: task.dueAt || task.createdAt,
         endAt: task.dueAt || task.createdAt,
-        tagId: task.tagId || "system-task"
+        tagId: task.tagId || null
       }));
 
       // Combine
@@ -739,7 +739,7 @@ export default function CalendarPage() {
       notification,
       noteColor,
       color: noteColor, // Ensure color is saved in DB
-      tagId: selectedTagId
+      tagId: selectedTagId || null
     };
 
     if (itemType === "event") {
@@ -933,7 +933,7 @@ export default function CalendarPage() {
     setStartAtStr("");
     setEndAtStr("");
     setAllDay(false);
-    setSelectedTagId("system-event");
+    setSelectedTagId("");
     setNotification(false);
     setNoteColor("#fdfd96");
     setRecurrence("NONE");
@@ -956,7 +956,7 @@ export default function CalendarPage() {
     clearForm();
     setEditingItem(null);
     setItemType(isTaskVal ? "task" : "event");
-    const defaultTagId = isTaskVal ? "system-task" : "system-event";
+    const defaultTagId = isTaskVal ? "" : "system-event";
     setSelectedTagId(defaultTagId);
     
     const tag = tags.find(t => t.id === defaultTagId);
@@ -989,7 +989,7 @@ export default function CalendarPage() {
     setTitle(item.title);
     setDescription(item.description || "");
     setItemType(item.isTask ? "task" : "event");
-    setSelectedTagId(item.tagId || (item.isTask ? "system-task" : "system-event"));
+    setSelectedTagId(item.tagId || "");
     setNotification(item.notification);
     setNoteColor(item.noteColor || item.color || "#fdfd96");
     setCompleted(item.completed || false);
@@ -1129,8 +1129,8 @@ export default function CalendarPage() {
 
   // Filter items
   const filteredItems = items.filter(item => {
-    const tagId = item.tagId || (item.isTask ? "system-task" : "system-event");
-    return selectedTags.includes(tagId);
+    if (!item.tagId) return true; // Items without a tag are always shown
+    return selectedTags.includes(item.tagId);
   });
 
   // Calendar calculations
@@ -1314,8 +1314,8 @@ export default function CalendarPage() {
               
               {/* Day cells */}
               {daysInMonth.map((day, i) => {
-                // Filter out floating tasks so they don't render in cell
-                const dayItems = filteredItems.filter(item => isSameDay(parseISO(item.startAt), day) && (!item.isTask || !taskPositions[item.id]));
+                // Filter out floating tasks so they don't render in cell, except completed ones
+                const dayItems = filteredItems.filter(item => isSameDay(parseISO(item.startAt), day) && (!item.isTask || !taskPositions[item.id] || item.completed));
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isToday = isSameDay(day, new Date());
 
@@ -1781,6 +1781,11 @@ export default function CalendarPage() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ id: task.id, completed: true })
                   });
+                  // Clean up floating position so the task returns cleanly to the calendar grid
+                  const updated = { ...taskPositions };
+                  delete updated[task.id];
+                  setTaskPositions(updated);
+                  localStorage.setItem("calendar-task-positions", JSON.stringify(updated));
                   showToast(`Đã hoàn thành: "${task.title}"!`);
                   loadData();
                 }}
@@ -1880,7 +1885,7 @@ export default function CalendarPage() {
                       type="button" 
                       onClick={() => { 
                         setItemType("task"); 
-                        setSelectedTagId("system-task"); 
+                        setSelectedTagId(""); 
                         setNotification(startAtStr !== "");
                       }} 
                       className={`py-2 rounded-lg text-center transition-all ${itemType === "task" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280]"}`}
@@ -1967,7 +1972,7 @@ export default function CalendarPage() {
                             </span>
                           );
                         }
-                        return <span className="text-gray-400">-- Chọn nhãn --</span>;
+                        return <span className="text-gray-400 font-bold text-xs">-- Không gán nhãn --</span>;
                       })()}
                       <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
                     </button>
@@ -1983,6 +1988,19 @@ export default function CalendarPage() {
                     {/* Dropdown Options List */}
                     {tagDropdownOpen && (
                       <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto space-y-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTagId("");
+                            setNoteColor("#fdfd96");
+                            setTagDropdownOpen(false);
+                          }}
+                          className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
+                        >
+                          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans bg-gray-100 text-gray-500 border border-gray-200">
+                            -- Không gán nhãn --
+                          </span>
+                        </button>
                         {tags.map((t) => {
                           const styles = getTagStyles(t.color);
                           return (
