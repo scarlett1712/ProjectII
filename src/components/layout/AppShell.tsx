@@ -538,17 +538,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className={`mx-auto w-full flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? "max-w-7xl" : "max-w-6xl"}`}>
               
               {/* Global Top Header Bar */}
-              <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 mb-6 md:mb-8 pb-4 border-b border-purple-100/50">
-                <div className="flex flex-row items-baseline gap-2 flex-wrap min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-black text-[#581C87] capitalize shrink-0">
+              <header className="flex flex-col gap-3 sm:gap-4 mb-6 md:mb-8 pb-4 border-b border-purple-100/50">
+                {/* Row 1 & 2: Title and Subtitle */}
+                <div className="flex flex-col gap-1 min-w-0">
+                  <h1 className="text-2xl sm:text-3xl font-black text-[#581C87] capitalize tracking-tight">
                     {pathname.startsWith("/dashboard") ? "Trang chủ" :
                      pathname.startsWith("/nutrition") ? "Măm măm" :
                      pathname.startsWith("/calendar") ? "Lịch lịch" :
                      pathname.startsWith("/budget") ? "Xèng xèng" :
                      pathname.startsWith("/chat") ? "Star Chat" : "Little Star"}
                   </h1>
-                  <span className="text-gray-300 hidden sm:inline">•</span>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs sm:text-sm text-gray-500 font-medium">
                     {pathname.startsWith("/dashboard") ? "Năng lượng bùng nổ nào!!" :
                      pathname.startsWith("/nutrition") ? "Ăn uống điều độ, uống nước đủ đầy" :
                      pathname.startsWith("/calendar") ? "Sắp xếp lịch trình & quản lý công việc" :
@@ -556,7 +556,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                      pathname.startsWith("/chat") ? "Trò chuyện cùng trợ lý Star" : "Trợ lý sức khỏe của bạn"}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+
+                {/* Row 3: Search Bar & Notifications */}
+                <div className="flex items-center gap-3 w-full">
                   {/* Notification permission prompt button */}
                   {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && (
                     <button
@@ -582,7 +584,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   )}
 
                   {/* Global Search Bar */}
-                  <div className="relative flex-1 md:w-64">
+                  <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-400" />
                     <input 
                       type="text" 
@@ -599,7 +601,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
-                          className="absolute top-full left-0 md:left-auto md:right-0 mt-2 w-full md:w-80 max-h-80 overflow-y-auto bg-white/95 rounded-2xl border border-purple-100 shadow-2xl p-2 z-[200] backdrop-blur-md"
+                          className="absolute top-full left-0 mt-2 w-full max-h-80 overflow-y-auto bg-white/95 rounded-2xl border border-purple-100 shadow-2xl p-2 z-[200] backdrop-blur-md"
                         >
                           {searchLoading ? (
                             <p className="text-xs text-gray-400 p-3 text-center">Đang tìm kiếm...</p>
@@ -628,7 +630,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </AnimatePresence>
                   </div>
 
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <button 
                       onClick={() => setShowNotifDropdown(!showNotifDropdown)}
                       className="relative rounded-full bg-white p-2 text-gray-500 shadow-sm hover:text-[#A172FD] border border-purple-100 hover:bg-[#F5F3FF] transition-all"

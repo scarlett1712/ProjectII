@@ -666,7 +666,7 @@ export default function DashboardPage() {
   );
 
   // Filter tasks to show inline only if NOT floating and NOT completed
-  const inlineTasks = tasks.filter(t => !t.completed && !taskPositions[t.id]).slice(0, 3);
+  const inlineTasks = tasks.filter(t => !t.completed && !taskPositions[t.id]).slice(0, 4);
   const floatingTasks = tasks.filter(t => !t.completed && taskPositions[t.id]);
 
   return (
@@ -743,7 +743,7 @@ export default function DashboardPage() {
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-[#A172FD]">Deadline!!!</h2>
             </div>
-            <div className="flex flex-wrap gap-4 min-h-[176px]">
+            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-4 min-h-[176px]">
               {inlineTasks.length > 0 ? inlineTasks.map((task, i) => (
                 <motion.div
                   key={task.id}
@@ -782,7 +782,7 @@ export default function DashboardPage() {
                     y: 0,
                     backgroundColor: getTaskBgHex(task)
                   }} // Reset offset to prevent jumps
-                  className="relative h-44 w-40 p-4 shadow-md rounded-br-[40px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none task-card-ref transition-all"
+                  className="relative h-44 w-44 sm:w-36 lg:w-40 p-4 shadow-md rounded-br-[40px] border border-black/5 flex flex-col justify-between cursor-grab active:cursor-grabbing select-none task-card-ref transition-all"
                 >
                   {/* Circle Check Completion Button */}
                   <button
