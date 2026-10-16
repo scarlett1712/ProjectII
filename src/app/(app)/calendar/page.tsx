@@ -1531,28 +1531,27 @@ export default function CalendarPage() {
                                       zIndex: 30,
                                       opacity: item.completed ? 0.5 : 1
                                     }}
-                                    className="absolute p-2 rounded-xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.02] transition-transform select-none task-card-ref group/task"
+                                    className="absolute p-1.5 sm:p-2 rounded-xl shadow-md border border-yellow-200/25 flex flex-col justify-between overflow-hidden cursor-grab active:cursor-grabbing transform hover:scale-[1.02] hover:z-40 transition-transform select-none task-card-ref group/task"
+                                    title={`${item.title} (${format(new Date(item.startAt), "HH:mm")})${item.description ? ' - ' + item.description : ''}`}
                                   >
                                     {(() => {
                                       const contrastColor = getContrastTextColorForEvent(getTaskBgColor(item) || "#fdfd96");
                                       return (
                                         <>
-                                          <div className="flex-1 flex flex-col min-h-0 select-none text-left">
-                                            <p className="font-bold text-[9px] leading-tight break-words shrink-0" style={{ color: contrastColor }}>
+                                          <div className="flex-1 min-h-0 overflow-hidden select-none text-left flex flex-col justify-start">
+                                            <p className="font-bold text-[8px] sm:text-[8.5px] leading-[1.15] break-words line-clamp-2" style={{ color: contrastColor }}>
                                               📌 {item.title}
                                             </p>
-                                            <div className="flex-1 overflow-y-auto note-scrollbar pr-0.5 mt-0.5">
-                                              {item.description && (
-                                                <p className="text-[7.5px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight" style={{ color: contrastColor }}>
-                                                  {item.description}
-                                                </p>
-                                              )}
-                                            </div>
+                                            {item.description && pos.height > 65 && (
+                                              <p className="text-[7px] sm:text-[7.5px] opacity-80 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5 line-clamp-1" style={{ color: contrastColor }}>
+                                                {item.description}
+                                              </p>
+                                            )}
                                           </div>
-                                          <div className="flex items-center justify-between mt-1 shrink-0">
-                                            <span className="text-[7px] font-semibold flex items-center gap-0.5" style={{ color: contrastColor, opacity: 0.75 }}>
-                                              <Clock className="h-2 w-2" />
-                                              {format(new Date(item.startAt), "HH:mm")}
+                                          <div className="flex items-center justify-between mt-0.5 shrink-0 pt-0.5 border-t border-black/5">
+                                            <span className="text-[7px] sm:text-[7.5px] font-semibold flex items-center gap-0.5 truncate max-w-[calc(100%-10px)]" style={{ color: contrastColor, opacity: 0.85 }}>
+                                              <Clock className="h-2 w-2 shrink-0" />
+                                              <span className="truncate">{format(new Date(item.startAt), "HH:mm")}</span>
                                             </span>
                                             <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${getStatusDotColor(status)}`} />
                                           </div>
@@ -1566,6 +1565,7 @@ export default function CalendarPage() {
                                   <div 
                                     key={item.id}
                                     onClick={(e) => { e.stopPropagation(); openEditPopup(item); }}
+                                    title={`${item.title} (${format(new Date(item.startAt), "HH:mm")} - ${format(new Date(item.endAt), "HH:mm")})${item.description ? ' - ' + item.description : ''}`}
                                     style={{ 
                                       top: pos.top, 
                                       height: pos.height,
@@ -1574,17 +1574,17 @@ export default function CalendarPage() {
                                       zIndex: 20,
                                       ...getEventStyle(item)
                                     }}
-                                    className="absolute font-bold p-2 rounded-xl cursor-pointer hover:brightness-95 flex flex-col text-[9px] justify-between shadow-sm overflow-y-auto scrollbar-none select-none transition-all"
+                                    className="absolute font-bold p-1.5 sm:p-2 rounded-xl cursor-pointer hover:brightness-95 hover:z-40 flex flex-col text-[8.5px] sm:text-[9px] justify-between shadow-sm overflow-hidden select-none transition-all"
                                   >
-                                    <div className="space-y-0.5 flex-1 min-h-0">
-                                      <p className="leading-snug break-words">{item.title}</p>
-                                      {item.description && (
-                                        <p className="text-[7.5px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5">
+                                    <div className="space-y-0.5 flex-1 min-h-0 overflow-hidden">
+                                      <p className="leading-snug break-words line-clamp-2">{item.title}</p>
+                                      {item.description && pos.height > 65 && (
+                                        <p className="text-[7.5px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5 line-clamp-1">
                                           {item.description}
                                         </p>
                                       )}
                                     </div>
-                                    <p className="text-[6.5px] opacity-75 font-normal mt-1 self-start shrink-0">
+                                    <p className="text-[6.5px] sm:text-[7px] opacity-75 font-normal mt-0.5 self-start shrink-0 truncate max-w-full">
                                       {format(new Date(item.startAt), "HH:mm")} - {format(new Date(item.endAt), "HH:mm")}
                                     </p>
                                   </div>
@@ -1667,30 +1667,29 @@ export default function CalendarPage() {
                                   zIndex: 30,
                                   opacity: item.completed ? 0.5 : 1
                                 }}
-                                className="absolute p-3 rounded-2xl shadow-md border border-yellow-200/25 flex flex-col justify-between cursor-grab active:cursor-grabbing transform hover:scale-[1.01] transition-transform select-none task-card-ref group/task"
+                                className="absolute p-2.5 sm:p-3 rounded-2xl shadow-md border border-yellow-200/25 flex flex-col justify-between overflow-hidden cursor-grab active:cursor-grabbing transform hover:scale-[1.01] hover:z-40 transition-transform select-none task-card-ref group/task"
+                                title={`${item.title} (${format(new Date(item.startAt), "HH:mm")})${item.description ? ' - ' + item.description : ''}`}
                               >
                                 {(() => {
                                   const contrastColor = getContrastTextColorForEvent(getTaskBgColor(item) || "#fdfd96");
                                   return (
                                     <>
-                                      <div className="flex-1 flex flex-col min-h-0 select-none text-left">
-                                        <p className="font-bold text-xs leading-tight break-words shrink-0" style={{ color: contrastColor }}>
+                                      <div className="flex-1 min-h-0 overflow-hidden select-none text-left flex flex-col justify-start">
+                                        <p className="font-bold text-xs leading-snug break-words line-clamp-2" style={{ color: contrastColor }}>
                                           📌 {item.title}
                                         </p>
-                                        <div className="flex-1 overflow-y-auto note-scrollbar pr-1 mt-1">
-                                          {item.description && (
-                                            <p className="text-[10px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight" style={{ color: contrastColor }}>
-                                              {item.description}
-                                            </p>
-                                          )}
-                                        </div>
+                                        {item.description && pos.height > 65 && (
+                                          <p className="text-[10px] opacity-80 font-medium whitespace-pre-wrap break-words leading-tight mt-1 line-clamp-2" style={{ color: contrastColor }}>
+                                            {item.description}
+                                          </p>
+                                        )}
                                       </div>
-                                      <div className="flex items-center justify-between mt-2 shrink-0">
-                                        <span className="text-[10px] font-semibold flex items-center gap-1" style={{ color: contrastColor, opacity: 0.75 }}>
-                                          <Clock className="h-3 w-3" />
-                                          {format(new Date(item.startAt), "HH:mm")}
+                                      <div className="flex items-center justify-between mt-1.5 shrink-0 pt-1 border-t border-black/5">
+                                        <span className="text-[10px] font-semibold flex items-center gap-1 truncate max-w-[calc(100%-16px)]" style={{ color: contrastColor, opacity: 0.85 }}>
+                                          <Clock className="h-3 w-3 shrink-0" />
+                                          <span className="truncate">{format(new Date(item.startAt), "HH:mm")}</span>
                                         </span>
-                                        <div className={`h-2.5 w-2.5 rounded-full shrink-0 ${getStatusDotColor(status)}`} />
+                                        <div className={`h-2 w-2 rounded-full shrink-0 ${getStatusDotColor(status)}`} />
                                       </div>
                                     </>
                                   );
@@ -1702,6 +1701,7 @@ export default function CalendarPage() {
                               <div 
                                 key={item.id}
                                 onClick={(e) => { e.stopPropagation(); openEditPopup(item); }}
+                                title={`${item.title} (${format(new Date(item.startAt), "HH:mm")} - ${format(new Date(item.endAt), "HH:mm")})${item.description ? ' - ' + item.description : ''}`}
                                 style={{ 
                                   top: pos.top, 
                                   height: pos.height,
@@ -1710,17 +1710,17 @@ export default function CalendarPage() {
                                   zIndex: 20,
                                   ...getEventStyle(item)
                                 }}
-                                className="absolute font-bold p-3 rounded-2xl cursor-pointer hover:brightness-95 flex flex-col text-xs justify-between shadow-sm overflow-y-auto scrollbar-none select-none transition-all"
+                                className="absolute font-bold p-2.5 sm:p-3 rounded-2xl cursor-pointer hover:brightness-95 hover:z-40 flex flex-col text-xs justify-between shadow-sm overflow-hidden select-none transition-all"
                               >
-                                <div className="space-y-1 flex-1 min-h-0">
-                                  <p className="leading-snug break-words">{item.title}</p>
-                                  {item.description && (
-                                    <p className="text-[10px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5">
+                                <div className="space-y-1 flex-1 min-h-0 overflow-hidden">
+                                  <p className="leading-snug break-words line-clamp-2">{item.title}</p>
+                                  {item.description && pos.height > 65 && (
+                                    <p className="text-[10px] opacity-90 font-medium whitespace-pre-wrap break-words leading-tight mt-0.5 line-clamp-2">
                                       {item.description}
                                     </p>
                                   )}
                                 </div>
-                                <p className="text-[9px] opacity-75 font-normal mt-1 self-start shrink-0">
+                                <p className="text-[9px] opacity-75 font-normal mt-1 self-start shrink-0 truncate max-w-full">
                                   {format(new Date(item.startAt), "HH:mm")} - {format(new Date(item.endAt), "HH:mm")}
                                 </p>
                               </div>
