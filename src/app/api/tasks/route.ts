@@ -21,6 +21,7 @@ function generateRecurringTaskInstances(task: any, windowStart: Date, windowEnd:
         isRecurringInstance: true,
         originalId: task.id,
         dueAt: new Date(currentStart),
+        completed: false, // Recurring occurrences generated from template start uncompleted; individual completions are stored as standalone tasks
       });
     }
 
@@ -105,27 +106,38 @@ export async function PATCH(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const mode = searchParams.get("mode") || body.mode || "all";
+    const originalId = id.includes("_rec_") ? id.split("_rec_")[0] : id;
+
+    const task = await db.taskItem.findFirst({
+      where: {
+        id: originalId,
+        userId: auth.userId!
+      }
+    });
+
+    if (!task) {
+      return NextResponse.json({ error: "Không tìm thấy nhiệm vụ gốc." }, { status: 404 });
+    }
+
+    const isRecurring = Boolean(id.includes("_rec_") || (task.recurrence && task.recurrence !== "NONE"));
+
+    let mode = searchParams.get("mode") || body.mode;
+    if (!mode) {
+      if (id.includes("_rec_")) {
+        mode = "one";
+      } else if (data.completed !== undefined && isRecurring) {
+        mode = "one";
+      } else {
+        mode = "all";
+      }
+    }
 
     // Mode: "one" - editing or completing a single instance of a recurring series
-    if (mode === "one" && (id.includes("_rec_") || (await db.taskItem.findFirst({ where: { id, userId: auth.userId! } }))?.recurrence !== "NONE")) {
-      let originalId = id;
+    if (mode === "one" && isRecurring) {
       let timestamp: number;
-
-      const task = await db.taskItem.findFirst({
-        where: {
-          id: id.includes("_rec_") ? id.split("_rec_")[0] : id,
-          userId: auth.userId!
-        }
-      });
-
-      if (!task) {
-        return NextResponse.json({ error: "Không tìm thấy nhiệm vụ gốc." }, { status: 404 });
-      }
 
       if (id.includes("_rec_")) {
         const parts = id.split("_rec_");
-        originalId = parts[0];
         timestamp = parseInt(parts[1], 10);
       } else {
         timestamp = task.dueAt ? new Date(task.dueAt).getTime() : new Date(task.createdAt).getTime();
@@ -162,8 +174,8 @@ export async function PATCH(req: NextRequest) {
           data: { recurrenceEnd: newEndLimit }
         });
 
-        const originalRecurrenceEnd = task.recurrenceEnd ? new Date(task.recurrenceEnd) : addMonths(new Date(), 6);
-        if (nextStart <= originalRecurrenceEnd) {
+        const originalRecurrenceEnd = task.recurrenceEnd ? new Date(task.recurrenceEnd) : null;
+        if (!originalRecurrenceEnd || nextStart <= originalRecurrenceEnd) {
           await db.taskItem.create({
             data: {
               userId: auth.userId!,
@@ -181,7 +193,7 @@ export async function PATCH(req: NextRequest) {
         }
       }
 
-      const newDueAt = data.dueAt !== undefined ? (data.dueAt ? new Date(data.dueAt) : null) : instanceStart;
+      const newDueAt = data.dueAt !== undefined ? (data.dueAt ? new Date(data.dueAt) : null) : (task.dueAt ? instanceStart : null);
       const standaloneTask = await db.taskItem.create({
         data: {
           userId: auth.userId!,
@@ -201,20 +213,17 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Mode: "future" - modifying from this instance forward
-    if (mode === "future" && id.includes("_rec_")) {
-      const parts = id.split("_rec_");
-      const originalId = parts[0];
-      const timestamp = parseInt(parts[1], 10);
-      const instanceStart = new Date(timestamp);
-
-      const task = await db.taskItem.findFirst({
-        where: { id: originalId, userId: auth.userId! }
-      });
-      if (!task) {
-        return NextResponse.json({ error: "Không tìm thấy nhiệm vụ gốc." }, { status: 404 });
+    if (mode === "future" && isRecurring) {
+      let timestamp: number;
+      if (id.includes("_rec_")) {
+        const parts = id.split("_rec_");
+        timestamp = parseInt(parts[1], 10);
+      } else {
+        timestamp = task.dueAt ? new Date(task.dueAt).getTime() : new Date(task.createdAt).getTime();
       }
-
+      const instanceStart = new Date(timestamp);
       const taskStart = new Date(task.dueAt || task.createdAt);
+
       if (instanceStart.getTime() === taskStart.getTime()) {
         const updatedParent = await db.taskItem.update({
           where: { id: originalId },

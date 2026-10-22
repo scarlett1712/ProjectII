@@ -1783,11 +1783,14 @@ export default function CalendarPage() {
                   await fetch("/api/tasks", {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: task.id, completed: true })
+                    body: JSON.stringify({ id: task.id, completed: true, mode: "one" })
                   });
                   // Clean up floating position so the task returns cleanly to the calendar grid
                   const updated = { ...taskPositions };
                   delete updated[task.id];
+                  if (task.id.includes("_rec_")) {
+                    delete updated[task.id.split("_rec_")[0]];
+                  }
                   setTaskPositions(updated);
                   localStorage.setItem("calendar-task-positions", JSON.stringify(updated));
                   showToast(`Đã hoàn thành: "${task.title}"!`);

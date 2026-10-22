@@ -801,7 +801,7 @@ export default function DashboardPage() {
                           await fetch("/api/tasks", {
                             method: "PATCH",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ id: task.id, completed: true })
+                            body: JSON.stringify({ id: task.id, completed: true, mode: "one" })
                           });
                           fetchTasks();
                           showToast(`Đã hoàn thành: "${task.title}"!`);
@@ -1737,8 +1737,16 @@ export default function DashboardPage() {
               await fetch("/api/tasks", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: task.id, completed: true })
+                body: JSON.stringify({ id: task.id, completed: true, mode: "one" })
               });
+              // Clean up floating position so the task returns cleanly
+              const updated = { ...taskPositions };
+              delete updated[task.id];
+              if (task.id.includes("_rec_")) {
+                delete updated[task.id.split("_rec_")[0]];
+              }
+              setTaskPositions(updated);
+              localStorage.setItem("dashboard-task-positions", JSON.stringify(updated));
               fetchTasks();
               showToast(`Đã hoàn thành: "${task.title}"!`);
             }}

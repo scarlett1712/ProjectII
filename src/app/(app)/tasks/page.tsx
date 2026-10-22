@@ -42,7 +42,7 @@ export default function TasksPage() {
               type="checkbox"
               checked={task.completed}
               onChange={async (e) => {
-                await fetch("/api/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: task.id, completed: e.target.checked }) });
+                await fetch("/api/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: task.id, completed: e.target.checked, mode: "one" }) });
                 await load();
               }}
             />

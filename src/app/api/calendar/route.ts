@@ -110,27 +110,28 @@ export async function PATCH(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const mode = searchParams.get("mode") || body.mode || "all";
+    const mode = searchParams.get("mode") || body.mode || (id.includes("_rec_") ? "one" : "all");
+    const originalId = id.includes("_rec_") ? id.split("_rec_")[0] : id;
+
+    const event = await db.calendarEvent.findFirst({
+      where: {
+        id: originalId,
+        userId: auth.userId!
+      }
+    });
+
+    if (!event) {
+      return NextResponse.json({ error: "Không tìm thấy sự kiện gốc." }, { status: 404 });
+    }
+
+    const isRecurring = Boolean(id.includes("_rec_") || (event.recurrence && event.recurrence !== "NONE"));
 
     // If updating a single occurrence of a recurring series
-    if (mode === "one" && (id.includes("_rec_") || (await db.calendarEvent.findFirst({ where: { id, userId: auth.userId! } }))?.recurrence !== "NONE")) {
-      let originalId = id;
+    if (mode === "one" && isRecurring) {
       let timestamp: number;
-
-      const event = await db.calendarEvent.findFirst({
-        where: {
-          id: id.includes("_rec_") ? id.split("_rec_")[0] : id,
-          userId: auth.userId!
-        }
-      });
-
-      if (!event) {
-        return NextResponse.json({ error: "Không tìm thấy sự kiện gốc." }, { status: 404 });
-      }
 
       if (id.includes("_rec_")) {
         const parts = id.split("_rec_");
-        originalId = parts[0];
         timestamp = parseInt(parts[1], 10);
       } else {
         timestamp = new Date(event.startAt).getTime();
@@ -225,24 +226,11 @@ export async function PATCH(req: NextRequest) {
     }
 
     // If updating from this occurrence onward
-    if (mode === "future" && (id.includes("_rec_") || (await db.calendarEvent.findFirst({ where: { id, userId: auth.userId! } }))?.recurrence !== "NONE")) {
-      let originalId = id;
+    if (mode === "future" && isRecurring) {
       let timestamp: number;
-
-      const event = await db.calendarEvent.findFirst({
-        where: {
-          id: id.includes("_rec_") ? id.split("_rec_")[0] : id,
-          userId: auth.userId!
-        }
-      });
-
-      if (!event) {
-        return NextResponse.json({ error: "Không tìm thấy sự kiện gốc." }, { status: 404 });
-      }
 
       if (id.includes("_rec_")) {
         const parts = id.split("_rec_");
-        originalId = parts[0];
         timestamp = parseInt(parts[1], 10);
       } else {
         timestamp = new Date(event.startAt).getTime();
