@@ -432,11 +432,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <StarBackground>
-      <div className="flex min-h-screen items-center justify-center p-4 md:p-8">
+      <div className="flex min-h-screen items-center justify-center p-0 md:p-8">
         {/* Main Inner Frame */}
-        <div className="relative flex h-[90vh] w-full max-w-[1440px] overflow-hidden rounded-[48px] bg-white/80 shadow-[0_20px_80px_rgba(0,0,0,0.15)] backdrop-blur-xl">
+        <div className="relative flex h-screen md:h-[90vh] w-full max-w-[1440px] overflow-hidden rounded-none md:rounded-[48px] bg-white/80 shadow-[0_20px_80px_rgba(0,0,0,0.15)] backdrop-blur-xl">
           {/* Sidebar */}
-          <aside className={`border-r border-white/20 bg-white/40 transition-all duration-300 flex flex-col ${isCollapsed ? "w-24 p-4" : "w-64 p-8"}`}>
+          <aside className={`border-r border-white/20 bg-white/40 transition-all duration-300 hidden md:flex flex-col ${isCollapsed ? "w-24 p-4" : "w-64 p-8"}`}>
             <div className="flex h-full flex-col">
               {/* Logo/Brand */}
               <div className="mb-12 flex items-center justify-between px-2">
@@ -534,7 +534,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-4 sm:p-6 md:p-8 transition-all duration-300 flex flex-col">
+          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 pb-24 md:pb-8 transition-all duration-300 flex flex-col">
             <div className={`mx-auto w-full flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? "max-w-7xl" : "max-w-6xl"}`}>
               
               {/* Global Top Header Bar */}
@@ -698,6 +698,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       )}
                     </AnimatePresence>
                   </div>
+
+                  {/* Mobile Profile Avatar Button */}
+                  <button
+                    onClick={() => setShowProfile(true)}
+                    className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#A172FD] text-white shadow-md active:scale-95"
+                    title="Hồ sơ cá nhân"
+                  >
+                    <UserIcon className="h-5 w-5" />
+                  </button>
                 </div>
               </header>
 
@@ -706,6 +715,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </main>
+
+          {/* Mobile Bottom Navigation Bar */}
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-purple-100 flex items-center justify-around py-2 px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+            {sidebarLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all active:scale-95 ${
+                    isActive ? "text-[#A172FD]" : "text-gray-400 hover:text-gray-600"
+                  }`}
+                >
+                  <div className={`p-1.5 rounded-xl ${isActive ? "bg-purple-100 text-[#A172FD]" : ""}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className={`text-[10px] font-bold mt-0.5 ${isActive ? "text-[#A172FD]" : "text-gray-500"}`}>
+                    {link.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
         {/* Profile Modal */}
