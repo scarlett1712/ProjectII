@@ -230,6 +230,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
   const [txToAccount, setTxToAccount] = useState("");
   const [txNote, setTxNote] = useState("");
   const [txDate, setTxDate] = useState(new Date().toISOString().split("T")[0]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Dropdowns
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
@@ -275,6 +276,8 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
 
   const handleLogTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const amount = parseInt(txAmountStr.replace(/\D/g, ""), 10);
     
     if (!amount || isNaN(amount)) {
@@ -300,6 +303,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/budget/transactions", {
         method: "POST",
@@ -330,6 +334,8 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
     } catch (e) {
       console.error(e);
       alert("Lỗi mạng.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -509,9 +515,12 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
             <div className="mt-10">
               <button
                 onClick={handleLogTransaction}
-                className="w-full rounded-2xl bg-[#A172FD] py-4 font-bold text-white shadow-lg shadow-[#A172FD]/20 transition-transform hover:scale-[1.02] active:scale-95 text-sm"
+                disabled={isSubmitting}
+                className={`w-full rounded-2xl bg-[#A172FD] py-4 font-bold text-white shadow-lg shadow-[#A172FD]/20 transition-all text-sm flex items-center justify-center gap-2 ${
+                  isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:scale-[1.02] active:scale-95"
+                }`}
               >
-                Ghi lại ngay
+                {isSubmitting ? "Đang ghi nhận..." : "Ghi lại ngay"}
               </button>
             </div>
           </div>

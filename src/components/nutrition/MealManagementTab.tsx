@@ -90,6 +90,7 @@ export function MealManagementTab() {
   };
   
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     show: boolean;
     title: string;
@@ -167,6 +168,7 @@ export function MealManagementTab() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!mealName.trim()) return;
     
     // Create eatenAt based on selected date and entered/selected time
@@ -174,6 +176,7 @@ export function MealManagementTab() {
     const [h, m] = mealTime.split(":");
     eatenAt.setHours(Number(h), Number(m), 0, 0);
 
+    setIsSubmitting(true);
     try {
       const url = "/api/meals";
       const method = editingMeal ? "PATCH" : "POST";
@@ -219,6 +222,8 @@ export function MealManagementTab() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -1035,9 +1040,12 @@ export function MealManagementTab() {
                   </div>
                   <button 
                     type="submit"
-                    className="w-full max-w-[240px] mx-auto block rounded-full bg-[#A172FD] py-2 text-sm font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md mt-4"
+                    disabled={isSubmitting}
+                    className={`w-full max-w-[240px] mx-auto block rounded-full bg-[#A172FD] py-2 text-sm font-bold text-white transition-all shadow-md mt-4 ${
+                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                    }`}
                   >
-                    {editingMeal ? "Lưu thay đổi" : "Thêm vào thực đơn"}
+                    {isSubmitting ? "Đang lưu..." : (editingMeal ? "Lưu thay đổi" : "Thêm vào thực đơn")}
                   </button>
                 </form>
               </div>

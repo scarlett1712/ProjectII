@@ -403,6 +403,7 @@ export default function CalendarPage() {
   const [recurrence, setRecurrence] = useState("NONE");
   const [recurrenceEndStr, setRecurrenceEndStr] = useState("");
   const [completed, setCompleted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Tag creation form
   const [newTagName, setNewTagName] = useState("");
@@ -521,6 +522,11 @@ export default function CalendarPage() {
   };
 
   const handleInlineTaskDragEnd = (e: any, info: any, task: CalendarItem, containerClass: string) => {
+    // If the task is completed, do not allow dragging out into a note
+    if (task.completed) {
+      return;
+    }
+
     // If the drag offset is very small, treat it as a click/tap (don't float it)
     if (Math.abs(info.offset.x) < 10 && Math.abs(info.offset.y) < 10) {
       return;
@@ -678,6 +684,8 @@ export default function CalendarPage() {
   }, [currentDate]);
 
   const executeSave = async (payload: any, mode: "one" | "all" | "future") => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       let url = itemType === "event" ? "/api/calendar" : "/api/tasks";
       let method = "POST";
@@ -730,6 +738,8 @@ export default function CalendarPage() {
     } catch (e) {
       console.error(e);
       showToast("Lỗi kết nối khi lưu.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1347,13 +1357,15 @@ export default function CalendarPage() {
                           return (
                             <motion.div 
                               key={item.id}
-                              drag
+                              drag={!item.completed}
                               dragMomentum={false}
                               dragElastic={0}
                               onDragStart={() => {
+                                if (item.completed) return;
                                 draggedTaskIdRef.current = item.id;
                               }}
                               onDragEnd={(e, info) => {
+                                if (item.completed) return;
                                 handleInlineTaskDragEnd(e, info, item, '.calendar-container');
                                 setTimeout(() => {
                                   draggedTaskIdRef.current = null;
@@ -1366,9 +1378,12 @@ export default function CalendarPage() {
                               style={{ 
                                 backgroundColor: getTaskBgColor(item),
                                 x: 0,
-                                y: 0
+                                y: 0,
+                                opacity: item.completed ? 0.5 : 1
                               }}
-                              className="text-[10px] p-1.5 rounded-lg shadow-sm border border-yellow-200/25 flex items-center justify-between gap-1 cursor-grab active:cursor-grabbing task-card-ref select-none"
+                              className={`text-[10px] p-1.5 rounded-lg shadow-sm border border-yellow-200/25 flex items-center justify-between gap-1 select-none task-card-ref ${
+                                item.completed ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+                              }`}
                             >
                               <span className={`font-bold text-gray-800 truncate flex-1 ${item.completed ? "line-through opacity-50" : ""}`}>
                                 📌 {item.title}
@@ -1504,7 +1519,7 @@ export default function CalendarPage() {
                                 return (
                                   <motion.div 
                                     key={item.id}
-                                    drag
+                                    drag={!item.completed}
                                     dragMomentum={false}
                                     dragElastic={0}
                                     onDragStart={() => {
@@ -1531,7 +1546,9 @@ export default function CalendarPage() {
                                       zIndex: 30,
                                       opacity: item.completed ? 0.5 : 1
                                     }}
-                                    className="absolute p-1.5 sm:p-2 rounded-xl shadow-md border border-yellow-200/25 flex flex-col justify-between overflow-hidden cursor-grab active:cursor-grabbing transform hover:scale-[1.02] hover:z-40 transition-transform select-none task-card-ref group/task"
+                                    className={`absolute p-1.5 sm:p-2 rounded-xl shadow-md border border-yellow-200/25 flex flex-col justify-between overflow-hidden transform hover:scale-[1.02] hover:z-40 transition-transform select-none task-card-ref group/task ${
+                                      item.completed ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+                                    }`}
                                     title={`${item.title} (${format(new Date(item.startAt), "HH:mm")})${item.description ? ' - ' + item.description : ''}`}
                                   >
                                     {(() => {
@@ -1640,7 +1657,7 @@ export default function CalendarPage() {
                             return (
                               <motion.div 
                                 key={item.id}
-                                drag
+                                drag={!item.completed}
                                 dragMomentum={false}
                                 dragElastic={0}
                                 onDragStart={() => {
@@ -1667,7 +1684,9 @@ export default function CalendarPage() {
                                   zIndex: 30,
                                   opacity: item.completed ? 0.5 : 1
                                 }}
-                                className="absolute p-2.5 sm:p-3 rounded-2xl shadow-md border border-yellow-200/25 flex flex-col justify-between overflow-hidden cursor-grab active:cursor-grabbing transform hover:scale-[1.01] hover:z-40 transition-transform select-none task-card-ref group/task"
+                                className={`absolute p-2.5 sm:p-3 rounded-2xl shadow-md border border-yellow-200/25 flex flex-col justify-between overflow-hidden transform hover:scale-[1.01] hover:z-40 transition-transform select-none task-card-ref group/task ${
+                                  item.completed ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"
+                                }`}
                                 title={`${item.title} (${format(new Date(item.startAt), "HH:mm")})${item.description ? ' - ' + item.description : ''}`}
                               >
                                 {(() => {
@@ -2220,9 +2239,12 @@ export default function CalendarPage() {
                   )}
                   <button 
                     type="submit" 
-                    className="flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm"
+                    disabled={isSubmitting}
+                    className={`flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
+                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                    }`}
                   >
-                    Lưu
+                    {isSubmitting ? "Đang lưu..." : "Lưu"}
                   </button>
                 </div>
               </form>

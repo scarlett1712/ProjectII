@@ -201,6 +201,7 @@ export default function BudgetPage() {
   const [showEditTransaction, setShowEditTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionType, setTransactionType] = useState<"EXPENSE" | "INCOME" | "TRANSFER">("EXPENSE");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Custom Dropdowns state
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
@@ -308,8 +309,10 @@ export default function BudgetPage() {
   // Add Account
   const handleAddAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!accountName.trim()) return;
 
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/budget/accounts", {
         method: "POST",
@@ -334,14 +337,18 @@ export default function BudgetPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // Edit Account
   const handleEditAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!editingAccount || !accountName.trim()) return;
 
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/budget/accounts", {
         method: "PATCH",
@@ -368,6 +375,8 @@ export default function BudgetPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -399,8 +408,10 @@ export default function BudgetPage() {
   // Add Category
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!categoryName.trim()) return;
 
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/budget/categories", {
         method: "POST",
@@ -424,14 +435,18 @@ export default function BudgetPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // Edit Category
   const handleEditCategory = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!editingCategory || !categoryName.trim()) return;
 
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/budget/categories", {
         method: "PATCH",
@@ -456,6 +471,8 @@ export default function BudgetPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -546,6 +563,7 @@ export default function BudgetPage() {
   // Edit Transaction
   const handleEditTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!editingTransaction) return;
 
     if (!txAmount || isNaN(Number(txAmount))) {
@@ -571,6 +589,7 @@ export default function BudgetPage() {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const res = await fetch("/api/budget/transactions", {
         method: "PATCH",
@@ -603,6 +622,8 @@ export default function BudgetPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1712,8 +1733,14 @@ export default function BudgetPage() {
                     </div>
                   </div>
                 </div>
-                <button type="submit" className="w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
-                  Lưu tài khoản
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
+                    isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                  }`}
+                >
+                  {isSubmitting ? "Đang lưu..." : "Lưu tài khoản"}
                 </button>
               </form>
             </motion.div>
@@ -1823,8 +1850,14 @@ export default function BudgetPage() {
                   >
                     Xóa
                   </button>
-                  <button type="submit" className="flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
-                    Lưu thay đổi
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
+                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                    }`}
+                  >
+                    {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
                   </button>
                 </div>
               </form>
@@ -1919,8 +1952,14 @@ export default function BudgetPage() {
                     </div>
                   </div>
                 </div>
-                <button type="submit" className="w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
-                  Lưu danh mục
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
+                    isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                  }`}
+                >
+                  {isSubmitting ? "Đang lưu..." : "Lưu danh mục"}
                 </button>
               </form>
             </motion.div>
@@ -2020,8 +2059,14 @@ export default function BudgetPage() {
                   >
                     Xóa
                   </button>
-                  <button type="submit" className="flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm">
-                    Lưu thay đổi
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
+                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                    }`}
+                  >
+                    {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
                   </button>
                 </div>
               </form>
@@ -2416,8 +2461,14 @@ export default function BudgetPage() {
                   </div>
                 </div>
 
-                <button type="submit" className="w-full mt-4 rounded-xl bg-[#A172FD] py-4 font-bold text-white hover:bg-[#8b5cf6] transition-transform active:scale-[0.99] shadow-lg text-sm">
-                  Lưu thay đổi ➔
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`w-full mt-4 rounded-xl bg-[#A172FD] py-4 font-bold text-white transition-all active:scale-[0.99] shadow-lg text-sm ${
+                    isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                  }`}
+                >
+                  {isSubmitting ? "Đang lưu thay đổi..." : "Lưu thay đổi ➔"}
                 </button>
               </form>
             </motion.div>

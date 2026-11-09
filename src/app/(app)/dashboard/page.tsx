@@ -157,6 +157,7 @@ export default function DashboardPage() {
 
   const [taskPositions, setTaskPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [editingTask, setEditingTask] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -378,6 +379,8 @@ export default function DashboardPage() {
 
   const handleSaveMeal = async () => {
     if (!mealForm.name) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const eatenAt = new Date();
       const [h, m] = (mealForm.time || "07:00").split(":");
@@ -413,11 +416,15 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSaveTask = async () => {
     if (!taskForm.title) return;
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       let url = "/api/tasks";
       let method = "POST";
@@ -453,12 +460,15 @@ export default function DashboardPage() {
       showToast(editingTask ? "Đã cập nhật công việc!" : "Đã thêm công việc mới!");
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSaveCalendarItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!calTitle.trim()) return;
+    if (isSubmitting) return;
 
     const payload: any = {
       title: calTitle.trim(),
@@ -484,6 +494,7 @@ export default function DashboardPage() {
       payload.completed = calCompleted;
     }
 
+    setIsSubmitting(true);
     try {
       const url = itemType === "event" ? "/api/calendar" : "/api/tasks";
       const res = await fetch(url, {
@@ -503,6 +514,8 @@ export default function DashboardPage() {
     } catch (e) {
       console.error(e);
       showToast("Lỗi máy chủ.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -665,9 +678,19 @@ export default function DashboardPage() {
     </div>
   );
 
-  // Filter tasks to show inline only if NOT floating and NOT completed
-  const inlineTasks = tasks.filter(t => !t.completed && !taskPositions[t.id]).slice(0, 4);
-  const floatingTasks = tasks.filter(t => !t.completed && taskPositions[t.id]);
+  // Filter tasks to show inline only if NOT floating and NOT completed, sorted by deadline approaching first
+  const activeTasks = tasks.filter(t => !t.completed);
+  const sortedActiveTasks = [...activeTasks].sort((a, b) => {
+    if (a.dueAt && b.dueAt) {
+      return new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime();
+    }
+    if (a.dueAt && !b.dueAt) return -1;
+    if (!a.dueAt && b.dueAt) return 1;
+    return 0;
+  });
+
+  const inlineTasks = sortedActiveTasks.filter(t => !taskPositions[t.id]);
+  const floatingTasks = sortedActiveTasks.filter(t => taskPositions[t.id]);
 
   return (
     <div className="relative space-y-6 sm:space-y-8 min-h-[80vh] dashboard-container">
@@ -745,14 +768,8 @@ export default function DashboardPage() {
             </div>
             <div className="flex-1 flex items-center justify-center w-full my-auto py-2">
               {inlineTasks.length > 0 ? (
-                <div className={`grid gap-3 sm:gap-4 justify-items-center items-center w-fit mx-auto ${
-                  inlineTasks.length === 1
-                    ? "grid-cols-1"
-                    : inlineTasks.length === 2
-                    ? "grid-cols-1 @[320px]:grid-cols-2"
-                    : inlineTasks.length === 3
-                    ? "grid-cols-1 @[320px]:grid-cols-2 @[520px]:grid-cols-3"
-                    : "grid-cols-1 @[320px]:grid-cols-2 @[640px]:grid-cols-4"
+                <div className={`w-full overflow-x-auto pb-3 pt-1 px-1 flex gap-3.5 sm:gap-4 items-center scrollbar-thin scrollbar-thumb-purple-200 ${
+                  inlineTasks.length <= 3 ? "justify-center" : "justify-start"
                 }`}>
                   {inlineTasks.map((task, i) => (
                     <motion.div
@@ -837,6 +854,11 @@ export default function DashboardPage() {
                       <div className="absolute bottom-0 right-0 h-7 w-7 rounded-tl-xl bg-black/5 pointer-events-none" />
                     </motion.div>
                   ))}
+                </div>
+              ) : activeTasks.length > 0 ? (
+                <div className="flex h-40 w-full flex-col items-center justify-center text-[#6B7280]">
+                  <StickyNote className="mb-2 h-10 w-10 text-[#A172FD]/40 animate-pulse" />
+                  <p className="text-xs font-semibold text-[#A172FD]">Bạn còn {activeTasks.length} nhiệm vụ đó nha :3</p>
                 </div>
               ) : (
                 <div className="flex h-40 w-full flex-col items-center justify-center text-[#6B7280]">
@@ -1218,9 +1240,12 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={handleSaveTask}
-                    className="flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white hover:bg-[#8b5cf6] transition-colors shadow-md text-sm"
+                    disabled={isSubmitting}
+                    className={`flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
+                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                    }`}
                   >
-                    Lưu Note
+                    {isSubmitting ? "Đang lưu..." : "Lưu Note"}
                   </button>
                 </div>
               </div>
@@ -1308,10 +1333,14 @@ export default function DashboardPage() {
                   />
                 </div>
                 <button
+                  type="button"
                   onClick={handleSaveMeal}
-                  className="mt-4 block w-full max-w-[240px] mx-auto rounded-full bg-[#A172FD] py-2 text-sm font-bold text-white shadow-lg shadow-[#A172FD]/30 transition-transform hover:scale-105 active:scale-95"
+                  disabled={isSubmitting}
+                  className={`mt-4 block w-full max-w-[240px] mx-auto rounded-full bg-[#A172FD] py-2 text-sm font-bold text-white shadow-lg shadow-[#A172FD]/30 transition-all ${
+                    isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:scale-105 active:scale-95"
+                  }`}
                 >
-                  Thêm vào thực đơn
+                  {isSubmitting ? "Đang thêm..." : "Thêm vào thực đơn"}
                 </button>
               </div>
             </div>
@@ -1664,9 +1693,12 @@ export default function DashboardPage() {
                 <div className="flex gap-3 pt-3">
                   <button
                     type="submit"
-                    className="flex-1 rounded-xl bg-[#A172FD] py-4 text-sm font-bold text-white hover:bg-[#8b5cf6] transition-all shadow-lg"
+                    disabled={isSubmitting}
+                    className={`flex-1 rounded-xl bg-[#A172FD] py-4 text-sm font-bold text-white transition-all shadow-lg ${
+                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
+                    }`}
                   >
-                    Lưu lịch trình
+                    {isSubmitting ? "Đang lưu..." : "Lưu lịch trình"}
                   </button>
                 </div>
               </form>

@@ -7,6 +7,7 @@ type Task = { id: string; title: string; completed: boolean };
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function load() {
     const res = await fetch("/api/tasks");
@@ -26,14 +27,35 @@ export default function TasksPage() {
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          await fetch("/api/tasks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title }) });
-          setTitle("");
-          await load();
+          if (isSubmitting || !title.trim()) return;
+          setIsSubmitting(true);
+          try {
+            await fetch("/api/tasks", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ title: title.trim() })
+            });
+            setTitle("");
+            await load();
+          } finally {
+            setIsSubmitting(false);
+          }
         }}
         className="flex gap-2 rounded border bg-white p-4"
       >
-        <input className="w-full rounded border px-2 py-1" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Them task moi" />
-        <button className="rounded bg-indigo-600 px-3 py-1 text-white">Them</button>
+        <input
+          className="w-full rounded border px-2 py-1"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Thêm task mới"
+        />
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="rounded bg-indigo-600 px-3 py-1 text-white disabled:opacity-50 transition-opacity"
+        >
+          {isSubmitting ? "Đang thêm..." : "Thêm"}
+        </button>
       </form>
       <div className="rounded border bg-white p-4">
         {tasks.map((task) => (
@@ -42,7 +64,11 @@ export default function TasksPage() {
               type="checkbox"
               checked={task.completed}
               onChange={async (e) => {
-                await fetch("/api/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: task.id, completed: e.target.checked, mode: "one" }) });
+                await fetch("/api/tasks", {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ id: task.id, completed: e.target.checked, mode: "one" })
+                });
                 await load();
               }}
             />

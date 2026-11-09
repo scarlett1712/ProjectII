@@ -21,6 +21,7 @@ export function WaterReminderTab() {
   const [slotsInput, setSlotsInput] = useState<string[]>([]);
   const [newTimeInput, setNewTimeInput] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isLoggingWater, setIsLoggingWater] = useState(false);
 
   async function loadData() {
     try {
@@ -46,6 +47,8 @@ export function WaterReminderTab() {
   }, []);
 
   async function logWater(amountMl: number) {
+    if (isLoggingWater) return;
+    setIsLoggingWater(true);
     try {
       const res = await fetch("/api/water", {
         method: "POST",
@@ -58,6 +61,8 @@ export function WaterReminderTab() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setIsLoggingWater(false);
     }
   }
 
