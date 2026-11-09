@@ -534,7 +534,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 pb-24 md:pb-8 transition-all duration-300 flex flex-col">
+          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 pb-32 md:pb-8 transition-all duration-300 flex flex-col">
             <div className={`mx-auto w-full flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? "max-w-7xl" : "max-w-6xl"}`}>
               
               {/* Global Top Header Bar */}
@@ -712,6 +712,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
               <div className="flex-1">
                 {children}
+                {/* Spacer to guarantee the bottom-most content is never hidden behind the bottom nav */}
+                <div className="h-14 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
               </div>
             </div>
           </main>
@@ -963,7 +965,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className="fixed bottom-6 right-6 z-[300] flex items-center gap-3 rounded-2xl bg-white/95 border border-purple-100 p-4 shadow-[0_10px_30px_rgba(161,114,253,0.25)] backdrop-blur-md"
+              className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-[300] flex items-center gap-3 rounded-2xl bg-white/95 border border-purple-100 p-4 shadow-[0_10px_30px_rgba(161,114,253,0.25)] backdrop-blur-md"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-[#A172FD]">
                 <Bell className="h-4 w-4 animate-bounce" />

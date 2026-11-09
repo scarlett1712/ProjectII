@@ -257,7 +257,7 @@ export default function ChatPage() {
   ];
 
   return (
-    <div className="flex h-[80vh] overflow-hidden rounded-[32px] bg-white/60 shadow-xl border border-white/20 backdrop-blur-xl">
+    <div className="flex h-[calc(100vh-210px)] md:h-[80vh] min-h-[460px] overflow-hidden rounded-[32px] bg-white/60 shadow-xl border border-white/20 backdrop-blur-xl">
       {/* SIDEBAR */}
       <motion.div
         animate={{ width: isSidebarCollapsed ? 0 : 280 }}
