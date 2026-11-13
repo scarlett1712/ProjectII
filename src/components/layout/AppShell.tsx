@@ -400,10 +400,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         const waterRes = await fetch("/api/water");
         if (waterRes.ok) {
           const waterData = await waterRes.json();
+          // Đồng bộ chuẩn hóa giờ với Server time để tránh lệch giờ giữa máy tính và điện thoại
+          const currentTime = waterData.serverTime ? new Date(waterData.serverTime) : now;
+          const waterTodayStr = format(currentTime, "yyyy-MM-dd");
+          const waterNowStr = format(currentTime, "HH:mm");
+
           const slots = waterData.slots || [];
           for (const slot of slots) {
-            if (slot.slotTime === nowStr) {
-              const cacheKey = `${slot.id}-${todayStr}`;
+            if (slot.slotTime === waterNowStr) {
+              const cacheKey = `${slot.id}-${waterTodayStr}`;
               if (!notifiedWaterCache.current.has(cacheKey)) {
                 notifiedWaterCache.current.add(cacheKey);
                 if (typeof window !== "undefined") {

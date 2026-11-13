@@ -29,7 +29,12 @@ export async function GET() {
       orderBy: { slotTime: "asc" },
     }),
   ]);
-  return NextResponse.json({ goal, logs, slots });
+  return NextResponse.json({ 
+    goal, 
+    logs, 
+    slots,
+    serverTime: new Date().toISOString()
+  });
 }
 
 export async function POST(req: NextRequest) {
