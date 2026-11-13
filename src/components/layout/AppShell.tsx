@@ -16,7 +16,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Bell
+  Bell,
+  KeyRound,
+  Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StarBackground } from "@/components/StarBackground";
@@ -40,6 +42,62 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+
+  // Change Password state
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPw, setCurrentPw] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [confirmPw, setConfirmPw] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState<string | null>(null);
+  const [pwSuccess, setPwSuccess] = useState<string | null>(null);
+
+  const handleSavePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwError(null);
+    setPwSuccess(null);
+
+    if (!currentPw) {
+      setPwError("Vui lòng nhập mật khẩu hiện tại.");
+      return;
+    }
+
+    if (newPw.length < 8) {
+      setPwError("Mật khẩu mới phải có tối thiểu 8 ký tự.");
+      return;
+    }
+
+    if (newPw !== confirmPw) {
+      setPwError("Mật khẩu xác nhận không khớp.");
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: currentPw, newPassword: newPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPwError(data.error || "Không thể đổi mật khẩu.");
+        return;
+      }
+      setPwSuccess("Đổi mật khẩu thành công!");
+      setCurrentPw("");
+      setNewPw("");
+      setConfirmPw("");
+      setTimeout(() => {
+        setShowChangePassword(false);
+        setPwSuccess(null);
+      }, 1500);
+    } catch {
+      setPwError("Lỗi kết nối máy chủ.");
+    } finally {
+      setPwLoading(false);
+    }
+  };
   
   // Sidebar state
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -496,14 +554,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     >
                       <button 
                         onClick={() => { setShowProfile(true); setUserMenuOpen(false); }}
-                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-[#4B5563] hover:bg-[#F5F3FF] hover:text-[#A172FD] transition-all"
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-[#4B5563] hover:bg-[#F5F3FF] hover:text-[#A172FD] transition-all cursor-pointer"
                       >
                         <UserIcon className="h-4 w-4 shrink-0" />
                         {!isCollapsed && <span>Hồ sơ</span>}
                       </button>
                       <button 
+                        onClick={() => { setShowChangePassword(true); setUserMenuOpen(false); }}
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-[#4B5563] hover:bg-[#F5F3FF] hover:text-[#A172FD] transition-all cursor-pointer"
+                      >
+                        <KeyRound className="h-4 w-4 shrink-0 text-[#A172FD]" />
+                        {!isCollapsed && <span>Đổi mật khẩu</span>}
+                      </button>
+                      <button 
                         onClick={() => signOut({ callbackUrl: "/login" })}
-                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-all"
+                        className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-all cursor-pointer"
                       >
                         <LogOut className="h-4 w-4 shrink-0" />
                         {!isCollapsed && <span>Đăng xuất</span>}
@@ -800,15 +865,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <div className="mt-8 flex w-full gap-3">
                         <button 
                           onClick={() => setIsEditingProfile(true)}
-                          className="flex-1 rounded-2xl border-2 border-[#A172FD] py-4 font-bold text-[#A172FD] hover:bg-[#F5F3FF] transition-transform active:scale-95"
+                          className="flex-1 rounded-2xl border-2 border-[#A172FD] py-3.5 font-bold text-[#A172FD] hover:bg-[#F5F3FF] transition-transform active:scale-95 cursor-pointer"
                         >
                           Chỉnh sửa
                         </button>
                         <button 
                           onClick={() => { setShowProfile(false); setIsEditingProfile(false); }}
-                          className="flex-1 rounded-2xl bg-[#A172FD] py-4 font-bold text-white shadow-lg transition-transform active:scale-95 hover:scale-[1.02]"
+                          className="flex-1 rounded-2xl bg-[#A172FD] py-3.5 font-bold text-white shadow-lg transition-transform active:scale-95 hover:scale-[1.02] cursor-pointer"
                         >
                           Đóng
+                        </button>
+                      </div>
+
+                      {/* Quick links inside profile */}
+                      <div className="mt-4 pt-4 border-t border-purple-100 flex items-center justify-between w-full">
+                        <button
+                          type="button"
+                          onClick={() => { setShowProfile(false); setShowChangePassword(true); }}
+                          className="flex items-center gap-1.5 text-xs font-bold text-[#A172FD] hover:underline cursor-pointer"
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                          Đổi mật khẩu
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => signOut({ callbackUrl: "/login" })}
+                          className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:underline cursor-pointer"
+                        >
+                          <LogOut className="h-3.5 w-3.5" />
+                          Đăng xuất
                         </button>
                       </div>
                     </>
@@ -902,6 +987,121 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       </div>
                     </form>
                   )}
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Change Password Modal */}
+        <AnimatePresence>
+          {showChangePassword && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-4"
+              onClick={() => { setShowChangePassword(false); setPwError(null); setPwSuccess(null); }}
+            >
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="w-full max-w-md overflow-hidden rounded-[36px] bg-white p-7 sm:p-9 shadow-2xl border border-purple-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex flex-col items-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F5F3FF] text-[#A172FD] shadow-inner">
+                    <KeyRound className="h-8 w-8" />
+                  </div>
+                  <h2 className="text-xl font-black text-[#A172FD]">Đổi mật khẩu</h2>
+                  <p className="mb-6 text-xs text-[#6B7280]">Cập nhật mật khẩu mới cho tài khoản của bạn</p>
+
+                  {pwSuccess && (
+                    <div className="w-full mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700 font-bold text-center">
+                      {pwSuccess}
+                    </div>
+                  )}
+
+                  {pwError && (
+                    <div className="w-full mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-600 font-bold text-center">
+                      {pwError}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSavePassword} className="w-full space-y-3.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-gray-700">Mật khẩu hiện tại *</label>
+                        <Link
+                          href="/forgot-password"
+                          onClick={() => setShowChangePassword(false)}
+                          className="text-[11px] font-bold text-[#A172FD] hover:underline"
+                        >
+                          Quên mật khẩu?
+                        </Link>
+                      </div>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#A172FD]" />
+                        <input
+                          type="password"
+                          required
+                          value={currentPw}
+                          onChange={(e) => setCurrentPw(e.target.value)}
+                          placeholder="Mật khẩu đang dùng"
+                          className="w-full rounded-2xl bg-[#F5F3FF] pl-10 pr-4 py-2.5 text-sm text-gray-900 font-bold outline-none focus:ring-2 focus:ring-[#A172FD]/20"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Mật khẩu mới (tối thiểu 8 ký tự) *</label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#A172FD]" />
+                        <input
+                          type="password"
+                          required
+                          value={newPw}
+                          onChange={(e) => setNewPw(e.target.value)}
+                          placeholder="Mật khẩu mới"
+                          className="w-full rounded-2xl bg-[#F5F3FF] pl-10 pr-4 py-2.5 text-sm text-gray-900 font-bold outline-none focus:ring-2 focus:ring-[#A172FD]/20"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 mb-1">Xác nhận mật khẩu mới *</label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#A172FD]" />
+                        <input
+                          type="password"
+                          required
+                          value={confirmPw}
+                          onChange={(e) => setConfirmPw(e.target.value)}
+                          placeholder="Nhập lại mật khẩu mới"
+                          className="w-full rounded-2xl bg-[#F5F3FF] pl-10 pr-4 py-2.5 text-sm text-gray-900 font-bold outline-none focus:ring-2 focus:ring-[#A172FD]/20"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex gap-3 pt-2">
+                      <button
+                        type="button"
+                        disabled={pwLoading}
+                        onClick={() => { setShowChangePassword(false); setPwError(null); }}
+                        className="flex-1 rounded-2xl border-2 border-gray-300 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 transition active:scale-95 cursor-pointer"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={pwLoading}
+                        className="flex-1 rounded-2xl bg-[#A172FD] py-3 text-sm font-bold text-white shadow-lg transition active:scale-95 hover:bg-[#8b5cf6] disabled:opacity-60 cursor-pointer"
+                      >
+                        {pwLoading ? "Đang lưu..." : "Cập nhật"}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               </motion.div>
             </motion.div>
