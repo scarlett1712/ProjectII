@@ -36,8 +36,8 @@ export default function ChatPage() {
   const [currentSession, setCurrentSession] = useState<Session | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   
-  // UI states
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  // UI states (Default collapsed on entry for clean full-screen chat)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);

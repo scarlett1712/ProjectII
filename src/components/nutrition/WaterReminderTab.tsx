@@ -302,8 +302,8 @@ export function WaterReminderTab() {
 
       {/* Goal & Slots settings modal */}
       {showGoalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[420px] rounded-[28px] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-[420px] rounded-[28px] p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[85dvh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">Thiết lập mục tiêu & Nhắc nhở</h2>
             <form onSubmit={saveGoal} className="space-y-5">
               <div>

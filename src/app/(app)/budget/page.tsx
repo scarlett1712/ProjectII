@@ -235,28 +235,20 @@ export default function BudgetPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Fetch all data
+  // Fetch all budget data in 1 unified fast request
   const fetchData = async () => {
     if (!userId) return;
     setLoading(true);
     try {
-      const [accRes, catRes, goalRes, txRes] = await Promise.all([
-        fetch(`/api/budget/accounts?year=${currentYear}&month=${currentMonth}`),
-        fetch("/api/budget/categories"),
-        fetch(`/api/budget/goals?year=${currentYear}&month=${currentMonth}`),
-        fetch(`/api/budget/transactions?year=${currentYear}&month=${currentMonth}`),
-      ]);
-
-      if (accRes.ok && catRes.ok && goalRes.ok && txRes.ok) {
-        const accData = await accRes.json();
-        const catData = await catRes.json();
-        const goalData = await goalRes.json();
-        const txData = await txRes.json();
-
-        setAccounts(accData);
-        setCategories(catData);
-        setGoals(goalData);
-        setTransactions(txData);
+      const res = await fetch(`/api/budget?year=${currentYear}&month=${currentMonth}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAccounts(data.accounts || []);
+        setCategories(data.categories || []);
+        setGoals(data.goals || []);
+        setTransactions(data.transactions || []);
+      } else {
+        throw new Error("Failed to load budget");
       }
     } catch (e) {
       console.error(e);

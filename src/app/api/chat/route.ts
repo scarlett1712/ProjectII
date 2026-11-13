@@ -254,6 +254,20 @@ const tools = [
         }
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_web",
+      description: "Tìm kiếm thông tin thời gian thực trên Internet, báo chí và tin tức: sự kiện đang diễn ra, tin tức thời sự, thời tiết, địa điểm, sự kiện tại các tỉnh thành (ví dụ: 'sự kiện Hà Nội', 'thời tiết hôm nay', 'tin tức mới')",
+      parameters: {
+        type: "object",
+        properties: {
+          query: { type: "string", description: "Từ khóa tìm kiếm trên Internet" }
+        },
+        required: ["query"]
+      }
+    }
   }
 ];
 
@@ -261,7 +275,7 @@ async function callOpenClaw(messages: any[]) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (apiKey) {
     const url = "https://generativelanguage.googleapis.com/v1beta/openai/v1/chat/completions";
-    const fallbackModels = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite"];
+    const fallbackModels = ["gemini-2.5-flash", "gemini-flash-latest"];
 
     for (const model of fallbackModels) {
       try {
@@ -728,6 +742,56 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
       };
     }
 
+    case "search_web": {
+      const query = String(args.query || "").trim();
+      if (!query) return { error: "Vui lòng cung cấp từ khóa tìm kiếm" };
+
+      try {
+        // Search via Google News RSS for live news, events, weather
+        const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=vi&gl=VN&ceid=VN:vi`;
+        const res = await fetch(rssUrl, {
+          headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+          signal: AbortSignal.timeout(6000),
+        });
+
+        if (res.ok) {
+          const xml = await res.text();
+          const items = [...xml.matchAll(/<item>[\s\S]*?<title>(.*?)<\/title>[\s\S]*?<pubDate>(.*?)<\/pubDate>[\s\S]*?<\/item>/g)]
+            .slice(0, 5)
+            .map(m => ({
+              title: m[1]?.replace(/&quot;/g, '"')?.replace(/&amp;/g, '&')?.replace(/&#39;/g, "'")?.trim(),
+              date: m[2]?.trim(),
+            }));
+
+          if (items.length > 0) {
+            return {
+              query,
+              found: true,
+              source: "Báo chí & Tin tức thời sự Google News",
+              articles: items,
+            };
+          }
+        }
+
+        // Wikipedia fallback
+        const wikiUrl = `https://vi.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&utf8=`;
+        const wikiRes = await fetch(wikiUrl, { signal: AbortSignal.timeout(5000) });
+        if (wikiRes.ok) {
+          const wikiData = await wikiRes.json();
+          const snippets = (wikiData.query?.search || []).slice(0, 3).map((s: any) => ({
+            title: s.title,
+            snippet: s.snippet?.replace(/<[^>]+>/g, ""),
+          }));
+          return { query, found: snippets.length > 0, source: "Wikipedia Bách Khoa Toàn Thư", snippets };
+        }
+
+        return { query, found: false, message: "Không tìm thấy thông tin phù hợp trên mạng lúc này." };
+      } catch (err: any) {
+        console.error("Search web error:", err);
+        return { query, error: "Đường truyền tìm kiếm mạng bị chậm hoặc gián đoạn." };
+      }
+    }
+
     default:
       return { error: `Công cụ ${name} không tồn tại` };
   }
@@ -856,21 +920,59 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Load chat history (limit to last 15 messages to preserve tokens)
-  const history = await db.chatMessage.findMany({
-    where: { sessionId: session.id },
-    orderBy: { createdAt: "asc" },
-    take: 15,
-  });
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  // Parallel fetch: chat history + live user snapshot for instant intelligent memory
+  const [history, userProfile, userRecord, todayMeals, todayWater, pendingTasks, userAccounts] = await Promise.all([
+    db.chatMessage.findMany({
+      where: { sessionId: session.id },
+      orderBy: { createdAt: "asc" },
+      take: 15,
+    }),
+    db.profile.findUnique({ where: { userId: auth.userId! } }),
+    db.user.findUnique({ where: { id: auth.userId! }, select: { name: true, email: true } }),
+    db.mealEntry.findMany({
+      where: { userId: auth.userId!, eatenAt: { gte: todayStart } },
+      select: { mealName: true, calories: true },
+    }),
+    db.waterLog.findMany({
+      where: { userId: auth.userId!, loggedAt: { gte: todayStart } },
+      select: { amountMl: true },
+    }),
+    db.taskItem.findMany({
+      where: { userId: auth.userId!, completed: false },
+      take: 6,
+      select: { title: true, dueAt: true },
+    }),
+    db.budgetAccount.findMany({
+      where: { userId: auth.userId! },
+      select: { name: true, balance: true },
+    }),
+  ]);
+
+  const totalCaloriesToday = todayMeals.reduce((acc, m) => acc + (m.calories || 0), 0);
+  const totalWaterToday = todayWater.reduce((acc, w) => acc + (w.amountMl || 0), 0);
+  const totalBalance = userAccounts.reduce((acc, a) => acc + (a.balance || 0), 0);
 
   const currentLocalTime = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
   const dynamicSystemPrompt = `${SYSTEM_PROMPT}
 
 MỐC THỜI GIAN THỰC TẾ:
-- Thời gian hiện tại hệ thống (Local Time): ${currentLocalTime} (UTC: ${new Date().toISOString()}). Bạn hãy luôn sử dụng mốc thời gian này để tính toán các ngày thứ trong tuần, tháng, năm cho chính xác. Tránh tuyệt đối việc lấy nhầm năm cũ (như 2024 hay 2025). Hôm nay là năm 2026.
+- Thời gian hiện tại hệ thống (Local Time): ${currentLocalTime} (UTC: ${new Date().toISOString()}). Bạn hãy luôn sử dụng mốc thời gian này để tính toán các ngày thứ trong tuần, tháng, năm cho chính xác. Hôm nay là năm 2026.
 
-QUY TẮC TRUY VẤN LẠI DỮ LIỆU (QUAN TRỌNG):
-- Khi người dùng hỏi các câu hỏi tiếp theo yêu cầu chi tiết hoặc liệt kê thông tin của lượt chat trước (ví dụ: "là những hôm nào", "chi tiết thế nào", "cụ thể là gì"), bạn BẮT BUỘC phải gọi lại công cụ tương ứng (như \`get_tasks_and_events\`, \`get_budget_status\`, \`get_transaction_history\`,...) để lấy lại dữ liệu mới nhất. Tuyệt đối không được tự suy đoán hoặc tự nhớ lại vì lịch sử trò chuyện không lưu trữ kết quả của các công cụ ở lượt chat trước.`;
+TRÍ NHỚ & DỮ LIỆU HIỆN TẠI CỦA NGƯỜI DÙNG (${userRecord?.name || "Người dùng"}):
+- Tên người dùng: ${userRecord?.name || "Bạn"}
+- Thể trạng: Giới tính ${userProfile?.gender || "chưa rõ"}, Cân nặng ${userProfile?.weightKg || "?"}kg, Chiều cao ${userProfile?.heightCm || "?"}cm.
+- Dinh dưỡng hôm nay: Đã nạp ${totalCaloriesToday} kcal ${todayMeals.length > 0 ? `(Gồm: ${todayMeals.map(m => `${m.mealName} ${m.calories}kcal`).join(", ")})` : "(Chưa ghi nhận món nào)"} / Mục tiêu: ${userProfile?.dailyCalories || 2000} kcal.
+- Lượng nước uống hôm nay: ${totalWaterToday} ml.
+- Nhiệm vụ cần làm (${pendingTasks.length} việc): ${pendingTasks.map(t => t.title).join(", ") || "Đã xong hết việc!"}.
+- Tổng số dư tài chính: ${totalBalance.toLocaleString("vi-VN")} đ.
+
+QUY TẮC PHẢN HỒI THÔNG MINH & NHANH CHÓNG:
+1. Bạn ĐÃ CÓ SẴN các dữ liệu trên trong trí nhớ. Nếu người dùng hỏi tình hình của bản thân ("tôi uống bao nhiêu nước rồi", "tôi ăn bao nhiêu calo", "còn việc gì không", "tổng tiền tôi có",...), HÃY TRẢ LỜI NGAY từ trí nhớ trên, KHÔNG CẦN gọi tool lại giúp phản hồi tức thì và chính xác!
+2. Khi người dùng hỏi tin tức, thời tiết, sự kiện ngoài đời, tin mới (ví dụ: "dạo này Hà Nội có sự kiện gì", "tin tức hôm nay", "thời tiết"): BẮT BUỘC gọi công cụ \`search_web\` để tìm kiếm thông tin mới nhất trên báo chí rồi tổng hợp trả lời cho người dùng thật chi tiết và tự nhiên!
+3. Khi người dùng ra lệnh thêm/sửa dữ liệu (uống nước, ăn món, thêm task, thêm chi tiêu): Gọi các công cụ tương ứng để thực hiện ngay lập tức.`;
 
   const apiMessages: any[] = [
     { role: "system", content: dynamicSystemPrompt },

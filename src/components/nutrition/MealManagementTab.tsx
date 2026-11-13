@@ -964,7 +964,7 @@ export function MealManagementTab() {
            initial={{ opacity: 0 }}
            animate={{ opacity: 1 }}
            exit={{ opacity: 0 }}
-           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-md"
+           className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto"
            onClick={() => { setShowAddModal(false); setClickedHour(null); setEditingMeal(null); }}
          >
             <motion.div 
@@ -972,7 +972,7 @@ export function MealManagementTab() {
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0, rotate: 180 }}
               transition={{ type: "spring", damping: 20, stiffness: 100 }}
-              className="relative flex h-[500px] w-[500px] items-center justify-center rounded-full bg-white shadow-2xl ring-8 ring-[#F5F3FF]"
+              className="relative flex min-h-[460px] max-h-[88dvh] w-full max-w-[480px] sm:h-[500px] sm:w-[500px] rounded-[36px] sm:rounded-full items-center justify-center bg-white shadow-2xl ring-8 ring-[#F5F3FF] overflow-y-auto p-6 sm:p-10"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close button X */}

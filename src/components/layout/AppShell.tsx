@@ -101,6 +101,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   
   // Sidebar state
   const [isCollapsed, setIsCollapsed] = useState(false);
+  // Keyboard detection on mobile to hide bottom navigation bar
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const isChatPage = pathname.startsWith("/chat");
+
+  useEffect(() => {
+    const handleFocus = (e: FocusEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea") {
+        setIsKeyboardOpen(true);
+      }
+    };
+    const handleBlur = (e: FocusEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea") {
+        setIsKeyboardOpen(false);
+      }
+    };
+    window.addEventListener("focusin", handleFocus);
+    window.addEventListener("focusout", handleBlur);
+    return () => {
+      window.removeEventListener("focusin", handleFocus);
+      window.removeEventListener("focusout", handleBlur);
+    };
+  }, []);
+
+  // Register Service Worker for background push notifications
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch((err) => {
+        console.error("SW registration error:", err);
+      });
+    }
+  }, []);
 
   type NotificationLog = {
     id: string;
@@ -599,7 +632,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 transition-all duration-300 flex flex-col overscroll-contain">
+          <main className={`flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 ${isChatPage ? "pb-2" : "pb-[calc(4.2rem+env(safe-area-inset-bottom,0px))]"} md:pb-8 transition-all duration-300 flex flex-col overscroll-contain`}>
             <div className={`mx-auto w-full flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? "max-w-7xl" : "max-w-6xl"}`}>
               
               {/* Global Top Header Bar */}
@@ -777,35 +810,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
               <div className="flex-1">
                 {children}
-                {/* Spacer to guarantee the bottom-most content is never hidden behind the bottom nav */}
-                <div className="h-14 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
               </div>
             </div>
           </main>
 
-          {/* Mobile Bottom Navigation Bar */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-purple-100/80 flex items-center justify-around pt-2 pb-[max(env(safe-area-inset-bottom),0.85rem)] px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-            {sidebarLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all active:scale-95 ${
-                    isActive ? "text-[#A172FD]" : "text-gray-400 hover:text-gray-600"
-                  }`}
-                >
-                  <div className={`p-1.5 rounded-xl ${isActive ? "bg-purple-100 text-[#A172FD]" : ""}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className={`text-[10px] font-bold mt-0.5 ${isActive ? "text-[#A172FD]" : "text-gray-500"}`}>
-                    {link.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
+          {/* Mobile Bottom Navigation Bar (Hidden when chatting or typing on mobile) */}
+          {!isChatPage && !isKeyboardOpen && (
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-purple-100/80 flex items-center justify-around pt-2 pb-[max(env(safe-area-inset-bottom),0.85rem)] px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] animate-in fade-in duration-200">
+              {sidebarLinks.map((link) => {
+                const Icon = link.icon;
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-all active:scale-95 ${
+                      isActive ? "text-[#A172FD]" : "text-gray-400 hover:text-gray-600"
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-xl ${isActive ? "bg-purple-100 text-[#A172FD]" : ""}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className={`text-[10px] font-bold mt-0.5 ${isActive ? "text-[#A172FD]" : "text-gray-500"}`}>
+                      {link.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
         </div>
 
         {/* Profile Modal */}

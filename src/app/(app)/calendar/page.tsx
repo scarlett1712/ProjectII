@@ -1871,13 +1871,13 @@ export default function CalendarPage() {
         {showPopup && (
           <div 
             onClick={() => { setShowPopup(false); setEditingItem(null); clearForm(); }}
-            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog"
+            className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4 popup-dialog"
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[500px] rounded-[32px] p-8 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto scrollbar-thin"
+              className="bg-white w-full max-w-[500px] rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain pb-10 sm:pb-8 scrollbar-thin"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -1935,7 +1935,7 @@ export default function CalendarPage() {
                 </div>
 
                 {/* Time Range */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                       {itemType === "event" ? "Bắt đầu" : "Thời hạn (Không bắt buộc)"}
