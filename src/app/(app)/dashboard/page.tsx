@@ -1053,82 +1053,83 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Time & Notify */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-w-0 w-full">
-                  <div className="min-w-0 w-full">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Thời hạn (Không bắt buộc)</label>
-                    <input
-                      type="datetime-local"
-                      value={taskForm.dueAt}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setTaskForm({ ...taskForm, dueAt: val });
-                        setNotify(val !== "");
-                        if (val !== "" && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-                          Notification.requestPermission();
-                        }
-                      }}
-                      className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                    />
-                  </div>
-                  <div className="flex flex-col justify-end items-start pb-2">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Thông báo</label>
-                    <ToggleSwitch active={notify} onToggle={() => {
-                      const nextVal = !notify;
-                      setNotify(nextVal);
-                      if (nextVal && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Thời hạn (Không bắt buộc)</label>
+                  <input
+                    type="datetime-local"
+                    value={taskForm.dueAt}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setTaskForm({ ...taskForm, dueAt: val });
+                      setNotify(val !== "");
+                      if (val !== "" && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
                         Notification.requestPermission();
                       }
-                    }} />
-                  </div>
+                    }}
+                    className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                    style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-2 border-y border-gray-50">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông báo (Windows + Chatbot)</span>
+                  <ToggleSwitch active={notify} onToggle={() => {
+                    const nextVal = !notify;
+                    setNotify(nextVal);
+                    if (nextVal && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+                      Notification.requestPermission();
+                    }
+                  }} />
                 </div>
 
                 {/* Recurrence Options */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0 w-full">
-                  <div className="min-w-0 w-full">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
-                    <select
-                      value={taskRecurrence}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setTaskRecurrence(val);
-                        if (val !== "NONE" && !taskRecurrenceEnd) {
-                          const defaultEnd = new Date();
-                          defaultEnd.setMonth(defaultEnd.getMonth() + 1);
-                          defaultEnd.setHours(23, 59, 0, 0);
-                          const offset = defaultEnd.getTimezoneOffset();
-                          const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
-                          setTaskRecurrenceEnd(local.toISOString().slice(0, 16));
-                        }
-                      }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                    >
-                      <option value="NONE">Không lặp</option>
-                      <option value="DAILY">Hàng ngày</option>
-                      <option value="WEEKLY">Hàng tuần</option>
-                      <option value="MONTHLY">Hàng tháng</option>
-                    </select>
-                  </div>
-                  {taskRecurrence !== "NONE" && (
-                    <div className="min-w-0 w-full">
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
-                      <input
-                        type="datetime-local"
-                        value={taskRecurrenceEnd}
-                        onChange={e => {
-                          let val = e.target.value;
-                          if (val && val.includes("T")) {
-                            const [date, time] = val.split("T");
-                            if (time === "00:00") {
-                              val = `${date}T23:59`;
-                            }
-                          }
-                          setTaskRecurrenceEnd(val);
-                        }}
-                        className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      />
-                    </div>
-                  )}
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
+                  <select
+                    value={taskRecurrence}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setTaskRecurrence(val);
+                      if (val !== "NONE" && !taskRecurrenceEnd) {
+                        const defaultEnd = new Date();
+                        defaultEnd.setMonth(defaultEnd.getMonth() + 1);
+                        defaultEnd.setHours(23, 59, 0, 0);
+                        const offset = defaultEnd.getTimezoneOffset();
+                        const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
+                        setTaskRecurrenceEnd(local.toISOString().slice(0, 16));
+                      }
+                    }}
+                    className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                    style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                  >
+                    <option value="NONE">Không lặp</option>
+                    <option value="DAILY">Hàng ngày</option>
+                    <option value="WEEKLY">Hàng tuần</option>
+                    <option value="MONTHLY">Hàng tháng</option>
+                  </select>
                 </div>
+
+                {taskRecurrence !== "NONE" && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
+                    <input
+                      type="datetime-local"
+                      value={taskRecurrenceEnd}
+                      onChange={e => {
+                        let val = e.target.value;
+                        if (val && val.includes("T")) {
+                          const [date, time] = val.split("T");
+                          if (time === "00:00") {
+                            val = `${date}T23:59`;
+                          }
+                        }
+                        setTaskRecurrenceEnd(val);
+                      }}
+                      className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                      style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                    />
+                  </div>
+                )}
 
                 {/* Classification Tag */}
                 <div>
@@ -1425,41 +1426,42 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Time Range */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-w-0 w-full">
-                  <div className="min-w-0 w-full">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                      {itemType === "event" ? "Bắt đầu" : "Thời hạn (Không bắt buộc)"}
-                    </label>
-                    <input
-                      required={itemType === "event"}
-                      type="datetime-local"
-                      value={calStartAtStr}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setCalStartAtStr(val);
-                        if (itemType === "task") {
-                          setCalNotification(val !== "");
-                          if (val !== "" && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-                            Notification.requestPermission();
-                          }
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+                    {itemType === "event" ? "Bắt đầu" : "Thời hạn (Không bắt buộc)"}
+                  </label>
+                  <input
+                    required={itemType === "event"}
+                    type="datetime-local"
+                    value={calStartAtStr}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setCalStartAtStr(val);
+                      if (itemType === "task") {
+                        setCalNotification(val !== "");
+                        if (val !== "" && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+                          Notification.requestPermission();
                         }
-                      }}
-                      className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                      }
+                    }}
+                    className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                    style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                  />
+                </div>
+
+                {itemType === "event" && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc</label>
+                    <input
+                      required
+                      type="datetime-local"
+                      value={calEndAtStr}
+                      onChange={e => setCalEndAtStr(e.target.value)}
+                      className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                      style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
                     />
                   </div>
-                  {itemType === "event" && (
-                    <div className="min-w-0 w-full">
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc</label>
-                      <input
-                        required
-                        type="datetime-local"
-                        value={calEndAtStr}
-                        onChange={e => setCalEndAtStr(e.target.value)}
-                        className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      />
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* Classification Tag */}
                 <div>
@@ -1549,52 +1551,53 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Recurrence Options */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
-                    <select
-                      value={calRecurrence}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setCalRecurrence(val);
-                        if (val !== "NONE" && !calRecurrenceEndStr) {
-                          const defaultEnd = new Date();
-                          defaultEnd.setMonth(defaultEnd.getMonth() + 1);
-                          defaultEnd.setHours(23, 59, 0, 0);
-                          const offset = defaultEnd.getTimezoneOffset();
-                          const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
-                          setCalRecurrenceEndStr(local.toISOString().slice(0, 16));
-                        }
-                      }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                    >
-                      <option value="NONE">Không lặp</option>
-                      <option value="DAILY">Hàng ngày</option>
-                      <option value="WEEKLY">Hàng tuần</option>
-                      <option value="MONTHLY">Hàng tháng</option>
-                    </select>
-                  </div>
-                  {calRecurrence !== "NONE" && (
-                    <div className="min-w-0 w-full">
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
-                      <input
-                        type="datetime-local"
-                        value={calRecurrenceEndStr}
-                        onChange={e => {
-                          let val = e.target.value;
-                          if (val && val.includes("T")) {
-                            const [date, time] = val.split("T");
-                            if (time === "00:00") {
-                              val = `${date}T23:59`;
-                            }
-                          }
-                          setCalRecurrenceEndStr(val);
-                        }}
-                        className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                      />
-                    </div>
-                  )}
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
+                  <select
+                    value={calRecurrence}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setCalRecurrence(val);
+                      if (val !== "NONE" && !calRecurrenceEndStr) {
+                        const defaultEnd = new Date();
+                        defaultEnd.setMonth(defaultEnd.getMonth() + 1);
+                        defaultEnd.setHours(23, 59, 0, 0);
+                        const offset = defaultEnd.getTimezoneOffset();
+                        const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
+                        setCalRecurrenceEndStr(local.toISOString().slice(0, 16));
+                      }
+                    }}
+                    className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                    style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                  >
+                    <option value="NONE">Không lặp</option>
+                    <option value="DAILY">Hàng ngày</option>
+                    <option value="WEEKLY">Hàng tuần</option>
+                    <option value="MONTHLY">Hàng tháng</option>
+                  </select>
                 </div>
+
+                {calRecurrence !== "NONE" && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
+                    <input
+                      type="datetime-local"
+                      value={calRecurrenceEndStr}
+                      onChange={e => {
+                        let val = e.target.value;
+                        if (val && val.includes("T")) {
+                          const [date, time] = val.split("T");
+                          if (time === "00:00") {
+                            val = `${date}T23:59`;
+                          }
+                        }
+                        setCalRecurrenceEndStr(val);
+                      }}
+                      className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
+                      style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                    />
+                  </div>
+                )}
 
                 {/* Options: Notification & Note Color */}
                 <div className="flex items-center justify-between py-2 border-y border-gray-50">
