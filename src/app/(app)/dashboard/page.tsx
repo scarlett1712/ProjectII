@@ -1023,7 +1023,7 @@ export default function DashboardPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[500px] rounded-[32px] p-8 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto scrollbar-thin"
+              className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -1053,8 +1053,8 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Time & Notify */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-w-0 w-full">
+                  <div className="min-w-0 w-full">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Thời hạn (Không bắt buộc)</label>
                     <input
                       type="datetime-local"
@@ -1067,7 +1067,7 @@ export default function DashboardPage() {
                           Notification.requestPermission();
                         }
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                      className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
                     />
                   </div>
                   <div className="flex flex-col justify-end items-start pb-2">
@@ -1083,8 +1083,8 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Recurrence Options */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0 w-full">
+                  <div className="min-w-0 w-full">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
                     <select
                       value={taskRecurrence}
@@ -1109,7 +1109,7 @@ export default function DashboardPage() {
                     </select>
                   </div>
                   {taskRecurrence !== "NONE" && (
-                    <div>
+                    <div className="min-w-0 w-full">
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
                       <input
                         type="datetime-local"
@@ -1124,7 +1124,7 @@ export default function DashboardPage() {
                           }
                           setTaskRecurrenceEnd(val);
                         }}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                        className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
                       />
                     </div>
                   )}
@@ -1371,7 +1371,7 @@ export default function DashboardPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[500px] rounded-[32px] p-8 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto scrollbar-thin"
+              className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -1425,8 +1425,8 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Time Range */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-w-0 w-full">
+                  <div className="min-w-0 w-full">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                       {itemType === "event" ? "Bắt đầu" : "Thời hạn (Không bắt buộc)"}
                     </label>
@@ -1444,18 +1444,18 @@ export default function DashboardPage() {
                           }
                         }
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                      className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
                     />
                   </div>
                   {itemType === "event" && (
-                    <div>
+                    <div className="min-w-0 w-full">
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc</label>
                       <input
                         required
                         type="datetime-local"
                         value={calEndAtStr}
                         onChange={e => setCalEndAtStr(e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                        className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
                       />
                     </div>
                   )}
@@ -1575,7 +1575,7 @@ export default function DashboardPage() {
                     </select>
                   </div>
                   {calRecurrence !== "NONE" && (
-                    <div>
+                    <div className="min-w-0 w-full">
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
                       <input
                         type="datetime-local"
@@ -1590,7 +1590,7 @@ export default function DashboardPage() {
                           }
                           setCalRecurrenceEndStr(val);
                         }}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
+                        className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
                       />
                     </div>
                   )}

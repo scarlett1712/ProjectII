@@ -6,8 +6,11 @@ import { calculateDailyCalories, type ActivityLevel } from "@/lib/health/calorie
 export async function GET() {
   const auth = await requireUserId();
   if (auth.response) return auth.response;
-  const profile = await db.profile.findUnique({ where: { userId: auth.userId! } });
-  return NextResponse.json(profile);
+  const [profile, user] = await Promise.all([
+    db.profile.findUnique({ where: { userId: auth.userId! } }),
+    db.user.findUnique({ where: { id: auth.userId! }, select: { name: true, image: true, email: true } }),
+  ]);
+  return NextResponse.json({ ...profile, name: user?.name, image: user?.image, email: user?.email });
 }
 
 export async function POST(req: NextRequest) {
@@ -15,10 +18,17 @@ export async function POST(req: NextRequest) {
   if (auth.response) return auth.response;
   const body = await req.json();
 
-  if (body.name) {
+  const userUpdateData: { name?: string; image?: string | null } = {};
+  if (body.name !== undefined) {
+    userUpdateData.name = String(body.name).trim();
+  }
+  if (body.image !== undefined) {
+    userUpdateData.image = body.image ? String(body.image) : null;
+  }
+  if (Object.keys(userUpdateData).length > 0) {
     await db.user.update({
       where: { id: auth.userId! },
-      data: { name: String(body.name).trim() },
+      data: userUpdateData,
     });
   }
 

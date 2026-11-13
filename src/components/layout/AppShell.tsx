@@ -18,7 +18,8 @@ import {
   Search,
   Bell,
   KeyRound,
-  Lock
+  Lock,
+  Camera
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StarBackground } from "@/components/StarBackground";
@@ -224,6 +225,85 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [editHeight, setEditHeight] = useState("");
   const [editActivity, setEditActivity] = useState("SEDENTARY");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+
+  // Avatar states & file handler
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  useEffect(() => {
+    if (profile?.image) {
+      setUserAvatar(profile.image);
+    } else if (session?.user?.image) {
+      setUserAvatar(session.user.image);
+    }
+  }, [profile, session]);
+
+  const handleAvatarFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Vui lòng chọn file hình ảnh (PNG, JPG, HEIC, ...)");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          const maxDim = 256;
+          let width = img.width;
+          let height = img.height;
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const base64Data = canvas.toDataURL("image/jpeg", 0.85);
+            setUserAvatar(base64Data);
+
+            const res = await fetch("/api/profile", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ image: base64Data })
+            });
+
+            if (res.ok) {
+              window.dispatchEvent(new CustomEvent("show-app-toast", { detail: "Đã cập nhật ảnh đại diện! ✨" }));
+              if (updateSession) {
+                await updateSession();
+              }
+            } else {
+              alert("Không thể lưu ảnh đại diện. Vui lòng thử lại.");
+            }
+          }
+          setIsUploadingAvatar(false);
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Avatar error:", err);
+      setIsUploadingAvatar(false);
+      alert("Lỗi khi tải ảnh.");
+    }
+  };
 
   // Global search states
   const [searchQuery, setSearchQuery] = useState("");
@@ -622,8 +702,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     isCollapsed ? "justify-center p-3" : "p-4"
                   } ${userMenuOpen ? "bg-[#581C87]" : "bg-[#A172FD] hover:bg-[#8B5CF6]"}`}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
-                    <UserIcon className="h-5 w-5" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20 overflow-hidden">
+                    {userAvatar ? (
+                      <img src={userAvatar} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      <UserIcon className="h-5 w-5" />
+                    )}
                   </div>
                   {!isCollapsed && (
                     <div className="flex-1 overflow-hidden">
@@ -637,7 +721,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
 
           {/* Main Content Area */}
-          <main className={`flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 ${isChatPage ? "pb-2" : "pb-[calc(4.2rem+env(safe-area-inset-bottom,0px))]"} md:pb-8 transition-all duration-300 flex flex-col overscroll-contain`}>
+          <main className={`flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 ${isKeyboardOpen ? "pb-2" : "pb-[calc(4.2rem+env(safe-area-inset-bottom,0px))]"} md:pb-8 transition-all duration-300 flex flex-col overscroll-contain`}>
             <div className={`mx-auto w-full flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? "max-w-7xl" : "max-w-6xl"}`}>
               
               {/* Global Top Header Bar */}
@@ -805,10 +889,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {/* Mobile Profile Avatar Button */}
                   <button
                     onClick={() => setShowProfile(true)}
-                    className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#A172FD] text-white shadow-md active:scale-95"
+                    className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#A172FD] text-white shadow-md active:scale-95 overflow-hidden"
                     title="Hồ sơ cá nhân"
                   >
-                    <UserIcon className="h-5 w-5" />
+                    {userAvatar ? (
+                      <img src={userAvatar} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      <UserIcon className="h-5 w-5" />
+                    )}
                   </button>
                 </div>
               </header>
@@ -819,8 +907,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </main>
 
-          {/* Mobile Bottom Navigation Bar (Hidden when chatting or typing on mobile) */}
-          {!isChatPage && !isKeyboardOpen && (
+          {/* Mobile Bottom Navigation Bar (Hidden only when virtual keyboard is active) */}
+          {!isKeyboardOpen && (
             <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-purple-100/80 flex items-center justify-around pt-2 pb-[max(env(safe-area-inset-bottom),0.85rem)] px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] animate-in fade-in duration-200">
               {sidebarLinks.map((link) => {
                 const Icon = link.icon;
@@ -864,8 +952,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex flex-col items-center">
-                  <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#F5F3FF] ring-8 ring-[#F5F3FF]/50">
-                    <UserIcon className="h-12 w-12 text-[#A172FD]" />
+                  {/* Avatar Picker & Preview */}
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileSelected}
+                    className="hidden"
+                  />
+                  <div
+                    className="relative mb-6 group cursor-pointer"
+                    onClick={() => avatarInputRef.current?.click()}
+                    title="Bấm để đổi ảnh đại diện"
+                  >
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#F5F3FF] ring-8 ring-[#F5F3FF]/50 overflow-hidden shadow-inner">
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="Avatar" className="h-full w-full object-cover" />
+                      ) : (
+                        <UserIcon className="h-12 w-12 text-[#A172FD]" />
+                      )}
+                    </div>
+                    <div className="absolute bottom-0 right-0 p-2 bg-[#A172FD] text-white rounded-full shadow-md group-hover:scale-110 active:scale-95 transition-transform">
+                      {isUploadingAvatar ? (
+                        <span className="block h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      ) : (
+                        <Camera className="h-3.5 w-3.5" />
+                      )}
+                    </div>
                   </div>
 
                   {!isEditingProfile ? (

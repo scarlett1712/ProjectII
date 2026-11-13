@@ -347,14 +347,14 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto"
+        className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain"
         onClick={onClose}
       >
         <motion.div
           initial={{ y: 200, opacity: 0, scale: 0.9 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 200, opacity: 0, scale: 0.9 }}
-          className="relative w-full max-w-xl rounded-[32px] bg-white p-0 shadow-2xl my-auto max-h-[92vh] overflow-y-auto scrollbar-thin"
+          className="relative w-full max-w-xl rounded-[28px] sm:rounded-[32px] bg-white p-0 shadow-2xl my-auto max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close button X */}
@@ -371,7 +371,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
             <div className="h-6 w-32 rounded-b-2xl bg-[#A172FD] shadow-md" />
           </div>
 
-          <div className="p-6 sm:p-10 pt-4 sm:pt-6">
+          <div className="p-5 sm:p-10 pt-4 sm:pt-6 pb-12 sm:pb-8">
             <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h2 className="text-xl sm:text-2xl font-bold text-[#A172FD]">Thêm giao dịch</h2>
               <div className="flex flex-wrap gap-1 bg-[#F5F3FF] p-1 rounded-full self-start sm:self-auto">
@@ -512,7 +512,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
               </div>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-8 mb-4">
               <button
                 onClick={handleLogTransaction}
                 disabled={isSubmitting}

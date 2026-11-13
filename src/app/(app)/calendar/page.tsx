@@ -1935,8 +1935,8 @@ export default function CalendarPage() {
                 </div>
 
                 {/* Time Range */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-w-0 w-full">
+                  <div className="min-w-0 w-full">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                       {itemType === "event" ? "Bắt đầu" : "Thời hạn (Không bắt buộc)"}
                     </label>
@@ -1954,18 +1954,18 @@ export default function CalendarPage() {
                           }
                         }
                       }} 
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]" 
+                      className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]" 
                     />
                   </div>
                   {itemType === "event" && (
-                    <div>
+                    <div className="min-w-0 w-full">
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc</label>
                       <input 
                         required 
                         type="datetime-local" 
                         value={endAtStr} 
                         onChange={e => setEndAtStr(e.target.value)} 
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]" 
+                        className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]" 
                       />
                     </div>
                   )}
@@ -2086,7 +2086,7 @@ export default function CalendarPage() {
                     </select>
                   </div>
                   {recurrence !== "NONE" && (
-                    <div>
+                    <div className="min-w-0 w-full">
                       <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
                       <input 
                         type="datetime-local" 
@@ -2101,7 +2101,7 @@ export default function CalendarPage() {
                           }
                           setRecurrenceEndStr(val);
                         }} 
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]" 
+                        className="w-full max-w-full min-w-0 box-border rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]" 
                       />
                     </div>
                   )}
