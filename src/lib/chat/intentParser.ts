@@ -19,13 +19,21 @@ function parseMeal(content: string): ParsedIntent | null {
   };
 }
 
+function parseWaterGoal(content: string): ParsedIntent | null {
+  const waterMatch = content.match(/(\d+(?:\.\d+)?)\s*(ml|l)\s*(nuoc|nước|water)?/i);
+  if (!/(muc tieu|mục tiêu|target|dat|đặt|can uong|cần uống|nhac|nhắc)/i.test(content) || !waterMatch) return null;
+  let value = Number(waterMatch[1]);
+  if (waterMatch[2].toLowerCase() === "l") value *= 1000;
+  return { type: "SET_WATER_GOAL", dailyTargetMl: Math.round(value) };
+}
+
 function parseLogWater(content: string): ParsedIntent | null {
   // VD: "tôi đã uống 200ml", "vừa uống 1 cốc"
-  const mlMatch = content.match(/(?:uong|uống|da uong|đã uống|vua uong|vừa uống).{0,20}?(\d+)\s*(ml|l)/i);
+  const mlMatch = content.match(/(?:uong|uống|da uong|đã uống|vua uong|vừa uống).{0,20}?(\d+(?:\.\d+)?)\s*(ml|l)/i);
   if (mlMatch) {
     let value = Number(mlMatch[1]);
     if (mlMatch[2].toLowerCase() === "l") value *= 1000;
-    return { type: "LOG_WATER", amountMl: value };
+    return { type: "LOG_WATER", amountMl: Math.round(value) };
   }
   
   const cupMatch = content.match(/(?:uong|uống|da uong|đã uống|vua uong|vừa uống).{0,20}?(\d+)\s*(coc|cốc|ly)/i);
@@ -35,14 +43,6 @@ function parseLogWater(content: string): ParsedIntent | null {
   }
   
   return null;
-}
-
-function parseWaterGoal(content: string): ParsedIntent | null {
-  const waterMatch = content.match(/(\d+)\s*(ml|l)\s*(nuoc|nước|water)?/i);
-  if (!/(muc tieu|mục tiêu|target|dat|đặt|can uong|cần uống)/i.test(content) || !waterMatch) return null;
-  let value = Number(waterMatch[1]);
-  if (waterMatch[2].toLowerCase() === "l") value *= 1000;
-  return { type: "SET_WATER_GOAL", dailyTargetMl: value };
 }
 
 function parseTask(content: string): ParsedIntent | null {
@@ -71,8 +71,8 @@ function parseEvent(content: string): ParsedIntent | null {
 export function parseIntent(content: string): ParsedIntent {
   return (
     parseMeal(content) ??
-    parseLogWater(content) ??
     parseWaterGoal(content) ??
+    parseLogWater(content) ??
     parseEvent(content) ??
     parseTask(content) ?? { type: "SMALL_TALK" }
   );

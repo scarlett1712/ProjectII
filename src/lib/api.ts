@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getAuthSession } from "@/lib/auth";
+import { db } from "@/lib/db";
 
-export async function requireUserId(req?: Request) {
+export type RequireUserIdResult =
+  | { userId: string; response: null }
+  | { userId: null; response: NextResponse };
+
+export type RequireRoleResult =
+  | { userId: string; role: string; response: null }
+  | { userId: string | null; role: string | null; response: NextResponse };
+
+export async function requireUserId(req?: Request): Promise<RequireUserIdResult> {
   // 1. Check for Mobile Authorization Bearer or x-user-id Header
   try {
     const h = await headers();
@@ -37,4 +46,41 @@ export async function requireUserId(req?: Request) {
     };
   }
   return { userId, response: null };
+}
+
+export async function requireRole(
+  allowedRoles: string | string[],
+  req?: Request
+): Promise<RequireRoleResult> {
+  const auth = await requireUserId(req);
+  if (auth.response) {
+    return { userId: null, role: null, response: auth.response };
+  }
+
+  try {
+    const user = await db.user.findUnique({
+      where: { id: auth.userId! },
+      select: { role: true },
+    });
+
+    const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+    if (!user || !roles.includes(user.role)) {
+      return {
+        userId: auth.userId,
+        role: user?.role ?? null,
+        response: NextResponse.json(
+          { error: "Forbidden: Insufficient permissions" },
+          { status: 403 }
+        ),
+      };
+    }
+
+    return { userId: auth.userId, role: user.role, response: null };
+  } catch {
+    return {
+      userId: auth.userId,
+      role: null,
+      response: NextResponse.json({ error: "Internal Server Error" }, { status: 500 }),
+    };
+  }
 }

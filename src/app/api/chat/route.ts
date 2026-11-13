@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
+import { applyRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 import { calculateDailyCalories, type ActivityLevel } from "@/lib/health/calorie";
 import { addDays, addWeeks, addMonths } from "date-fns";
 
@@ -769,15 +770,13 @@ export async function GET(req: NextRequest) {
   const sessions = rawSessions.filter(s => s._count.messages > 0).map(({ _count, ...s }) => s);
 
   let currentSession = null;
-  if (requestedSessionId === "new") {
-    // Trả về session tạm thời nếu client yêu cầu chat mới
-    currentSession = { id: "new", title: "Cuộc trò chuyện mới", updatedAt: new Date().toISOString() };
-  } else if (requestedSessionId) {
+  if (requestedSessionId && requestedSessionId !== "new") {
     currentSession = await db.chatSession.findFirst({
       where: { id: requestedSessionId, userId: auth.userId! },
     });
   } else {
-    currentSession = sessions[0] || null;
+    // Mặc định khi mới vào app/chat hoặc yêu cầu 'new': tự động tạo phiên hội thoại mới
+    currentSession = { id: "new", title: "Cuộc trò chuyện mới", updatedAt: new Date().toISOString() };
   }
 
   let messages: any[] = [];
@@ -796,6 +795,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimit = applyRateLimit(req, { keyPrefix: "chat", limit: 40, windowMs: 60000 });
+  if (!rateLimit.success) return rateLimitResponse(rateLimit.reset);
   const auth = await requireUserId();
   const body = await req.json();
 

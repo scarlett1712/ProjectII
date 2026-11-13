@@ -432,9 +432,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <StarBackground>
-      <div className="flex min-h-screen items-center justify-center p-0 md:p-8">
+      <div className="flex h-[100dvh] items-center justify-center p-0 md:p-8 overflow-hidden">
         {/* Main Inner Frame */}
-        <div className="relative flex h-screen md:h-[90vh] w-full max-w-[1440px] overflow-hidden rounded-none md:rounded-[48px] bg-white/80 shadow-[0_20px_80px_rgba(0,0,0,0.15)] backdrop-blur-xl">
+        <div className="relative flex h-full md:h-[90vh] w-full max-w-[1440px] overflow-hidden rounded-none md:rounded-[48px] bg-white/80 shadow-[0_20px_80px_rgba(0,0,0,0.15)] backdrop-blur-xl">
           {/* Sidebar */}
           <aside className={`border-r border-white/20 bg-white/40 transition-all duration-300 hidden md:flex flex-col ${isCollapsed ? "w-24 p-4" : "w-64 p-8"}`}>
             <div className="flex h-full flex-col">
@@ -534,11 +534,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 pb-32 md:pb-8 transition-all duration-300 flex flex-col">
+          <main className="flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] md:pb-8 transition-all duration-300 flex flex-col overscroll-contain">
             <div className={`mx-auto w-full flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? "max-w-7xl" : "max-w-6xl"}`}>
               
               {/* Global Top Header Bar */}
-              <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 xl:gap-4 mb-6 md:mb-8 pb-4 border-b border-purple-100/50">
+              <header className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 xl:gap-4 mb-4 md:mb-8 pt-[max(env(safe-area-inset-top),0.75rem)] md:pt-0 pb-3 md:pb-4 border-b border-purple-100/50 shrink-0">
                 {/* When small or half screen: Title on row 1, Subtitle on row 2. When xl+ (full screen): Title and Subtitle inline on row 1 */}
                 <div className="flex flex-col xl:flex-row xl:items-baseline gap-0.5 xl:gap-2 min-w-0">
                   <h1 className="text-xl sm:text-2xl font-black text-[#581C87] capitalize tracking-tight shrink-0">
@@ -719,7 +719,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </main>
 
           {/* Mobile Bottom Navigation Bar */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-purple-100 flex items-center justify-around py-2 px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-purple-100/80 flex items-center justify-around pt-2 pb-[max(env(safe-area-inset-bottom),0.85rem)] px-1 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
             {sidebarLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;

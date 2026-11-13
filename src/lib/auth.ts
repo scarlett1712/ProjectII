@@ -27,6 +27,7 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name ?? undefined,
+          role: user.role ?? "USER",
         };
       },
     }),
@@ -37,17 +38,22 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      if (user?.id) token.id = user.id;
+      if (user?.id) {
+        token.id = user.id;
+        token.role = user.role ?? "USER";
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id as string;
+        session.user.role = (token.role as string) ?? "USER";
         try {
           const dbUser = await db.user.findUnique({ where: { id: token.id as string } });
           if (dbUser) {
             session.user.name = dbUser.name;
             session.user.email = dbUser.email;
+            session.user.role = dbUser.role ?? "USER";
           }
         } catch (e) {
           console.error("Error fetching session user name from DB:", e);

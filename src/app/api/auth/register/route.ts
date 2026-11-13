@@ -2,6 +2,7 @@ import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { applyRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -10,6 +11,16 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Rate limiting: 10 requests per 10 minutes per IP
+  const rateLimit = applyRateLimit(req, {
+    keyPrefix: "register",
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+  });
+  if (!rateLimit.success) {
+    return rateLimitResponse(rateLimit.reset);
+  }
+
   let json: unknown;
   try {
     json = await req.json();
@@ -32,6 +43,7 @@ export async function POST(req: Request) {
         email,
         passwordHash,
         name: parsed.data.name?.trim() || null,
+        role: "USER",
       },
     });
   } catch (e: unknown) {

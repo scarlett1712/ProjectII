@@ -97,7 +97,12 @@ function LoginContent() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="mb-1 block text-sm font-medium text-[#374151]">Mật khẩu *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="password" className="block text-sm font-medium text-[#374151]">Mật khẩu *</label>
+                <Link href="/forgot-password" className="text-xs font-semibold text-[#A172FD] hover:underline">
+                  Quên mật khẩu?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required
