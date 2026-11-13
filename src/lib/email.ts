@@ -16,15 +16,26 @@ export async function sendOtpEmail({ to, otp, name }: SendOtpEmailParams) {
   // If SMTP credentials are configured, send real email
   if (smtpUser && smtpPass) {
     try {
-      const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-          user: smtpUser,
-          pass: smtpPass,
-        },
-      });
+      const cleanPass = smtpPass.replace(/\s+/g, "");
+      const transporter = nodemailer.createTransport(
+        smtpHost.includes("gmail")
+          ? {
+              service: "gmail",
+              auth: {
+                user: smtpUser.trim(),
+                pass: cleanPass,
+              },
+            }
+          : {
+              host: smtpHost,
+              port: smtpPort,
+              secure: smtpPort === 465,
+              auth: {
+                user: smtpUser.trim(),
+                pass: cleanPass,
+              },
+            }
+      );
 
       const htmlContent = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; border-radius: 20px; background: #ffffff; border: 1px solid #f3e8ff;">
