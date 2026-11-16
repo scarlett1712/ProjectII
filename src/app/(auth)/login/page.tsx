@@ -27,6 +27,7 @@ function LoginContent() {
   const [showLoading, setShowLoading] = useState(false);
 
   const justRegistered = searchParams.get("registered") === "1";
+  const sessionRevoked = searchParams.get("revoked") === "1";
 
   useEffect(() => {
     if (status === "authenticated" && data?.user?.id) router.push("/dashboard");
@@ -83,6 +84,12 @@ function LoginContent() {
           {justRegistered && (
             <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
               Đăng ký thành công. Bạn có thể đăng nhập bên dưới.
+            </p>
+          )}
+
+          {sessionRevoked && (
+            <p className="mb-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
+              Mật khẩu của bạn vừa được thay đổi hoặc phiên làm việc đã hết hạn. Vui lòng đăng nhập lại nhé!
             </p>
           )}
 

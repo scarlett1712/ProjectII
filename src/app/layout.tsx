@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
 import { AppSessionProvider } from "@/components/providers/SessionProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 const nunito = Nunito({
@@ -45,8 +46,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AppSessionProvider>
-          <PWAInstallPrompt />
-          {children}
+          <QueryProvider>
+            <PWAInstallPrompt />
+            {children}
+          </QueryProvider>
         </AppSessionProvider>
       </body>
     </html>

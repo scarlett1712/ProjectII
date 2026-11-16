@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown } from "lucide-react";
+import { notifyDataChanged } from "@/lib/cacheSync";
 
 export interface TransactionModalProps {
   isOpen: boolean;
@@ -325,6 +326,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
         setTxFromAccount("");
         setTxToAccount("");
         setTxNote("");
+        notifyDataChanged("budget");
         onClose();
         if (onSuccess) onSuccess();
       } else {

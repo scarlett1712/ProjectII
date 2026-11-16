@@ -55,11 +55,14 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash new password and update
+    // Hash new password and update with bumped tokenVersion to revoke old sessions
     const passwordHash = await hash(newPassword, 12);
     await db.user.update({
       where: { id: auth.userId! },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        tokenVersion: { increment: 1 },
+      },
     });
 
     return NextResponse.json({

@@ -43,6 +43,7 @@ import {
   Bell
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
 
 type Meal = { id: string; mealName: string; calories: number; grams: number; eatenAt: string; note?: string | null };
 
@@ -119,23 +120,33 @@ export function MealManagementTab() {
 
   async function loadMeals() {
     try {
-      const res = await fetch("/api/meals");
-      const data = await res.json();
-      setMeals(data);
+      fetchWithCache<Meal[]>("/api/meals", undefined, {
+        onInstant: (cached) => {
+          if (cached) {
+            setMeals(cached);
+            setLoading(false);
+          }
+        },
+        onFresh: (data) => {
+          setMeals(data);
+          setLoading(false);
+        },
+      }).catch((e) => {
+        console.error(e);
+        setLoading(false);
+      });
     } catch (e) {
       console.error(e);
-    } finally {
       setLoading(false);
     }
   }
 
   async function loadProfile() {
     try {
-      const res = await fetch("/api/profile");
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-      }
+      fetchWithCache<any>("/api/profile", undefined, {
+        onInstant: (cached) => { if (cached) setProfile(cached); },
+        onFresh: (data) => setProfile(data),
+      }).catch(console.error);
     } catch (e) {
       console.error(e);
     }
@@ -145,8 +156,37 @@ export function MealManagementTab() {
     loadMeals();
     loadProfile();
     const handleRefresh = () => loadMeals();
+    const handleSync = (e: Event) => {
+      const ce = e as CustomEvent<{ domain: string }>;
+      if (!ce.detail?.domain || ce.detail.domain === "all" || ce.detail.domain === "meals") {
+        loadMeals();
+      }
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "app-sync-trigger") {
+        try {
+          const { domain } = JSON.parse(e.newValue || "{}");
+          if (!domain || domain === "all" || domain === "meals") loadMeals();
+        } catch {}
+      }
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") loadMeals();
+    };
+
     window.addEventListener("refresh-meal-data", handleRefresh);
-    return () => window.removeEventListener("refresh-meal-data", handleRefresh);
+    window.addEventListener("app-data-sync", handleSync);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("refresh-meal-data", handleRefresh);
+      window.removeEventListener("app-data-sync", handleSync);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleVisibility);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   useEffect(() => {
@@ -207,6 +247,7 @@ export function MealManagementTab() {
       setEditingMeal(null);
       setShowAddModal(false);
       showToast(editingMeal ? "Đã cập nhật bữa ăn!" : "Đã lưu bữa ăn mới!");
+      notifyDataChanged("meals");
       loadMeals();
 
       // Trigger Star AI calorie portion estimation
@@ -239,6 +280,7 @@ export function MealManagementTab() {
           if (res.ok) {
             setSelectedMealForDetails(null);
             showToast("Đã xóa bữa ăn thành công!");
+            notifyDataChanged("meals");
             loadMeals();
           }
         } catch (e) {

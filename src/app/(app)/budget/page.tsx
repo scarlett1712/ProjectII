@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TransactionModal } from "@/components/budget/TransactionModal";
+import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
 import {
   BarChart,
   Bar,
@@ -235,31 +236,74 @@ export default function BudgetPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Fetch all budget data in 1 unified fast request
+  // Fetch all budget data in 1 unified fast request with Instant Cache
   const fetchData = async () => {
     if (!userId) return;
-    setLoading(true);
     try {
-      const res = await fetch(`/api/budget?year=${currentYear}&month=${currentMonth}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAccounts(data.accounts || []);
-        setCategories(data.categories || []);
-        setGoals(data.goals || []);
-        setTransactions(data.transactions || []);
-      } else {
-        throw new Error("Failed to load budget");
-      }
+      const url = `/api/budget?year=${currentYear}&month=${currentMonth}`;
+      fetchWithCache<any>(url, undefined, {
+        onInstant: (cached) => {
+          if (cached) {
+            setAccounts(cached.accounts || []);
+            setCategories(cached.categories || []);
+            setGoals(cached.goals || []);
+            setTransactions(cached.transactions || []);
+            setLoading(false);
+          }
+        },
+        onFresh: (data) => {
+          setAccounts(data.accounts || []);
+          setCategories(data.categories || []);
+          setGoals(data.goals || []);
+          setTransactions(data.transactions || []);
+          setLoading(false);
+        },
+      }).catch((e) => {
+        console.error(e);
+        triggerToast("Lỗi khi tải dữ liệu tài chính.");
+        setLoading(false);
+      });
     } catch (e) {
       console.error(e);
       triggerToast("Lỗi khi tải dữ liệu tài chính.");
-    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchData();
+
+    const handleSync = (e: Event) => {
+      const ce = e as CustomEvent<{ domain: string }>;
+      const d = ce.detail?.domain;
+      if (!d || d === "all" || d === "budget") {
+        fetchData();
+      }
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "app-sync-trigger") {
+        fetchData();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchData();
+      }
+    };
+
+    window.addEventListener("app-data-sync", handleSync);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("app-data-sync", handleSync);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleVisibility);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [userId, currentYear, currentMonth]);
 
   // Handle goals change
@@ -291,6 +335,7 @@ export default function BudgetPage() {
           return [...prev, updatedGoal];
         });
         triggerToast("Đã lưu dự tính ngân sách!");
+        notifyDataChanged("budget");
       }
     } catch (e) {
       console.error(e);
@@ -322,6 +367,7 @@ export default function BudgetPage() {
         setAccountColor("#A172FD");
         setShowAddAccount(false);
         triggerToast("Đã thêm tài khoản mới!");
+        notifyDataChanged("budget");
         fetchData();
       } else {
         const body = await res.json();

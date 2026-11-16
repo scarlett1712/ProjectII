@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { format, isSameDay, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
+import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
 
 type WaterGoal = { dailyTargetMl: number };
 type WaterLog = { id: string; amountMl: number; loggedAt: string };
@@ -25,16 +26,31 @@ export function WaterReminderTab() {
 
   async function loadData() {
     try {
-      const res = await fetch("/api/water");
-      const data = await res.json();
-      setGoal(data.goal);
-      setLogs(data.logs || []);
-      setSlots(data.slots || []);
-      if (data.goal) setTargetInput(data.goal.dailyTargetMl);
-      if (data.slots) setSlotsInput(data.slots.map((s: any) => s.slotTime));
+      fetchWithCache<any>("/api/water", undefined, {
+        onInstant: (cached) => {
+          if (cached) {
+            setGoal(cached.goal);
+            setLogs(cached.logs || []);
+            setSlots(cached.slots || []);
+            if (cached.goal) setTargetInput(cached.goal.dailyTargetMl);
+            if (cached.slots) setSlotsInput(cached.slots.map((s: any) => s.slotTime));
+            setLoading(false);
+          }
+        },
+        onFresh: (data) => {
+          setGoal(data.goal);
+          setLogs(data.logs || []);
+          setSlots(data.slots || []);
+          if (data.goal) setTargetInput(data.goal.dailyTargetMl);
+          if (data.slots) setSlotsInput(data.slots.map((s: any) => s.slotTime));
+          setLoading(false);
+        },
+      }).catch((e) => {
+        console.error(e);
+        setLoading(false);
+      });
     } catch (e) {
       console.error(e);
-    } finally {
       setLoading(false);
     }
   }
@@ -42,8 +58,37 @@ export function WaterReminderTab() {
   useEffect(() => {
     loadData();
     const handleRefresh = () => loadData();
+    const handleSync = (e: Event) => {
+      const ce = e as CustomEvent<{ domain: string }>;
+      if (!ce.detail?.domain || ce.detail.domain === "all" || ce.detail.domain === "water") {
+        loadData();
+      }
+    };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "app-sync-trigger") {
+        try {
+          const { domain } = JSON.parse(e.newValue || "{}");
+          if (!domain || domain === "all" || domain === "water") loadData();
+        } catch {}
+      }
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") loadData();
+    };
+
     window.addEventListener("refresh-water-data", handleRefresh);
-    return () => window.removeEventListener("refresh-water-data", handleRefresh);
+    window.addEventListener("app-data-sync", handleSync);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("refresh-water-data", handleRefresh);
+      window.removeEventListener("app-data-sync", handleSync);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleVisibility);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, []);
 
   async function logWater(amountMl: number) {
@@ -56,6 +101,7 @@ export function WaterReminderTab() {
         body: JSON.stringify({ amountMl }),
       });
       if (res.ok) {
+        notifyDataChanged("water");
         loadData();
         window.dispatchEvent(new CustomEvent("show-app-toast", { detail: `Đã ghi nhận uống thêm ${amountMl}ml nước! 💧` }));
       }
@@ -79,6 +125,7 @@ export function WaterReminderTab() {
         method: "DELETE",
       });
       if (res.ok) {
+        notifyDataChanged("water");
         loadData();
         window.dispatchEvent(new CustomEvent("show-app-toast", { detail: "Đã xóa bản ghi uống nước." }));
       }
@@ -100,6 +147,7 @@ export function WaterReminderTab() {
         }),
       });
       setShowGoalModal(false);
+      notifyDataChanged("water");
       loadData();
       window.dispatchEvent(new CustomEvent("show-app-toast", { detail: "Đã cập nhật mục tiêu & giờ uống nước! 🎯" }));
     } catch (e) {

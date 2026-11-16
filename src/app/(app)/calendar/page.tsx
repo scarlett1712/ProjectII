@@ -24,6 +24,7 @@ import {
 } from "date-fns";
 import { vi } from "date-fns/locale";
 import { registerPushSubscription } from "@/lib/clientNotifications";
+import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -627,54 +628,78 @@ export default function CalendarPage() {
 
   const loadData = async () => {
     try {
-      // Load tags
-      const tagRes = await fetch("/api/tags");
-      const tagData = await tagRes.json();
-      
-      // Merge system tag overrides
-      let overrides: Record<string, { name: string; color: string }> = {};
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("calendar-tag-overrides");
-        if (stored) {
-          try { overrides = JSON.parse(stored); } catch {}
+      // Merge system tag overrides helper
+      const applyTagOverrides = (tagData: Tag[]) => {
+        let overrides: Record<string, { name: string; color: string }> = {};
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("calendar-tag-overrides");
+          if (stored) {
+            try { overrides = JSON.parse(stored); } catch {}
+          }
         }
-      }
-      
-      const mergedTags = tagData.map((t: Tag) => {
-        if (t.id.startsWith("system-") && overrides[t.id]) {
-          return { ...t, ...overrides[t.id] };
-        }
-        return t;
-      });
-      setTags(mergedTags);
-      
-      // Auto-select all tags initially if none selected
-      if (selectedTags.length === 0) {
-        setSelectedTags(mergedTags.map((t: Tag) => t.id));
-      }
+        return (tagData || []).map((t: Tag) => {
+          if (t.id.startsWith("system-") && overrides[t.id]) {
+            return { ...t, ...overrides[t.id] };
+          }
+          return t;
+        });
+      };
+
+      // Load tags with Instant Cache
+      fetchWithCache<Tag[]>("/api/tags", undefined, {
+        onInstant: (cached) => {
+          const merged = applyTagOverrides(cached);
+          setTags(merged);
+          if (selectedTags.length === 0) setSelectedTags(merged.map((t) => t.id));
+        },
+        onFresh: (fresh) => {
+          const merged = applyTagOverrides(fresh);
+          setTags(merged);
+          if (selectedTags.length === 0) setSelectedTags(merged.map((t) => t.id));
+        },
+      }).catch(console.error);
 
       // Load calendar events
       const startRange = startOfMonth(subMonths(currentDate, 2)).toISOString();
       const endRange = endOfMonth(addMonths(currentDate, 4)).toISOString();
-      
-      const calRes = await fetch(`/api/calendar?start=${startRange}&end=${endRange}`);
-      const calData = await calRes.json();
-      
-      // Load tasks
-      const taskRes = await fetch("/api/tasks");
-      const taskData = await taskRes.json();
+      const calUrl = `/api/calendar?start=${startRange}&end=${endRange}`;
 
-      // Transform tasks into calendar-friendly structures
-      const formattedTasks = taskData.map((task: any) => ({
-        ...task,
-        isTask: true,
-        startAt: task.dueAt || task.createdAt,
-        endAt: task.dueAt || task.createdAt,
-        tagId: task.tagId || null
-      }));
+      const updateItems = (calList: any[], taskList: any[]) => {
+        const formattedTasks = (taskList || []).map((task: any) => ({
+          ...task,
+          isTask: true,
+          startAt: task.dueAt || task.createdAt,
+          endAt: task.dueAt || task.createdAt,
+          tagId: task.tagId || null
+        }));
+        setItems([...(calList || []), ...formattedTasks]);
+      };
 
-      // Combine
-      setItems([...calData, ...formattedTasks]);
+      let currentCal: any[] = [];
+      let currentTasks: any[] = [];
+
+      fetchWithCache<any[]>(calUrl, undefined, {
+        onInstant: (cached) => {
+          currentCal = cached || [];
+          updateItems(currentCal, currentTasks);
+        },
+        onFresh: (fresh) => {
+          currentCal = fresh || [];
+          updateItems(currentCal, currentTasks);
+        },
+      }).catch(console.error);
+
+      fetchWithCache<any[]>("/api/tasks", undefined, {
+        onInstant: (cached) => {
+          currentTasks = cached || [];
+          updateItems(currentCal, currentTasks);
+        },
+        onFresh: (fresh) => {
+          currentTasks = fresh || [];
+          updateItems(currentCal, currentTasks);
+        },
+      }).catch(console.error);
+
     } catch (e) {
       console.error(e);
     }
@@ -682,6 +707,38 @@ export default function CalendarPage() {
 
   useEffect(() => {
     loadData();
+
+    const handleSync = (e: Event) => {
+      const ce = e as CustomEvent<{ domain: string }>;
+      const d = ce.detail?.domain;
+      if (!d || d === "all" || d === "calendar" || d === "tasks") {
+        loadData();
+      }
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "app-sync-trigger") {
+        loadData();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        loadData();
+      }
+    };
+
+    window.addEventListener("app-data-sync", handleSync);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("app-data-sync", handleSync);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleVisibility);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [currentDate]);
 
   const executeSave = async (payload: any, mode: "one" | "all" | "future") => {
@@ -731,6 +788,7 @@ export default function CalendarPage() {
         setEditingItem(null);
         clearForm();
         showToast(editingItem ? "Đã cập nhật lịch trình!" : "Đã tạo lịch trình mới!");
+        notifyDataChanged(itemType === "event" ? "calendar" : "tasks");
         loadData();
       } else {
         const err = await res.json();
@@ -824,6 +882,7 @@ export default function CalendarPage() {
       if (res.ok) {
         showToast(`Đã dán lịch trình "${copiedItem.title}"!`);
         setCopiedItem(null);
+        notifyDataChanged(copiedItem.isTask ? "tasks" : "calendar");
         loadData();
       }
     } catch (e) {
@@ -842,6 +901,7 @@ export default function CalendarPage() {
         setShowPopup(false);
         setEditingItem(null);
         showToast("Đã xóa thành công!");
+        notifyDataChanged(isTask ? "tasks" : "calendar");
         loadData();
       } else {
         const data = await res.json();

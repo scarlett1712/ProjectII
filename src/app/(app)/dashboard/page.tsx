@@ -21,6 +21,7 @@ import {
 import { format, subDays, subMonths } from "date-fns";
 import { vi } from "date-fns/locale";
 import { registerPushSubscription } from "@/lib/clientNotifications";
+import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
 import { motion, AnimatePresence } from "framer-motion";
 import { OnboardingTour, TourStep } from "@/components/OnboardingTour";
 
@@ -211,17 +212,17 @@ export default function DashboardPage() {
   });
 
   const fetchProfile = () => {
-    fetch("/api/profile")
-      .then((res) => res.json())
-      .then((data) => setProfile(data))
-      .catch(() => undefined);
+    fetchWithCache("/api/profile", undefined, {
+      onInstant: (cached) => setProfile(cached),
+      onFresh: (data) => setProfile(data),
+    }).catch(() => undefined);
   };
 
   const fetchWater = () => {
-    fetch("/api/water")
-      .then((res) => res.json())
-      .then((data) => setWaterData(data))
-      .catch(() => undefined);
+    fetchWithCache("/api/water", undefined, {
+      onInstant: (cached) => setWaterData(cached),
+      onFresh: (data) => setWaterData(data),
+    }).catch(() => undefined);
   };
 
   const logWaterQuick = async (amountMl: number) => {
@@ -233,6 +234,7 @@ export default function DashboardPage() {
       });
       if (res.ok) {
         showToast(`Đã ghi nhận uống thêm ${amountMl}ml nước nha! 💧`);
+        notifyDataChanged("water");
         fetchWater();
       } else {
         showToast("Có lỗi xảy ra khi ghi nhận nước uống 🥺");
@@ -244,23 +246,22 @@ export default function DashboardPage() {
   };
 
   const fetchMeals = () => {
-    fetch("/api/meals")
-      .then((res) => res.json())
-      .then((data) => setMeals(data))
-      .catch(() => undefined);
+    fetchWithCache("/api/meals", undefined, {
+      onInstant: (cached) => setMeals(cached),
+      onFresh: (data) => setMeals(data),
+    }).catch(() => undefined);
   };
 
   const fetchTasks = () => {
-    fetch("/api/tasks")
-      .then((res) => res.json())
-      .then((data) => setTasks(data))
-      .catch(() => undefined);
+    fetchWithCache("/api/tasks", undefined, {
+      onInstant: (cached) => setTasks(cached),
+      onFresh: (data) => setTasks(data),
+    }).catch(() => undefined);
   };
 
   const fetchTags = () => {
-    fetch("/api/tags")
-      .then((res) => res.json())
-      .then((data) => {
+    fetchWithCache("/api/tags", undefined, {
+      onInstant: (cached) => {
         let overrides: Record<string, { name: string; color: string }> = {};
         if (typeof window !== "undefined") {
           const stored = localStorage.getItem("calendar-tag-overrides");
@@ -268,15 +269,31 @@ export default function DashboardPage() {
             try { overrides = JSON.parse(stored); } catch { }
           }
         }
-        const merged = data.map((t: any) => {
+        const merged = (cached || []).map((t: any) => {
           if (t.id.startsWith("system-") && overrides[t.id]) {
             return { ...t, ...overrides[t.id] };
           }
           return t;
         });
         setCalendarTags(merged);
-      })
-      .catch(() => undefined);
+      },
+      onFresh: (data) => {
+        let overrides: Record<string, { name: string; color: string }> = {};
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("calendar-tag-overrides");
+          if (stored) {
+            try { overrides = JSON.parse(stored); } catch { }
+          }
+        }
+        const merged = (data || []).map((t: any) => {
+          if (t.id.startsWith("system-") && overrides[t.id]) {
+            return { ...t, ...overrides[t.id] };
+          }
+          return t;
+        });
+        setCalendarTags(merged);
+      },
+    }).catch(() => undefined);
   };
 
   const fetchBudgetStats = (view = walletChartView) => {
@@ -367,14 +384,56 @@ export default function DashboardPage() {
       if (customEvent.detail) showToast(customEvent.detail);
     };
 
+    const handleSync = (e: Event) => {
+      const ce = e as CustomEvent<{ domain: string }>;
+      const d = ce.detail?.domain;
+      if (!d || d === "all") {
+        fetchTasks();
+        fetchMeals();
+        fetchWater();
+        fetchTags();
+        fetchBudgetStats();
+      } else if (d === "water") fetchWater();
+      else if (d === "meals") fetchMeals();
+      else if (d === "tasks") fetchTasks();
+      else if (d === "budget") fetchBudgetStats();
+      else if (d === "calendar") { fetchTasks(); fetchTags(); }
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "app-sync-trigger" && e.newValue) {
+        try {
+          const { domain } = JSON.parse(e.newValue);
+          handleSync(new CustomEvent("app-data-sync", { detail: { domain } }));
+        } catch {}
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        fetchTasks();
+        fetchMeals();
+        fetchWater();
+        fetchBudgetStats();
+      }
+    };
+
     window.addEventListener("refresh-water-data", handleWaterRefresh);
     window.addEventListener("refresh-meal-data", handleMealRefresh);
     window.addEventListener("show-app-toast", handleToast);
+    window.addEventListener("app-data-sync", handleSync);
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("focus", handleVisibility);
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       window.removeEventListener("refresh-water-data", handleWaterRefresh);
       window.removeEventListener("refresh-meal-data", handleMealRefresh);
       window.removeEventListener("show-app-toast", handleToast);
+      window.removeEventListener("app-data-sync", handleSync);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("focus", handleVisibility);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, []);
 
@@ -399,6 +458,7 @@ export default function DashboardPage() {
         }),
       });
       const newMeal = await res.json();
+      notifyDataChanged("meals");
       fetchMeals();
       setShowAddMeal(false);
       setMealForm({ name: "", grams: "", calories: "", category: "Sáng", time: "07:00" });
@@ -452,6 +512,7 @@ export default function DashboardPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
+      notifyDataChanged("tasks");
       fetchTasks();
       setShowAddNote(false);
       setEditingTask(null);
@@ -507,6 +568,7 @@ export default function DashboardPage() {
       if (res.ok) {
         setShowCalendarModal(false);
         showToast(itemType === "event" ? "Đã tạo lịch trình mới!" : "Đã tạo nhiệm vụ mới!");
+        notifyDataChanged("calendar");
         fetchTasks();
       } else {
         const errorData = await res.json();
@@ -534,6 +596,7 @@ export default function DashboardPage() {
             setShowAddNote(false);
             setEditingTask(null);
             showToast("Đã xóa công việc thành công.");
+            notifyDataChanged("tasks");
             fetchTasks();
           }
         } catch (err) {
@@ -821,6 +884,7 @@ export default function DashboardPage() {
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ id: task.id, completed: true, mode: "one" })
                           });
+                          notifyDataChanged("tasks");
                           fetchTasks();
                           showToast(`Đã hoàn thành: "${task.title}"!`);
                         }}
@@ -1791,6 +1855,7 @@ export default function DashboardPage() {
               }
               setTaskPositions(updated);
               localStorage.setItem("dashboard-task-positions", JSON.stringify(updated));
+              notifyDataChanged("tasks");
               fetchTasks();
               showToast(`Đã hoàn thành: "${task.title}"!`);
             }}

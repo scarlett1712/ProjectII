@@ -11,6 +11,7 @@ model User {
   name             String?
   email            String              @unique
   passwordHash     String?
+  tokenVersion     Int                 @default(0)
   emailVerified    DateTime?
   image            String?
   role             String              @default("USER")

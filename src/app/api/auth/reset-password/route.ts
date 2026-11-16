@@ -66,10 +66,13 @@ export async function POST(req: Request) {
     // Hash new password
     const passwordHash = await hash(newPassword, 12);
 
-    // Update password in DB
+    // Update password in DB and increment tokenVersion to revoke old sessions
     await db.user.update({
       where: { email },
-      data: { passwordHash },
+      data: {
+        passwordHash,
+        tokenVersion: { increment: 1 },
+      },
     });
 
     // Delete used verification token

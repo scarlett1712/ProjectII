@@ -28,6 +28,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name ?? undefined,
           role: user.role ?? "USER",
+          tokenVersion: user.tokenVersion ?? 0,
         };
       },
     }),
@@ -41,6 +42,7 @@ export const authOptions: NextAuthOptions = {
       if (user?.id) {
         token.id = user.id;
         token.role = user.role ?? "USER";
+        token.tokenVersion = (user as any).tokenVersion ?? 0;
       }
       return token;
     },
@@ -49,8 +51,20 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = (token.role as string) ?? "USER";
         try {
-          const dbUser = await db.user.findUnique({ where: { id: token.id as string } });
+          const dbUser = await db.user.findUnique({
+            where: { id: token.id as string },
+            select: { name: true, email: true, role: true, tokenVersion: true },
+          });
           if (dbUser) {
+            // Check if password changed and tokenVersion was bumped
+            if (
+              token.tokenVersion !== undefined &&
+              dbUser.tokenVersion !== undefined &&
+              (token.tokenVersion as number) < dbUser.tokenVersion
+            ) {
+              // Token is revoked! Empty user out so session is invalid
+              return {} as any;
+            }
             session.user.name = dbUser.name;
             session.user.email = dbUser.email;
             session.user.role = dbUser.role ?? "USER";
