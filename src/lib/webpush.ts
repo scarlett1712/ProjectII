@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { setVapidDetails, sendNotification } from "web-push";
 import { db } from "./db";
 
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "BMwuCMhra9xTQ_pcq3hkKa58eZxzHwnHOdURjF4FO_bUJgduWH7VS5Y2GKrbRW-KA8kn2WM7HpwADnuwqTICEPM";
@@ -6,7 +6,7 @@ const privateKey = process.env.VAPID_PRIVATE_KEY || "4viDOlN20UhFNqesgiqTfsjkuMo
 const subject = process.env.VAPID_SUBJECT || "mailto:lilstar1712@gmail.com";
 
 try {
-  webpush.setVapidDetails(subject, publicKey, privateKey);
+  setVapidDetails(subject, publicKey, privateKey);
 } catch (e) {
   console.error("[WebPush] Failed to set VAPID details:", e);
 }
@@ -51,7 +51,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
       };
 
       try {
-        await webpush.sendNotification(pushConfig, payloadString);
+        await sendNotification(pushConfig, payloadString);
       } catch (err: any) {
         // If status is 404 or 410, the subscription has expired or unsubscribed
         if (err.statusCode === 404 || err.statusCode === 410) {

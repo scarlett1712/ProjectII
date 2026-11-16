@@ -11,9 +11,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const authUser = await requireUserId(req);
-    if (!authUser.userId) return authUser.response;
-    const userId = authUser.userId;
+    const auth = await requireUserId(req);
+    if (auth.response) return auth.response;
+    const userId = auth.userId;
 
     const body = await req.json();
     const { endpoint, keys } = body;
@@ -47,9 +47,9 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const authUser = await requireUserId(req);
-    if (!authUser.userId) return authUser.response;
-    const userId = authUser.userId;
+    const auth = await requireUserId(req);
+    if (auth.response) return auth.response;
+    const userId = auth.userId;
 
     const body = await req.json();
     const { endpoint } = body;
