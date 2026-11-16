@@ -7,32 +7,33 @@ datasource db {
 }
 
 model User {
-  id            String        @id @default(cuid())
-  name          String?
-  email         String        @unique
-  passwordHash  String?
-  emailVerified DateTime?
-  image         String?
-  role          String        @default("USER")
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  profile       Profile?
-  calorieGoals  CalorieGoal[]
-  meals         MealEntry[]
-  calendar      CalendarEvent[]
-  tasks         TaskItem[]
-  waterGoals    WaterGoal[]
-  waterLogs     WaterLog[]
-  reminderSlots WaterReminderSlot[]
-  chatSessions  ChatSession[]
-  chatMessages  ChatMessage[]
+  id               String              @id @default(cuid())
+  name             String?
+  email            String              @unique
+  passwordHash     String?
+  emailVerified    DateTime?
+  image            String?
+  role             String              @default("USER")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  accounts         Account[]
   budgetAccounts   BudgetAccount[]
   budgetCategories BudgetCategory[]
-  transactions     BudgetTransaction[]
-  calendarTags     CalendarTag[]
   budgetGoals      BudgetGoal[]
+  transactions     BudgetTransaction[]
+  calendar         CalendarEvent[]
+  calendarTags     CalendarTag[]
+  calorieGoals     CalorieGoal[]
+  chatMessages     ChatMessage[]
+  chatSessions     ChatSession[]
+  meals            MealEntry[]
+  profile          Profile?
+  sessions         Session[]
+  tasks            TaskItem[]
+  waterGoals       WaterGoal[]
+  waterLogs        WaterLog[]
+  reminderSlots    WaterReminderSlot[]
+  pushSubscriptions PushSubscription[]
 }
 
 model Profile {
@@ -50,68 +51,68 @@ model Profile {
 }
 
 model CalorieGoal {
-  id            String   @id @default(cuid())
-  userId        String
+  id             String   @id @default(cuid())
+  userId         String
   targetCalories Int
-  date          DateTime
-  createdAt     DateTime @default(now())
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
 }
 
 model MealEntry {
-  id          String   @id @default(cuid())
-  userId      String
-  mealName    String
-  grams       Float
-  calories    Int
-  eatenAt     DateTime
-  note        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String
+  mealName  String
+  grams     Float
+  calories  Int
+  eatenAt   DateTime
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, eatenAt])
 }
 
 model CalendarEvent {
-  id          String   @id @default(cuid())
-  userId      String
-  title       String
-  description String?
-  startAt     DateTime
-  endAt     DateTime
-  allDay      Boolean  @default(false)
-  tagId       String?
-  color       String?
-  notification Boolean  @default(false)
-  noteColor   String?
-  recurrence  String?
+  id            String    @id @default(cuid())
+  userId        String
+  title         String
+  description   String?
+  startAt       DateTime
+  endAt         DateTime
+  allDay        Boolean   @default(false)
+  tagId         String?
+  color         String?
+  notification  Boolean   @default(false)
+  noteColor     String?
+  recurrence    String?
   recurrenceEnd DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, startAt, endAt])
 }
 
 model TaskItem {
-  id          String   @id @default(cuid())
-  userId      String
-  title       String
-  description String?
-  dueAt       DateTime?
-  completed   Boolean  @default(false)
-  tagId       String?
-  color       String?
-  notification Boolean  @default(false)
-  noteColor   String?
-  recurrence  String?
+  id            String    @id @default(cuid())
+  userId        String
+  title         String
+  description   String?
+  dueAt         DateTime?
+  completed     Boolean   @default(false)
+  tagId         String?
+  color         String?
+  notification  Boolean   @default(false)
+  noteColor     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  recurrence    String?
   recurrenceEnd DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, dueAt, completed])
 }
@@ -153,27 +154,27 @@ model WaterReminderSlot {
 }
 
 model ChatSession {
-  id        String        @id @default(cuid())
+  id        String          @id @default(cuid())
   userId    String
   title     String?
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages  ChatMessage[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
   actions   ChatActionLog[]
+  messages  ChatMessage[]
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, updatedAt])
 }
 
 model ChatMessage {
-  id         String      @id @default(cuid())
-  userId     String
-  sessionId  String
-  role       MessageRole
-  content    String
-  createdAt  DateTime    @default(now())
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  id        String      @id @default(cuid())
+  userId    String
+  sessionId String
+  role      MessageRole
+  content   String
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, sessionId, createdAt])
 }
@@ -187,11 +188,6 @@ model ChatActionLog {
   session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
-}
-
-enum MessageRole {
-  USER
-  ASSISTANT
 }
 
 model Account {
@@ -227,57 +223,51 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
 model BudgetAccount {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  balance   Float    @default(0)
-  color     String   @default("#A172FD")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String              @id @default(cuid())
+  userId           String
+  name             String
+  balance          Float               @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  color            String              @default("#A172FD")
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   fromTransactions BudgetTransaction[] @relation("FromAccount")
   toTransactions   BudgetTransaction[] @relation("ToAccount")
 }
 
 model BudgetCategory {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String
-  type      TransactionType
-  color     String   @default("#A172FD")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions BudgetTransaction[]
+  id           String              @id @default(cuid())
+  userId       String
+  name         String
+  type         TransactionType
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  color        String              @default("#A172FD")
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   budgetGoals  BudgetGoal[]
+  transactions BudgetTransaction[]
 }
 
 model BudgetTransaction {
-  id          String   @id @default(cuid())
-  userId      String
-  amount      Float
-  type        TransactionType
-  categoryId  String?
+  id            String          @id @default(cuid())
+  userId        String
+  amount        Float
+  type          TransactionType
+  categoryId    String?
   fromAccountId String?
   toAccountId   String?
-  note        String?
-  occurredAt  DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    BudgetCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  fromAccount BudgetAccount?  @relation("FromAccount", fields: [fromAccountId], references: [id], onDelete: SetNull)
-  toAccount   BudgetAccount?  @relation("ToAccount", fields: [toAccountId], references: [id], onDelete: SetNull)
+  note          String?
+  occurredAt    DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  category      BudgetCategory? @relation(fields: [categoryId], references: [id])
+  fromAccount   BudgetAccount?  @relation("FromAccount", fields: [fromAccountId], references: [id])
+  toAccount     BudgetAccount?  @relation("ToAccount", fields: [toAccountId], references: [id])
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, occurredAt])
-}
-
-enum TransactionType {
-  INCOME
-  EXPENSE
-  TRANSFER
 }
 
 model CalendarTag {
@@ -292,16 +282,40 @@ model CalendarTag {
 }
 
 model BudgetGoal {
-  id          String         @id @default(cuid())
-  userId      String
-  categoryId  String
-  amount      Float
-  year        Int
-  month       Int
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id         String         @id @default(cuid())
+  userId     String
+  categoryId String
+  amount     Float
+  year       Int
+  month      Int
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  category   BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, categoryId, year, month])
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

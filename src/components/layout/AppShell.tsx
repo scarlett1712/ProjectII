@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StarBackground } from "@/components/StarBackground";
 import { DraggableStar } from "@/components/DraggableStar";
 import { format } from "date-fns";
+import { showSystemNotification, registerPushSubscription } from "@/lib/clientNotifications";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Trang chủ", icon: LayoutDashboard },
@@ -130,11 +131,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Register Service Worker for background push notifications
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch((err) => {
+      navigator.serviceWorker.register("/sw.js").then(() => {
+        if (Notification.permission === "granted" && session) {
+          registerPushSubscription();
+        }
+      }).catch((err) => {
         console.error("SW registration error:", err);
       });
     }
-  }, []);
+  }, [session]);
 
   type NotificationLog = {
     id: string;
@@ -406,9 +411,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!session) return;
 
-    // Request notification permission
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
+    // Request notification permission & register push
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission().then((perm) => {
+          if (perm === "granted") {
+            registerPushSubscription();
+          }
+        });
+      } else if (Notification.permission === "granted") {
+        registerPushSubscription();
+      }
     }
 
     const checkNotifications = async () => {
@@ -460,13 +473,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   ? `Nhiệm vụ "${item.title}" ${threshold === 'overdue' ? 'đã đến hạn!' : threshold === 'critical' ? 'sắp hết hạn (còn dưới 2 giờ)!' : 'sắp hết hạn (còn dưới 24 giờ)!'}`
                   : `Sự kiện "${item.title}" ${threshold === 'overdue' ? 'đang diễn ra!' : threshold === 'critical' ? 'sắp diễn ra (còn dưới 2 giờ)!' : 'sắp diễn ra (còn dưới 24 giờ)!'}`;
 
-                if (Notification.permission === "granted") {
-                  try {
-                    new Notification("Little Star Nhắc Nhở", { body: message, icon: "/chatbot-star.png" });
-                  } catch (e) {
-                    console.error("Standard notification error, fallback to service worker if any", e);
-                  }
-                }
+                showSystemNotification("Little Star Nhắc Nhở", { body: message });
 
                 window.dispatchEvent(new CustomEvent("star-notification", {
                   detail: { message, type: "task", id: item.id }
@@ -497,13 +504,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                 const message = `Đã đến giờ uống nước! Hãy uống ${slot.amountMl}ml nước nhé. 💧`;
                 
-                if (Notification.permission === "granted") {
-                  try {
-                    new Notification("Little Star Nhắc Nhở", { body: message, icon: "/chatbot-star.png" });
-                  } catch (e) {
-                    console.error("Standard notification error, fallback to service worker if any", e);
-                  }
-                }
+                showSystemNotification("Little Star Nhắc Nhở", { body: message });
 
                 window.dispatchEvent(new CustomEvent("star-notification", {
                   detail: { message, type: "water", amountMl: slot.amountMl, slotId: slot.id }
@@ -753,21 +754,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       onClick={async () => {
                         const res = await Notification.requestPermission();
                         if (res === "granted") {
-                          try {
-                            new Notification("Little Star Nhắc Nhở", {
-                              body: "Cảm ơn bạn đã bật thông báo hệ thống! 🌟",
-                              icon: "/chatbot-star.png"
-                            });
-                          } catch (e) {
-                            console.error(e);
-                          }
+                          await registerPushSubscription();
+                          await showSystemNotification("Little Star Nhắc Nhở", {
+                            body: "Cảm ơn bạn đã bật thông báo hệ thống! 🌟",
+                          });
                         }
                         window.location.reload();
                       }}
                       className="flex items-center gap-1.5 rounded-full bg-yellow-50 hover:bg-yellow-100 px-3.5 py-1.5 text-[11px] font-black text-yellow-700 transition-all border border-yellow-200 shadow-sm animate-pulse cursor-pointer shrink-0"
-                      title="Bật thông báo Windows"
+                      title="Bật thông báo hệ thống"
                     >
-                      <span>⚠️ Bật thông báo Windows</span>
+                      <span>🔔 Bật thông báo</span>
                     </button>
                   )}
 

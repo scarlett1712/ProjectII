@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { StarBackground } from "@/components/StarBackground";
 import { DraggableStar } from "@/components/DraggableStar";
+import { registerPushSubscription, showSystemNotification } from "@/lib/clientNotifications";
 
 export default function SetupNotificationsPage() {
   const router = useRouter();
@@ -27,11 +28,21 @@ export default function SetupNotificationsPage() {
     );
   }
 
-  function handleAllow() {
+  async function handleAllow() {
     if ("Notification" in window) {
-      Notification.requestPermission().finally(() => {
+      try {
+        const res = await Notification.requestPermission();
+        if (res === "granted") {
+          await registerPushSubscription();
+          await showSystemNotification("Little Star Nhắc Nhở", {
+            body: "Cảm ơn bạn đã bật thông báo hệ thống! 🌟",
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
         router.push("/setup/water");
-      });
+      }
     } else {
       router.push("/setup/water");
     }

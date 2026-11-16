@@ -2,6 +2,7 @@ import { exec } from "child_process";
 import path from "path";
 import { db } from "./db";
 import { addDays, addWeeks, addMonths } from "date-fns";
+import { sendPushToUser } from "./webpush";
 
 const notifiedKeys = new Set<string>();
 
@@ -37,6 +38,11 @@ export function startBackgroundWorker() {
         if (!notifiedKeys.has(key)) {
           notifiedKeys.add(key);
           triggerNotification("Nhắc nhở công việc", `Đã đến hạn: "${task.title}"`);
+          sendPushToUser(task.userId, {
+            title: "Nhắc nhở công việc ⭐",
+            body: `Đã đến hạn: "${task.title}"`,
+            data: { url: "/calendar" },
+          }).catch(() => {});
         }
       }
 
@@ -60,6 +66,11 @@ export function startBackgroundWorker() {
             // Format time nicely
             const timeStr = inst.startAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
             triggerNotification("Sự kiện sắp diễn ra", `Lúc ${timeStr}: "${inst.title}"`);
+            sendPushToUser(event.userId, {
+              title: "Sự kiện sắp diễn ra ⭐",
+              body: `Lúc ${timeStr}: "${inst.title}"`,
+              data: { url: "/calendar" },
+            }).catch(() => {});
           }
         }
       }
@@ -81,6 +92,11 @@ export function startBackgroundWorker() {
           if (!notifiedKeys.has(key)) {
             notifiedKeys.add(key);
             triggerNotification("Nhắc nhở uống nước", `Đến giờ uống nước: ${slot.amountMl}ml (${slot.slotTime})`);
+            sendPushToUser(slot.userId, {
+              title: "Nhắc nhở uống nước ⭐",
+              body: `Đã đến giờ uống nước: ${slot.amountMl}ml (${slot.slotTime}) 💧`,
+              data: { url: "/dashboard" },
+            }).catch(() => {});
           }
         }
       }

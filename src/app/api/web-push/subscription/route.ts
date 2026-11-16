@@ -1,0 +1,71 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { requireUserId } from "@/lib/api";
+
+const defaultPublicKey = "BMwuCMhra9xTQ_pcq3hkKa58eZxzHwnHOdURjF4FO_bUJgduWH7VS5Y2GKrbRW-KA8kn2WM7HpwADnuwqTICEPM";
+
+export async function GET() {
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || defaultPublicKey;
+  return NextResponse.json({ publicKey });
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const authUser = await requireUserId(req);
+    if (!authUser.userId) return authUser.response;
+    const userId = authUser.userId;
+
+    const body = await req.json();
+    const { endpoint, keys } = body;
+
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return NextResponse.json({ error: "Invalid subscription data" }, { status: 400 });
+    }
+
+    const sub = await db.pushSubscription.upsert({
+      where: { endpoint },
+      create: {
+        userId,
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+      },
+      update: {
+        userId,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
+        updatedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({ success: true, subscriptionId: sub.id });
+  } catch (error: any) {
+    console.error("[API WebPush] Error registering subscription:", error);
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const authUser = await requireUserId(req);
+    if (!authUser.userId) return authUser.response;
+    const userId = authUser.userId;
+
+    const body = await req.json();
+    const { endpoint } = body;
+
+    if (endpoint) {
+      await db.pushSubscription.deleteMany({
+        where: {
+          userId,
+          endpoint,
+        },
+      });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("[API WebPush] Error deleting subscription:", error);
+    return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
+  }
+}

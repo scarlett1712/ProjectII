@@ -23,6 +23,7 @@ import {
   setMinutes 
 } from "date-fns";
 import { vi } from "date-fns/locale";
+import { registerPushSubscription } from "@/lib/clientNotifications";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -1949,7 +1950,9 @@ export default function CalendarPage() {
                       if (itemType === "task") {
                         setNotification(val !== "");
                         if (val !== "" && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-                          Notification.requestPermission();
+                          Notification.requestPermission().then((res) => {
+                            if (res === "granted") registerPushSubscription();
+                          });
                         }
                       }
                     }} 
@@ -2119,7 +2122,9 @@ export default function CalendarPage() {
                         const nextVal = !notification;
                         setNotification(nextVal);
                         if (nextVal && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-                          Notification.requestPermission();
+                          Notification.requestPermission().then((res) => {
+                            if (res === "granted") registerPushSubscription();
+                          });
                         }
                       }}
                       className={`p-2 rounded-xl transition-all ${notification ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-400"}`}
