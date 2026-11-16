@@ -527,7 +527,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           const slots = waterData.slots || [];
           for (const slot of slots) {
-            if (slot.slotTime === waterNowStr) {
+            // So khớp theo giờ máy điện thoại (nowStr) hoặc giờ server (waterNowStr)
+            if (slot.slotTime === nowStr || slot.slotTime === waterNowStr) {
               const cacheKey = `${slot.id}-${waterTodayStr}`;
               if (!notifiedWaterCache.current.has(cacheKey)) {
                 notifiedWaterCache.current.add(cacheKey);
@@ -537,7 +538,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
                 const message = `Đã đến giờ uống nước! Hãy uống ${slot.amountMl}ml nước nhé. 💧`;
                 
-                showSystemNotification("Little Star Nhắc Nhở", { body: message });
+                showSystemNotification("Little Star Nhắc Nhở ⭐", { body: message });
 
                 window.dispatchEvent(new CustomEvent("star-notification", {
                   detail: { message, type: "water", amountMl: slot.amountMl, slotId: slot.id }
