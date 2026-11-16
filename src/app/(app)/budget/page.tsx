@@ -2078,12 +2078,12 @@ export default function BudgetPage() {
 
         {/* 4. Modal Edit Transaction (Edit Expense / Income / Transfer) */}
         {showEditTransaction && editingTransaction && (
-          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" onClick={() => { setShowEditTransaction(false); setEditingTransaction(null); }}>
+          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain" onClick={() => { setShowEditTransaction(false); setEditingTransaction(null); }}>
             <motion.div
               initial={{ y: 150, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 150, opacity: 0 }}
-              className="bg-white w-full max-w-[500px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
+              className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">
@@ -2181,7 +2181,7 @@ export default function BudgetPage() {
 
                       {/* Dropdown Options List */}
                       {catDropdownOpen && (
-                        <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[260px] overflow-y-auto space-y-1">
+                        <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto overscroll-contain space-y-1 scrollbar-thin">
                           {categories
                             .filter((c) => c.type === transactionType)
                             .map((c) => (
@@ -2280,7 +2280,7 @@ export default function BudgetPage() {
 
                         {/* Dropdown Options List */}
                         {fromAccDropdownOpen && (
-                          <div className="absolute z-[250] bottom-full mb-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin">
+                          <div className="absolute z-[250] bottom-full mb-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto overscroll-contain space-y-1.5 scrollbar-thin">
                             {accounts.map((a) => (
                               <button
                                 key={a.id}
@@ -2382,7 +2382,7 @@ export default function BudgetPage() {
 
                         {/* Dropdown Options List */}
                         {toAccDropdownOpen && (
-                          <div className="absolute z-[250] bottom-full mb-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin">
+                          <div className="absolute z-[250] bottom-full mb-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto overscroll-contain space-y-1.5 scrollbar-thin">
                             {accounts.map((a) => (
                               <button
                                 key={a.id}

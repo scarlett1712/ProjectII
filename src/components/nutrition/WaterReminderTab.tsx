@@ -189,14 +189,14 @@ export function WaterReminderTab() {
       </div>
 
       {/* Quick Water Logging */}
-      <div id="tour-water-quick-log" className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 flex items-center justify-between flex-wrap gap-3">
+      <div id="tour-water-quick-log" className="bg-white rounded-[24px] p-4 sm:p-5 shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <span className="text-gray-700 font-bold text-sm">Ghi nhanh lượng nước:</span>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
           {[100, 200, 250, 350, 500].map(amount => (
             <button 
               key={amount} 
               onClick={() => logWater(amount)}
-              className="px-4 py-2.5 rounded-xl text-xs font-bold bg-[#F5F3FF] text-[#A172FD] hover:bg-[#A172FD] hover:text-white transition-all active:scale-95 shadow-sm border border-[#F0ECFF]"
+              className="flex-1 min-w-[52px] sm:flex-initial px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold bg-[#F5F3FF] text-[#A172FD] hover:bg-[#A172FD] hover:text-white transition-all active:scale-95 shadow-sm border border-[#F0ECFF] text-center whitespace-nowrap"
             >
               +{amount} ml
             </button>
@@ -381,7 +381,7 @@ export function WaterReminderTab() {
       {deleteConfirmId && (
         <div 
           onClick={() => setDeleteConfirmId(null)}
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
         >
           <div 
             onClick={(e) => e.stopPropagation()}

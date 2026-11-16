@@ -51,6 +51,31 @@ select:focus {
   box-shadow: 0 0 0 1px #A172FD !important;
 }
 
+/* Standardize date and datetime inputs across iOS Safari and Android */
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+input[type="datetime-local"]::-webkit-date-and-time-value,
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+input[type="datetime-local"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit,
+input[type="time"]::-webkit-datetime-edit {
+  display: flex;
+  padding: 0;
+}
+
 /* Custom thin purple scrollbars globally */
 ::-webkit-scrollbar {
   width: 6px;

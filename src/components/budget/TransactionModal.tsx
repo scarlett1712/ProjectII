@@ -111,7 +111,7 @@ const AccountSelector = ({ selectedId, onSelect, accounts, isOpen, setIsOpen, dr
       )}
 
       {isOpen && (
-        <div className={`absolute z-[250] w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto space-y-1.5 scrollbar-thin ${
+        <div className={`absolute z-[250] w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto overscroll-contain space-y-1.5 scrollbar-thin ${
           dropUp ? "bottom-full mb-1.5" : "mt-1.5 top-full"
         }`}>
           {accounts.map((a: any) => (
@@ -191,7 +191,7 @@ const CategorySelector = ({ selectedId, onSelect, categories, isOpen, setIsOpen 
       )}
 
       {isOpen && (
-        <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[260px] overflow-y-auto space-y-1">
+        <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto overscroll-contain space-y-1 scrollbar-thin">
           {categories.map((c: any) => (
             <button
               key={c.id}
@@ -354,7 +354,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
           initial={{ y: 200, opacity: 0, scale: 0.9 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 200, opacity: 0, scale: 0.9 }}
-          className="relative w-full max-w-xl rounded-[28px] sm:rounded-[32px] bg-white p-0 shadow-2xl my-auto max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+          className="relative w-full max-w-xl rounded-[28px] sm:rounded-[32px] bg-white p-0 shadow-2xl my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain scrollbar-thin"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close button X */}

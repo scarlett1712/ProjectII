@@ -1871,13 +1871,13 @@ export default function CalendarPage() {
         {showPopup && (
           <div 
             onClick={() => { setShowPopup(false); setEditingItem(null); clearForm(); }}
-            className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4 popup-dialog"
+            className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4 popup-dialog overflow-y-auto overscroll-contain"
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[500px] rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain pb-10 sm:pb-8 scrollbar-thin"
+              className="bg-white w-full max-w-[500px] rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain pb-10 sm:pb-8 scrollbar-thin"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-6">
@@ -1935,7 +1935,7 @@ export default function CalendarPage() {
                 </div>
 
                 {/* Time Range */}
-                <div>
+                <div className="w-full min-w-0">
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                     {itemType === "event" ? "Bắt đầu" : "Thời hạn (Không bắt buộc)"}
                   </label>
@@ -1953,21 +1953,21 @@ export default function CalendarPage() {
                         }
                       }
                     }} 
-                    className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]" 
-                    style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                    className="w-full min-w-0 max-w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] box-border" 
+                    style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
                   />
                 </div>
 
                 {itemType === "event" && (
-                  <div>
+                  <div className="w-full min-w-0">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc</label>
                     <input 
                       required 
                       type="datetime-local" 
                       value={endAtStr} 
                       onChange={e => setEndAtStr(e.target.value)} 
-                      className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]" 
-                      style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                      className="w-full min-w-0 max-w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] box-border" 
+                      style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
                     />
                   </div>
                 )}
@@ -2014,7 +2014,7 @@ export default function CalendarPage() {
 
                     {/* Dropdown Options List */}
                     {tagDropdownOpen && (
-                      <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto space-y-1">
+                      <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto overscroll-contain space-y-1 scrollbar-thin">
                         <button
                           type="button"
                           onClick={() => {
@@ -2088,7 +2088,7 @@ export default function CalendarPage() {
                 </div>
 
                 {recurrence !== "NONE" && (
-                  <div>
+                  <div className="w-full min-w-0">
                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
                     <input 
                       type="datetime-local" 
@@ -2103,8 +2103,8 @@ export default function CalendarPage() {
                         }
                         setRecurrenceEndStr(val);
                       }} 
-                      className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]" 
-                      style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+                      className="w-full min-w-0 max-w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] box-border" 
+                      style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
                     />
                   </div>
                 )}
@@ -2260,7 +2260,7 @@ export default function CalendarPage() {
         {showTagModal && (
           <div 
             onClick={() => setShowTagModal(false)}
-            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog"
+            className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog"
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
@@ -2368,7 +2368,7 @@ export default function CalendarPage() {
         {showEditTagModal && editingTag && (
           <div 
             onClick={() => { setShowEditTagModal(false); setEditingTag(null); }}
-            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog"
+            className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog"
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
@@ -2483,7 +2483,7 @@ export default function CalendarPage() {
         {confirmDialog && confirmDialog.show && (
           <div 
             onClick={() => setConfirmDialog(null)}
-            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
@@ -2528,7 +2528,7 @@ export default function CalendarPage() {
         {deleteConfirm && deleteConfirm.show && (
           <div 
             onClick={() => setDeleteConfirm(null)}
-            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
@@ -2609,7 +2609,7 @@ export default function CalendarPage() {
         {saveConfirm && saveConfirm.show && (
           <div 
             onClick={() => setSaveConfirm(null)}
-            className="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
           >
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
