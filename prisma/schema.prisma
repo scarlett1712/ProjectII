@@ -220,6 +220,7 @@ model Session {
 model VerificationToken {
   identifier String
   token      String   @unique
+  attempts   Int      @default(0)
   expires    DateTime
 
   @@unique([identifier, token])

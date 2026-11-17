@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { applyRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const schema = z.object({
   email: z.string().email("Email không hợp lệ"),
@@ -9,8 +10,20 @@ const schema = z.object({
   newPassword: z.string().min(8, "Mật khẩu mới phải có tối thiểu 8 ký tự"),
 });
 
+const MAX_OTP_ATTEMPTS = 5;
+
 export async function POST(req: Request) {
   try {
+    // 1. Rate Limit IP: Tối đa 5 lần thử / phút trên cùng 1 IP
+    const rateLimit = applyRateLimit(req, {
+      keyPrefix: "reset-pw",
+      limit: 5,
+      windowMs: 60 * 1000,
+    });
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit.reset);
+    }
+
     const json = await req.json().catch(() => null);
     const parsed = schema.safeParse(json);
 
@@ -25,7 +38,60 @@ export async function POST(req: Request) {
     const otp = parsed.data.otp.trim();
     const { newPassword } = parsed.data;
 
-    // Verify user exists
+    // 2. Kiểm tra xem email này có token nào đang kích hoạt không
+    const activeToken = await db.verificationToken.findFirst({
+      where: { identifier: email },
+      orderBy: { expires: "desc" },
+    });
+
+    if (!activeToken) {
+      return NextResponse.json(
+        { error: "Không tìm thấy yêu cầu đặt lại mật khẩu hoặc mã đã bị hủy. Vui lòng gửi lại yêu cầu." },
+        { status: 400 }
+      );
+    }
+
+    // 3. Kiểm tra token đã hết hạn chưa
+    if (new Date() > activeToken.expires) {
+      await db.verificationToken.deleteMany({ where: { identifier: email } });
+      return NextResponse.json(
+        { error: "Mã xác thực đã hết hạn (chỉ có hiệu lực trong 15 phút). Vui lòng yêu cầu mã mới." },
+        { status: 400 }
+      );
+    }
+
+    // 4. Kiểm tra số lần nhập sai (Anti Brute-Force Protection)
+    if (activeToken.attempts >= MAX_OTP_ATTEMPTS) {
+      // Hủy token ngay lập tức để chặn vét cạn
+      await db.verificationToken.deleteMany({ where: { identifier: email } });
+      return NextResponse.json(
+        { error: "Bạn đã nhập sai mã xác thực quá 5 lần. Mã này đã bị vô hiệu hóa vì lý do bảo mật. Vui lòng yêu cầu mã mới." },
+        { status: 429 }
+      );
+    }
+
+    // 5. So khớp mã OTP
+    if (activeToken.token !== otp) {
+      // Tăng số lần thử sai lên 1
+      const updated = await db.verificationToken.update({
+        where: { token: activeToken.token },
+        data: { attempts: { increment: 1 } },
+      });
+      const remaining = MAX_OTP_ATTEMPTS - updated.attempts;
+      if (remaining <= 0) {
+        await db.verificationToken.deleteMany({ where: { identifier: email } });
+        return NextResponse.json(
+          { error: "Mã xác thực không đúng. Bạn đã vượt quá 5 lần thử. Mã đã bị hủy để bảo vệ tài khoản!" },
+          { status: 429 }
+        );
+      }
+      return NextResponse.json(
+        { error: `Mã xác thực không chính xác. Bạn còn ${remaining} lần thử.` },
+        { status: 400 }
+      );
+    }
+
+    // 6. OTP chính xác -> Verify user exists
     const user = await db.user.findUnique({
       where: { email },
     });
@@ -34,32 +100,6 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Tài khoản không tồn tại." },
         { status: 404 }
-      );
-    }
-
-    // Verify OTP token in VerificationToken
-    const tokenRecord = await db.verificationToken.findFirst({
-      where: {
-        identifier: email,
-        token: otp,
-      },
-    });
-
-    if (!tokenRecord) {
-      return NextResponse.json(
-        { error: "Mã xác thực không chính xác. Vui lòng kiểm tra lại." },
-        { status: 400 }
-      );
-    }
-
-    if (new Date() > tokenRecord.expires) {
-      // Remove expired token
-      await db.verificationToken.deleteMany({
-        where: { identifier: email },
-      });
-      return NextResponse.json(
-        { error: "Mã xác thực đã hết hạn (chỉ có hiệu lực trong 15 phút). Vui lòng yêu cầu mã mới." },
-        { status: 400 }
       );
     }
 
