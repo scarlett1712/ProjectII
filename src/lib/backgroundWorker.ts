@@ -75,12 +75,24 @@ export function startBackgroundWorker() {
         }
       }
 
-      // 3. Check Water Reminder Slots
-      const today = new Date();
-      const dayStr = today.toISOString().split("T")[0]; // YYYY-MM-DD
-      const currentHour = today.getHours().toString().padStart(2, "0");
-      const currentMinute = today.getMinutes().toString().padStart(2, "0");
-      const currentTimeStr = `${currentHour}:${currentMinute}`; // HH:MM
+      // 3. Check Water Reminder Slots (Convert server UTC to Vietnam Time UTC+7)
+      const nowUtc = new Date();
+      // Chuyển sang giờ Việt Nam (UTC+7 / Asia/Ho_Chi_Minh)
+      const vnFormatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+      const parts = vnFormatter.formatToParts(nowUtc);
+      const partObj: Record<string, string> = {};
+      parts.forEach((p) => { partObj[p.type] = p.value; });
+
+      const dayStr = `${partObj.year}-${partObj.month}-${partObj.day}`;
+      const currentTimeStr = `${partObj.hour}:${partObj.minute}`;
 
       const slots = await db.waterReminderSlot.findMany({
         where: { enabled: true }

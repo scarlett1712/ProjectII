@@ -516,27 +516,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }
         }
 
-        // 2. Check Water Reminder Slots
+        // 2. Check Water Reminder Slots (Strictly use phone local time, ignore server UTC offset)
         const waterRes = await fetch("/api/water");
         if (waterRes.ok) {
           const waterData = await waterRes.json();
-          // Đồng bộ chuẩn hóa giờ với Server time để tránh lệch giờ giữa máy tính và điện thoại
-          const currentTime = waterData.serverTime ? new Date(waterData.serverTime) : now;
-          const waterTodayStr = format(currentTime, "yyyy-MM-dd");
-          const waterNowStr = format(currentTime, "HH:mm");
+          // Luôn lấy giờ thực tế trên điện thoại/máy tính của người dùng (Local Time)
+          const localTodayStr = format(now, "yyyy-MM-dd");
+          const localNowStr = format(now, "HH:mm");
 
           const slots = waterData.slots || [];
           for (const slot of slots) {
-            // So khớp theo giờ máy điện thoại (nowStr) hoặc giờ server (waterNowStr)
-            if (slot.slotTime === nowStr || slot.slotTime === waterNowStr) {
-              const cacheKey = `${slot.id}-${waterTodayStr}`;
+            // Chỉ so khớp duy nhất với giờ thực tế của thiết bị
+            if (slot.slotTime === localNowStr) {
+              const cacheKey = `water_${slot.id}_${localTodayStr}_${slot.slotTime}`;
               if (!notifiedWaterCache.current.has(cacheKey)) {
+                // Đánh dấu ngay vào cache và lưu vĩnh viễn trong ngày vào localStorage
                 notifiedWaterCache.current.add(cacheKey);
                 if (typeof window !== "undefined") {
-                  localStorage.setItem("star-notified-water-cache", JSON.stringify(Array.from(notifiedWaterCache.current)));
+                  try {
+                    localStorage.setItem(
+                      "star-notified-water-cache",
+                      JSON.stringify(Array.from(notifiedWaterCache.current))
+                    );
+                  } catch {}
                 }
 
-                const message = `Đã đến giờ uống nước! Hãy uống ${slot.amountMl}ml nước nhé. 💧`;
+                const message = `Đã đến giờ uống nước (${slot.slotTime})! Hãy uống ${slot.amountMl}ml nước nhé. 💧`;
                 
                 showSystemNotification("Little Star Nhắc Nhở ⭐", { body: message });
 
