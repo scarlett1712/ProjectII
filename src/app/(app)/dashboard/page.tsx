@@ -71,6 +71,9 @@ import {
   YAxis
 } from "recharts";
 import { TransactionModal } from "@/components/budget/TransactionModal";
+import { QuickMealModal } from "@/components/dashboard/QuickMealModal";
+import { DashboardNoteModal } from "@/components/dashboard/DashboardNoteModal";
+import { DashboardCalendarModal } from "@/components/dashboard/DashboardCalendarModal";
 
 // Mock data structure replaced by state in component
 
@@ -1077,344 +1080,41 @@ export default function DashboardPage() {
       {/* Modals */}
       <AnimatePresence>
         {/* Note Modal */}
-        {showAddNote && (
-          <div
-            onClick={() => { setShowAddNote(false); setEditingTask(null); }}
-            className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-[#A172FD]">
-                  {editingTask ? "Sửa công việc" : "Thêm việc mới"}
-                </h3>
-                <button
-                  onClick={() => { setShowAddNote(false); setEditingTask(null); }}
-                  className="p-1 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <div className="space-y-5">
-                {/* Title */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tiêu đề</label>
-                  <input
-                    required
-                    type="text"
-                    value={taskForm.title}
-                    onChange={e => setTaskForm({ ...taskForm, title: e.target.value })}
-                    placeholder="Ghi chú gì đó..."
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-
-                {/* Time & Notify */}
-                <div className="w-full min-w-0">
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Thời hạn (Không bắt buộc)</label>
-                  <input
-                    type="datetime-local"
-                    value={taskForm.dueAt}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setTaskForm({ ...taskForm, dueAt: val });
-                      setNotify(val !== "");
-                      if (val !== "" && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-                        Notification.requestPermission().then((res) => {
-                          if (res === "granted") registerPushSubscription();
-                        });
-                      }
-                    }}
-                    className="w-full min-w-0 max-w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] box-border"
-                    style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-2 border-y border-gray-50">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông báo (Windows + Chatbot)</span>
-                  <ToggleSwitch active={notify} onToggle={() => {
-                    const nextVal = !notify;
-                    setNotify(nextVal);
-                    if (nextVal && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-                      Notification.requestPermission().then((res) => {
-                        if (res === "granted") registerPushSubscription();
-                      });
-                    }
-                  }} />
-                </div>
-
-                {/* Recurrence Options */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
-                  <select
-                    value={taskRecurrence}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setTaskRecurrence(val);
-                      if (val !== "NONE" && !taskRecurrenceEnd) {
-                        const defaultEnd = new Date();
-                        defaultEnd.setMonth(defaultEnd.getMonth() + 1);
-                        defaultEnd.setHours(23, 59, 0, 0);
-                        const offset = defaultEnd.getTimezoneOffset();
-                        const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
-                        setTaskRecurrenceEnd(local.toISOString().slice(0, 16));
-                      }
-                    }}
-                    className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                    style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
-                  >
-                    <option value="NONE">Không lặp</option>
-                    <option value="DAILY">Hàng ngày</option>
-                    <option value="WEEKLY">Hàng tuần</option>
-                    <option value="MONTHLY">Hàng tháng</option>
-                  </select>
-                </div>
-
-                {taskRecurrence !== "NONE" && (
-                  <div className="w-full min-w-0">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
-                    <input
-                      type="datetime-local"
-                      value={taskRecurrenceEnd}
-                      onChange={e => {
-                        let val = e.target.value;
-                        if (val && val.includes("T")) {
-                          const [date, time] = val.split("T");
-                          if (time === "00:00") {
-                            val = `${date}T23:59`;
-                          }
-                        }
-                        setTaskRecurrenceEnd(val);
-                      }}
-                      className="w-full min-w-0 max-w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] box-border"
-                      style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
-                    />
-                  </div>
-                )}
-
-                {/* Classification Tag */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Phân loại nhãn</label>
-                  <select
-                    value={taskFormTagId}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setTaskFormTagId(val);
-                      const tag = calendarTags.find(t => t.id === val);
-                      if (tag) {
-                        setTaskFormColor(tag.color);
-                      } else {
-                        setTaskFormColor("#fdfd96");
-                      }
-                    }}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                  >
-                    <option value="">-- Không gán nhãn --</option>
-                    {calendarTags.map(t => (
-                      <option key={t.id} value={t.id}>{t.name} ({t.isSystem ? "Mặc định" : "Custom"})</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Unified Premium Color Selector */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Màu sắc giấy note</label>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {boldColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setTaskFormColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              taskFormColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pastelColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setTaskFormColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              taskFormColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
-                          title="Chọn màu tùy ý"
-                        >
-                          <input
-                            type="color"
-                            value={taskFormColor || "#fdfd96"}
-                            onChange={(e) => setTaskFormColor(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
-                        </div>
-                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{taskFormColor || "#fdfd96"}</span>
-                        <div 
-                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
-                          style={{ backgroundColor: taskFormColor || "#fdfd96" }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes/Description */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ghi chú</label>
-                  <textarea
-                    value={taskForm.description}
-                    onChange={e => setTaskForm({ ...taskForm, description: e.target.value })}
-                    placeholder="Nội dung ghi chú..."
-                    className="w-full h-24 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-[#A172FD] resize-none"
-                  />
-                </div>
-
-                {/* Form Buttons */}
-                <div className="flex gap-3 pt-3">
-                  {editingTask && (
-                    <button
-                      type="button"
-                      onClick={handleDeleteTask}
-                      className="px-6 py-3.5 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors font-bold text-sm"
-                    >
-                      Xóa
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={handleSaveTask}
-                    disabled={isSubmitting}
-                    className={`flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
-                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
-                    }`}
-                  >
-                    {isSubmitting ? "Đang lưu..." : "Lưu Note"}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
+        <DashboardNoteModal
+          showAddNote={showAddNote}
+          setShowAddNote={setShowAddNote}
+          editingTask={editingTask}
+          setEditingTask={setEditingTask}
+          taskForm={taskForm}
+          setTaskForm={setTaskForm}
+          notify={notify}
+          setNotify={setNotify}
+          taskRecurrence={taskRecurrence}
+          setTaskRecurrence={setTaskRecurrence}
+          taskRecurrenceEnd={taskRecurrenceEnd}
+          setTaskRecurrenceEnd={setTaskRecurrenceEnd}
+          taskFormTagId={taskFormTagId}
+          setTaskFormTagId={setTaskFormTagId}
+          taskFormColor={taskFormColor}
+          setTaskFormColor={setTaskFormColor}
+          calendarTags={calendarTags}
+          boldColors={boldColors}
+          pastelColors={pastelColors}
+          handleDeleteTask={handleDeleteTask}
+          handleSaveTask={handleSaveTask}
+          isSubmitting={isSubmitting}
+        />
       </AnimatePresence>
 
       {/* Meal Modal */}
-      {showAddMeal && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md"
-          onClick={() => setShowAddMeal(false)}
-        >
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            exit={{ scale: 0, rotate: 180 }}
-            transition={{ type: "spring", damping: 20, stiffness: 100 }}
-            className="relative flex h-[500px] w-[500px] items-center justify-center rounded-full bg-white shadow-2xl ring-8 ring-[#F5F3FF]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close button X */}
-            <button
-              onClick={() => setShowAddMeal(false)}
-              className="absolute top-8 right-8 p-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-gray-700 hover:text-red-500 transition-colors z-10"
-            >
-              <X className="h-4 w-4" />
-            </button>
-            <div className="w-full max-sm text-center px-10">
-              <Utensils className="mx-auto mb-4 h-12 w-12 text-[#A172FD]" />
-              <h2 className="mb-6 text-3xl font-bold text-[#A172FD]">Măm măm gì nè?</h2>
-              <div className="space-y-6">
-                <input
-                  type="text"
-                  placeholder="Tên món ăn..."
-                  value={mealForm.name}
-                  onChange={(e) => setMealForm({ ...mealForm, name: e.target.value })}
-                  className="w-full bg-transparent border-b-2 border-[#F0ECFF] py-2 text-center text-xl text-gray-950 placeholder:text-gray-400 font-bold outline-none"
-                />
-                <div className="flex justify-center gap-2">
-                  {["Sáng", "Trưa", "Tối", "Vặt"].map(b => (
-                    <button
-                      key={b}
-                      type="button"
-                      onClick={() => {
-                        let t = "07:00";
-                        if (b === "Trưa") t = "12:00";
-                        else if (b === "Tối") t = "18:00";
-                        else if (b === "Vặt") t = "15:00";
-                        setMealForm({ ...mealForm, category: b, time: t });
-                      }}
-                      className={`rounded-full px-4 py-1 text-xs font-medium transition-colors ${mealForm.category === b ? "bg-[#A172FD] text-white font-bold" : "bg-[#F5F3FF] text-[#A172FD] hover:bg-[#F0ECFF] font-semibold"}`}
-                    >
-                      {b}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-xs font-bold text-gray-400 uppercase">Giờ ăn:</span>
-                  <input
-                    type="time"
-                    value={mealForm.time}
-                    onChange={(e) => setMealForm({ ...mealForm, time: e.target.value })}
-                    className="bg-transparent border-b border-[#F0ECFF] text-center text-sm font-bold text-gray-950 outline-none w-28"
-                  />
-                </div>
-                <div className="flex gap-4">
-                  <input
-                    type="text"
-                    placeholder="Khối lượng (g) (Tùy chọn)"
-                    value={mealForm.grams}
-                    onChange={(e) => setMealForm({ ...mealForm, grams: e.target.value })}
-                    className="w-1/2 bg-transparent border-b-2 border-[#F0ECFF] py-2 text-center text-gray-950 placeholder:text-gray-400 font-bold outline-none"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Calo (Tùy chọn)"
-                    value={mealForm.calories}
-                    onChange={(e) => setMealForm({ ...mealForm, calories: e.target.value })}
-                    className="w-1/2 bg-transparent border-b-2 border-[#F0ECFF] py-2 text-center text-gray-950 placeholder:text-gray-400 font-bold outline-none"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSaveMeal}
-                  disabled={isSubmitting}
-                  className={`mt-4 block w-full max-w-[240px] mx-auto rounded-full bg-[#A172FD] py-2 text-sm font-bold text-white shadow-lg shadow-[#A172FD]/30 transition-all ${
-                    isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:scale-105 active:scale-95"
-                  }`}
-                >
-                  {isSubmitting ? "Đang thêm..." : "Thêm vào thực đơn"}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
+      <QuickMealModal
+        showAddMeal={showAddMeal}
+        setShowAddMeal={setShowAddMeal}
+        mealForm={mealForm}
+        setMealForm={setMealForm}
+        handleSaveMeal={handleSaveMeal}
+        isSubmitting={isSubmitting}
+      />
 
       {/* Transaction Modal */}
       <TransactionModal 
@@ -1430,355 +1130,38 @@ export default function DashboardPage() {
 
       {/* Calendar Modal */}
       <AnimatePresence>
-        {showCalendarModal && (
-          <div
-            onClick={() => { setShowCalendarModal(false); }}
-            className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-[#A172FD]">Tạo công việc/lịch trình</h3>
-                <button
-                  onClick={() => { setShowCalendarModal(false); }}
-                  className="p-1 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveCalendarItem} className="space-y-5">
-                {/* Event/Task Toggle */}
-                <div className="grid grid-cols-2 gap-2 bg-[#F5F3FF] p-1 rounded-xl text-sm font-bold">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setItemType("event");
-                      setCalSelectedTagId("system-event");
-                      setCalNotification(false);
-                    }}
-                    className={`py-2 rounded-lg text-center transition-all ${itemType === "event" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280]"}`}
-                  >
-                    Lịch cố định
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setItemType("task");
-                      setCalSelectedTagId("");
-                      setCalNotification(calStartAtStr !== "");
-                    }}
-                    className={`py-2 rounded-lg text-center transition-all ${itemType === "task" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280]"}`}
-                  >
-                    Nhiệm vụ (Task)
-                  </button>
-                </div>
-
-                {/* Title */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tiêu đề</label>
-                  <input
-                    required
-                    type="text"
-                    value={calTitle}
-                    onChange={e => setCalTitle(e.target.value)}
-                    placeholder="Nhập tiêu đề..."
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-
-                {/* Time Range */}
-                <div className="w-full min-w-0">
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                    {itemType === "event" ? "Bắt đầu" : "Thời hạn (Không bắt buộc)"}
-                  </label>
-                  <input
-                    required={itemType === "event"}
-                    type="datetime-local"
-                    value={calStartAtStr}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setCalStartAtStr(val);
-                      if (itemType === "task") {
-                        setCalNotification(val !== "");
-                        if (val !== "" && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-                          Notification.requestPermission().then((res) => {
-                            if (res === "granted") registerPushSubscription();
-                          });
-                        }
-                      }
-                    }}
-                    className="w-full min-w-0 max-w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] box-border"
-                    style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
-                  />
-                </div>
-
-                {itemType === "event" && (
-                  <div className="w-full min-w-0">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc</label>
-                    <input
-                      required
-                      type="datetime-local"
-                      value={calEndAtStr}
-                      onChange={e => setCalEndAtStr(e.target.value)}
-                      className="w-full min-w-0 max-w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] box-border"
-                      style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
-                    />
-                  </div>
-                )}
-
-                {/* Classification Tag */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Phân loại nhãn</label>
-                  <div className="relative text-left">
-                    {/* Trigger Button */}
-                    <button
-                      type="button"
-                      onClick={() => setCalTagDropdownOpen(!calTagDropdownOpen)}
-                      className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
-                    >
-                      {(() => {
-                        const selectedTag = calendarTags.find((t) => t.id === calSelectedTagId);
-                        if (selectedTag) {
-                          const styles = getTagStyles(selectedTag.color);
-                          return (
-                            <span
-                              className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
-                              style={{
-                                backgroundColor: styles.backgroundColor,
-                                color: styles.color,
-                                border: styles.border,
-                              }}
-                            >
-                              {selectedTag.name} {selectedTag.isSystem ? "(Mặc định)" : "(Custom)"}
-                            </span>
-                          );
-                        }
-                        return <span className="text-gray-400 font-bold text-xs">-- Không gán nhãn --</span>;
-                      })()}
-                      <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
-                    </button>
-
-                    {/* Backdrop for click-outside */}
-                    {calTagDropdownOpen && (
-                      <div
-                        className="fixed inset-0 z-[240]"
-                        onClick={() => setCalTagDropdownOpen(false)}
-                      />
-                    )}
-
-                    {/* Dropdown Options List */}
-                    {calTagDropdownOpen && (
-                      <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[200px] overflow-y-auto overscroll-contain space-y-1 scrollbar-thin">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCalSelectedTagId("");
-                            setCalNoteColor("#fdfd96");
-                            setCalTagDropdownOpen(false);
-                          }}
-                          className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
-                        >
-                          <span className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans bg-gray-100 text-gray-500 border border-gray-200">
-                            -- Không gán nhãn --
-                          </span>
-                        </button>
-                        {calendarTags.map((t) => {
-                          const styles = getTagStyles(t.color);
-                          return (
-                            <button
-                              key={t.id}
-                              type="button"
-                              onClick={() => {
-                                setCalSelectedTagId(t.id);
-                                setCalNoteColor(t.color);
-                                setCalTagDropdownOpen(false);
-                              }}
-                              className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
-                            >
-                              <span
-                                  className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
-                                  style={{
-                                    backgroundColor: styles.backgroundColor,
-                                    color: styles.color,
-                                    border: styles.border,
-                                  }}
-                              >
-                                {t.name} {t.isSystem ? "(Mặc định)" : "(Custom)"}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Recurrence Options */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Lặp lại</label>
-                  <select
-                    value={calRecurrence}
-                    onChange={e => {
-                      const val = e.target.value;
-                      setCalRecurrence(val);
-                      if (val !== "NONE" && !calRecurrenceEndStr) {
-                        const defaultEnd = new Date();
-                        defaultEnd.setMonth(defaultEnd.getMonth() + 1);
-                        defaultEnd.setHours(23, 59, 0, 0);
-                        const offset = defaultEnd.getTimezoneOffset();
-                        const local = new Date(defaultEnd.getTime() - offset * 60 * 1000);
-                        setCalRecurrenceEndStr(local.toISOString().slice(0, 16));
-                      }
-                    }}
-                    className="w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                    style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
-                  >
-                    <option value="NONE">Không lặp</option>
-                    <option value="DAILY">Hàng ngày</option>
-                    <option value="WEEKLY">Hàng tuần</option>
-                    <option value="MONTHLY">Hàng tháng</option>
-                  </select>
-                </div>
-
-                {calRecurrence !== "NONE" && (
-                  <div className="w-full min-w-0">
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Kết thúc lặp</label>
-                    <input
-                      type="datetime-local"
-                      value={calRecurrenceEndStr}
-                      onChange={e => {
-                        let val = e.target.value;
-                        if (val && val.includes("T")) {
-                          const [date, time] = val.split("T");
-                          if (time === "00:00") {
-                            val = `${date}T23:59`;
-                          }
-                        }
-                        setCalRecurrenceEndStr(val);
-                      }}
-                      className="w-full min-w-0 max-w-full block rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] box-border"
-                      style={{ width: "100%", maxWidth: "100%", minWidth: 0, boxSizing: "border-box", WebkitAppearance: "none", appearance: "none" }}
-                    />
-                  </div>
-                )}
-
-                {/* Options: Notification & Note Color */}
-                <div className="flex items-center justify-between py-2 border-y border-gray-50">
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông báo (Windows + Chatbot)</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nextVal = !calNotification;
-                        setCalNotification(nextVal);
-                        if (nextVal && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
-                          Notification.requestPermission().then((res) => {
-                            if (res === "granted") registerPushSubscription();
-                          });
-                        }
-                      }}
-                      className={`p-2 rounded-xl transition-all ${calNotification ? "bg-green-50 text-green-600" : "bg-gray-50 text-gray-400"}`}
-                      title={calNotification ? "Bật thông báo" : "Tắt thông báo"}
-                    >
-                      {calNotification ? <Bell className="h-5 w-5 animate-bounce" /> : <BellOff className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Unified Premium Color Selector */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Màu sắc giấy note / sự kiện</label>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {boldColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setCalNoteColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              calNoteColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pastelColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setCalNoteColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              calNoteColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
-                          title="Chọn màu tùy ý"
-                        >
-                          <input
-                            type="color"
-                            value={calNoteColor || "#fdfd96"}
-                            onChange={(e) => setCalNoteColor(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
-                        </div>
-                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{calNoteColor || "#fdfd96"}</span>
-                        <div 
-                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
-                          style={{ backgroundColor: calNoteColor || "#fdfd96" }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Notes/Description */}
-                <div>
-                  <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ghi chú</label>
-                  <textarea
-                    value={calDescription}
-                    onChange={e => setCalDescription(e.target.value)}
-                    placeholder="Thêm mô tả..."
-                    className="w-full h-24 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-[#A172FD] resize-none"
-                  />
-                </div>
-
-                {/* Form Buttons */}
-                <div className="flex gap-3 pt-3">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`flex-1 rounded-xl bg-[#A172FD] py-4 text-sm font-bold text-white transition-all shadow-lg ${
-                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
-                    }`}
-                  >
-                    {isSubmitting ? "Đang lưu..." : "Lưu lịch trình"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
+        <DashboardCalendarModal
+          showCalendarModal={showCalendarModal}
+          setShowCalendarModal={setShowCalendarModal}
+          handleSaveCalendarItem={handleSaveCalendarItem}
+          itemType={itemType}
+          setItemType={setItemType}
+          calTitle={calTitle}
+          setCalTitle={setCalTitle}
+          calStartAtStr={calStartAtStr}
+          setCalStartAtStr={setCalStartAtStr}
+          calEndAtStr={calEndAtStr}
+          setCalEndAtStr={setCalEndAtStr}
+          calSelectedTagId={calSelectedTagId}
+          setCalSelectedTagId={setCalSelectedTagId}
+          calendarTags={calendarTags}
+          calTagDropdownOpen={calTagDropdownOpen}
+          setCalTagDropdownOpen={setCalTagDropdownOpen}
+          getTagStyles={getTagStyles}
+          calRecurrence={calRecurrence}
+          setCalRecurrence={setCalRecurrence}
+          calRecurrenceEndStr={calRecurrenceEndStr}
+          setCalRecurrenceEndStr={setCalRecurrenceEndStr}
+          calNotification={calNotification}
+          setCalNotification={setCalNotification}
+          calNoteColor={calNoteColor}
+          setCalNoteColor={setCalNoteColor}
+          calDescription={calDescription}
+          setCalDescription={setCalDescription}
+          boldColors={boldColors}
+          pastelColors={pastelColors}
+          isSubmitting={isSubmitting}
+        />
       </AnimatePresence>
 
       {/* FLOATING WHITEBOARD CANVAS TASKS */}
