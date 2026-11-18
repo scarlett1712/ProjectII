@@ -670,8 +670,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 )}
                 <button 
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="rounded-xl p-1.5 text-[#6B7280] hover:bg-white/60 hover:text-[#A172FD] transition-all"
+                  className="rounded-xl p-1.5 text-[#6B7280] hover:bg-white/60 hover:text-[#A172FD] transition-all cursor-pointer"
                   title={isCollapsed ? "Mở rộng" : "Thu gọn"}
+                  aria-label={isCollapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"}
                 >
                   {isCollapsed ? (
                     <ChevronRight className="h-5 w-5" />
@@ -821,6 +822,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       placeholder="Tìm kiếm mọi thứ..." 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      aria-label="Tìm kiếm toàn hệ thống"
                       className="w-full rounded-full bg-white pl-9 pr-4 py-2 text-sm text-purple-950 placeholder:text-gray-400 font-bold shadow-sm outline-none focus:ring-2 focus:ring-[#A172FD]/20 border border-purple-100"
                     />
                     
@@ -863,7 +865,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <div className="relative shrink-0">
                     <button 
                       onClick={() => setShowNotifDropdown(!showNotifDropdown)}
-                      className="relative rounded-full bg-white p-2 text-gray-500 shadow-sm hover:text-[#A172FD] border border-purple-100 hover:bg-[#F5F3FF] transition-all"
+                      aria-label="Thông báo nhắc nhở"
+                      className="relative rounded-full bg-white p-2 text-gray-500 shadow-sm hover:text-[#A172FD] border border-purple-100 hover:bg-[#F5F3FF] transition-all cursor-pointer"
                     >
                       <Bell className="h-4.5 w-4.5" />
                       {notifications.filter(n => !n.read).length > 0 && (
@@ -931,8 +934,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {/* Mobile Profile Avatar Button */}
                   <button
                     onClick={() => setShowProfile(true)}
-                    className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#A172FD] text-white shadow-md active:scale-95 overflow-hidden"
+                    className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#A172FD] text-white shadow-md active:scale-95 overflow-hidden cursor-pointer"
                     title="Hồ sơ cá nhân"
+                    aria-label="Xem và chỉnh sửa hồ sơ cá nhân"
                   >
                     {userAvatar ? (
                       <img src={userAvatar} alt="Avatar" className="h-full w-full object-cover" />
@@ -987,6 +991,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => { setShowProfile(false); setIsEditingProfile(false); }}
             >
               <motion.div 
+                role="dialog"
+                aria-modal="true"
+                aria-label="Hồ sơ cá nhân"
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -1197,6 +1204,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => { setShowChangePassword(false); setPwError(null); setPwSuccess(null); }}
             >
               <motion.div 
+                role="dialog"
+                aria-modal="true"
+                aria-label="Đổi mật khẩu"
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.9, opacity: 0, y: 20 }}

@@ -32,7 +32,6 @@ import {
   Plus, 
   Trash2, 
   Clock, 
-  Tag as TagIcon, 
   Bell, 
   BellOff, 
   Check, 

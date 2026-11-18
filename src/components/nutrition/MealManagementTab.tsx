@@ -401,10 +401,10 @@ export function MealManagementTab() {
                   Tháng {format(selectedDate, "MM/yyyy", { locale: vi })}
                 </h2>
                 <div className="flex gap-2">
-                  <button onClick={() => setSelectedDate(subDays(selectedDate, 7))} className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+                  <button onClick={() => setSelectedDate(subDays(selectedDate, 7))} aria-label="Tuần trước" className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer">
                     <ChevronLeft className="h-5 w-5" />
                   </button>
-                  <button onClick={() => setSelectedDate(addDays(selectedDate, 7))} className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+                  <button onClick={() => setSelectedDate(addDays(selectedDate, 7))} aria-label="Tuần sau" className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer">
                     <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
@@ -564,8 +564,9 @@ export function MealManagementTab() {
                                   
                                   setShowAddModal(true);
                                 }}
-                                className="p-2 rounded-xl text-gray-400 hover:text-[#A172FD] hover:bg-[#F5F3FF] transition-all active:scale-95"
+                                className="p-2 rounded-xl text-gray-400 hover:text-[#A172FD] hover:bg-[#F5F3FF] transition-all active:scale-95 cursor-pointer"
                                 title="Sửa bữa ăn"
+                                aria-label="Sửa bữa ăn"
                               >
                                 <Pencil className="h-5 w-5" />
                               </button>
@@ -574,8 +575,9 @@ export function MealManagementTab() {
                                   e.stopPropagation();
                                   deleteMeal(meal.id);
                                 }}
-                                className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all active:scale-95"
+                                className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all active:scale-95 cursor-pointer"
                                 title="Xóa bữa ăn"
+                                aria-label="Xóa bữa ăn"
                               >
                                 <Trash2 className="h-5 w-5" />
                               </button>
@@ -628,19 +630,21 @@ export function MealManagementTab() {
             <div className="flex gap-2">
               <button 
                 onClick={() => setSelectedDate(subMonths(selectedDate, 1))} 
-                className="p-2 rounded-full hover:bg-purple-100/50 text-[#A172FD] transition-colors"
+                aria-label="Tháng trước"
+                className="p-2 rounded-full hover:bg-purple-100/50 text-[#A172FD] transition-colors cursor-pointer"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <button 
                 onClick={() => setSelectedDate(new Date())} 
-                className="px-4 py-1.5 rounded-full bg-[#F5F3FF] text-[#A172FD] font-bold text-xs hover:bg-[#A172FD] hover:text-white transition-colors"
+                className="px-4 py-1.5 rounded-full bg-[#F5F3FF] text-[#A172FD] font-bold text-xs hover:bg-[#A172FD] hover:text-white transition-colors cursor-pointer"
               >
                 Hôm nay
               </button>
               <button 
                 onClick={() => setSelectedDate(addMonths(selectedDate, 1))} 
-                className="p-2 rounded-full hover:bg-purple-100/50 text-[#A172FD] transition-colors"
+                aria-label="Tháng sau"
+                className="p-2 rounded-full hover:bg-purple-100/50 text-[#A172FD] transition-colors cursor-pointer"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>

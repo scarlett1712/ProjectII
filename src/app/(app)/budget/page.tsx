@@ -9,16 +9,10 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowRightLeft,
-  Calendar,
   BarChart3,
-  PieChart as PieIcon,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  PlusCircle,
-  HelpCircle,
-  AlertCircle,
-  Check,
   X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";

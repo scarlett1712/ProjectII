@@ -5,12 +5,10 @@ import { useEffect, useState, useRef } from "react";
 import {
   Bell,
   BellOff,
-  Search,
   Plus,
   Utensils,
   StickyNote,
   Wallet,
-  MoreHorizontal,
   ChevronRight,
   ChevronDown,
   X,

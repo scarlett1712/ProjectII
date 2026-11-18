@@ -353,6 +353,9 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
         onClick={onClose}
       >
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Thêm giao dịch mới"
           initial={{ y: 200, opacity: 0, scale: 0.9 }}
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 200, opacity: 0, scale: 0.9 }}
@@ -362,7 +365,8 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
           {/* Close button X */}
           <button
             onClick={onClose}
-            className="absolute top-6 right-6 p-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-gray-700 hover:text-red-500 transition-colors z-[160]"
+            aria-label="Đóng cửa sổ giao dịch"
+            className="absolute top-6 right-6 p-1.5 rounded-xl bg-black/5 hover:bg-black/10 text-gray-700 hover:text-red-500 transition-colors z-[160] cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
