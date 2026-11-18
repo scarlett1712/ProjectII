@@ -550,10 +550,10 @@ export default function CalendarPage() {
     }
   };
 
-  const handlePasteEvent = async (start: Date, end: Date | null) => {
+  async function handlePasteEvent(start: Date, end: Date | null) {
     if (!copiedItem) return;
 
-    let startAt = start.toISOString();
+    const startAt = start.toISOString();
     let endAt = end ? end.toISOString() : start.toISOString();
     if (!copiedItem.isTask) {
       const origStart = new Date(copiedItem.startAt);

@@ -4,7 +4,6 @@ import {
   generateRecurringTaskInstances,
   getNextRecurrenceDate,
 } from "./recurrence";
-import { addDays, addWeeks, addMonths } from "date-fns";
 
 describe("recurrence.ts", () => {
   it("computes next recurrence dates correctly", () => {

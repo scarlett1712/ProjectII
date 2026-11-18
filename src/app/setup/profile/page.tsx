@@ -25,17 +25,6 @@ export default function SetupProfilePage() {
   const [activity, setActivity] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5F3FF]">
-        <div className="text-center animate-pulse">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A172FD] border-t-transparent mx-auto"></div>
-          <p className="mt-4 text-[#A172FD] font-black">Đang tải...</p>
-        </div>
-      </div>
-    );
-  }
-
   useEffect(() => {
     if (userEmail) {
       // Landed on setup page -> new signup for this account
@@ -53,6 +42,17 @@ export default function SetupProfilePage() {
       localStorage.removeItem("star-tour-completed-calendar");
     }
   }, [userEmail]);
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F3FF]">
+        <div className="text-center animate-pulse">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#A172FD] border-t-transparent mx-auto"></div>
+          <p className="mt-4 text-[#A172FD] font-black">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
