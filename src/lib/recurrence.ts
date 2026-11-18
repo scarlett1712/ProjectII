@@ -2,6 +2,12 @@ import { addDays, addWeeks, addMonths } from "date-fns";
 
 export type RecurrenceType = "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | string | null | undefined;
 
+export type GeneratedInstance<T> = T & {
+  isRecurringInstance?: boolean;
+  originalId?: string;
+  completed?: boolean;
+};
+
 export interface RecurringEvent {
   id: string;
   startAt: Date | string;
@@ -37,12 +43,12 @@ export function generateRecurringInstances<T extends RecurringEvent>(
   event: T,
   windowStart: Date,
   windowEnd: Date
-): T[] {
+): GeneratedInstance<T>[] {
   if (!event.recurrence || event.recurrence === "NONE") {
-    return [event];
+    return [event as GeneratedInstance<T>];
   }
 
-  const instances: T[] = [];
+  const instances: GeneratedInstance<T>[] = [];
   let currentStart = new Date(event.startAt);
   const originalEnd = new Date(event.endAt);
   const durationMs = originalEnd.getTime() - currentStart.getTime();
@@ -76,12 +82,12 @@ export function generateRecurringTaskInstances<T extends RecurringTask>(
   task: T,
   windowStart: Date,
   windowEnd: Date
-): T[] {
+): GeneratedInstance<T>[] {
   if (!task.recurrence || task.recurrence === "NONE") {
-    return [task];
+    return [task as GeneratedInstance<T>];
   }
 
-  const instances: T[] = [];
+  const instances: GeneratedInstance<T>[] = [];
   let currentStart = new Date(task.dueAt || task.createdAt || Date.now());
   const limitDate = task.recurrenceEnd ? new Date(task.recurrenceEnd) : addMonths(new Date(), 6);
 
