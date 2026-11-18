@@ -17,6 +17,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TransactionModal } from "@/components/budget/TransactionModal";
+import { AccountModals } from "@/components/budget/AccountModals";
+import { CategoryModals } from "@/components/budget/CategoryModals";
+import { EditTransactionModal } from "@/components/budget/EditTransactionModal";
+import { Account, Category, Goal, Transaction } from "@/components/budget/types";
 import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
 import {
   BarChart,
@@ -31,43 +35,6 @@ import {
   Pie,
   Cell
 } from "recharts";
-
-type Account = {
-  id: string;
-  name: string;
-  balance: number;
-  color: string;
-  startingBalance?: number;
-};
-
-type Category = {
-  id: string;
-  name: string;
-  type: "INCOME" | "EXPENSE";
-  color: string;
-};
-
-type Goal = {
-  id: string;
-  categoryId: string;
-  amount: number;
-  year: number;
-  month: number;
-};
-
-type Transaction = {
-  id: string;
-  amount: number;
-  type: "INCOME" | "EXPENSE" | "TRANSFER";
-  categoryId: string | null;
-  fromAccountId: string | null;
-  toAccountId: string | null;
-  note: string | null;
-  occurredAt: string;
-  category?: Category | null;
-  fromAccount?: Account | null;
-  toAccount?: Account | null;
-};
 
 const boldColors = [
   "#A172FD", // Violet
@@ -1670,441 +1637,48 @@ export default function BudgetPage() {
           </motion.div>
         )}
 
-        {/* 1. Modal Add Account */}
-        {showAddAccount && (
-          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" onClick={() => setShowAddAccount(false)}>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-black text-purple-950">Thêm nguồn tiền mới</h3>
-                <button onClick={() => setShowAddAccount(false)} className="p-1 rounded-full hover:bg-gray-100 text-gray-400"><X className="h-5 w-5" /></button>
-              </div>
-              <form onSubmit={handleAddAccount} className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Tên tài khoản</label>
-                  <input
-                    type="text"
-                    required
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="Ví dụ: Ví điện tử Momo, Tiền mặt..."
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Số dư hiện tại (đ)</label>
-                  <input
-                    type="number"
-                    value={accountBalance}
-                    onChange={(e) => setAccountBalance(e.target.value)}
-                    placeholder="0đ"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc nguồn tiền</label>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {boldColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setAccountColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              accountColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pastelColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setAccountColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              accountColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
-                          title="Chọn màu tùy ý"
-                        >
-                          <input
-                            type="color"
-                            value={accountColor}
-                            onChange={(e) => setAccountColor(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
-                        </div>
-                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{accountColor}</span>
-                        <div 
-                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
-                          style={{ backgroundColor: accountColor }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
-                    isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
-                  }`}
-                >
-                  {isSubmitting ? "Đang lưu..." : "Lưu tài khoản"}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
+        {/* 1 & 1.5. Modal Add & Edit Account */}
+        <AccountModals
+          showAddAccount={showAddAccount}
+          setShowAddAccount={setShowAddAccount}
+          handleAddAccount={handleAddAccount}
+          showEditAccount={showEditAccount}
+          setShowEditAccount={setShowEditAccount}
+          editingAccount={editingAccount}
+          setEditingAccount={setEditingAccount}
+          handleEditAccount={handleEditAccount}
+          handleDeleteAccount={handleDeleteAccount}
+          accountName={accountName}
+          setAccountName={setAccountName}
+          accountBalance={accountBalance}
+          setAccountBalance={setAccountBalance}
+          accountColor={accountColor}
+          setAccountColor={setAccountColor}
+          isSubmitting={isSubmitting}
+          boldColors={boldColors}
+          pastelColors={pastelColors}
+        />
 
-        {/* 1.5. Modal Edit Account */}
-        {showEditAccount && editingAccount && (
-          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" onClick={() => { setShowEditAccount(false); setEditingAccount(null); }}>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-black text-purple-950">Chỉnh sửa tài khoản</h3>
-                <button onClick={() => { setShowEditAccount(false); setEditingAccount(null); }} className="p-1 rounded-full hover:bg-gray-100 text-gray-400"><X className="h-5 w-5" /></button>
-              </div>
-              <form onSubmit={handleEditAccount} className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Tên tài khoản</label>
-                  <input
-                    type="text"
-                    required
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="Tên tài khoản..."
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Số dư hiện tại (đ)</label>
-                  <input
-                    type="number"
-                    value={accountBalance}
-                    onChange={(e) => setAccountBalance(e.target.value)}
-                    placeholder="0đ"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc nguồn tiền</label>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {boldColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setAccountColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              accountColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pastelColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setAccountColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              accountColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
-                          title="Chọn màu tùy ý"
-                        >
-                          <input
-                            type="color"
-                            value={accountColor}
-                            onChange={(e) => setAccountColor(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
-                        </div>
-                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{accountColor}</span>
-                        <div 
-                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
-                          style={{ backgroundColor: accountColor }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteAccount(editingAccount.id)}
-                    className="px-4 py-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors font-bold text-sm"
-                  >
-                    Xóa
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
-                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
-                    }`}
-                  >
-                    {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-
-        {/* 2. Modal Add Category */}
-        {showAddCategory && (
-          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" onClick={() => setShowAddCategory(false)}>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-black text-purple-950">
-                  Thêm danh mục {categoryType === "INCOME" ? "Thu nhập" : "Chi tiêu"}
-                </h3>
-                <button onClick={() => setShowAddCategory(false)} className="p-1 rounded-full hover:bg-gray-100 text-gray-400"><X className="h-5 w-5" /></button>
-              </div>
-              <form onSubmit={handleAddCategory} className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Tên danh mục mới</label>
-                  <input
-                    type="text"
-                    required
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                    placeholder="Ví dụ: Ăn uống, Lương cứng, Đi chơi..."
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc danh mục</label>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {boldColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setCategoryColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              categoryColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pastelColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setCategoryColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              categoryColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
-                          title="Chọn màu tùy ý"
-                        >
-                          <input
-                            type="color"
-                            value={categoryColor}
-                            onChange={(e) => setCategoryColor(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
-                        </div>
-                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{categoryColor}</span>
-                        <div 
-                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
-                          style={{ backgroundColor: categoryColor }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full mt-2 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
-                    isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
-                  }`}
-                >
-                  {isSubmitting ? "Đang lưu..." : "Lưu danh mục"}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-
-        {/* 2.5. Modal Edit Category */}
-        {showEditCategory && editingCategory && (
-          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" onClick={() => { setShowEditCategory(false); setEditingCategory(null); }}>
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-black text-purple-950">Chỉnh sửa danh mục</h3>
-                <button onClick={() => { setShowEditCategory(false); setEditingCategory(null); }} className="p-1 rounded-full hover:bg-gray-100 text-gray-400"><X className="h-5 w-5" /></button>
-              </div>
-              <form onSubmit={handleEditCategory} className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Tên danh mục</label>
-                  <input
-                    type="text"
-                    required
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                    placeholder="Tên danh mục..."
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2.5">Màu sắc danh mục</label>
-                  <div className="space-y-3">
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu đậm</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {boldColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setCategoryColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              categoryColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Màu pastel</span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {pastelColors.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setCategoryColor(c)}
-                            style={{ backgroundColor: c }}
-                            className={`w-6 h-6 rounded-full border-2 transition-all ${
-                              categoryColor === c ? "border-[#A172FD] scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Tự chọn màu</span>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="relative w-6 h-6 rounded-full border border-gray-200 overflow-hidden cursor-pointer bg-gradient-to-tr from-red-400 via-green-400 to-blue-400 flex items-center justify-center group hover:scale-105 transition-transform"
-                          title="Chọn màu tùy ý"
-                        >
-                          <input
-                            type="color"
-                            value={categoryColor}
-                            onChange={(e) => setCategoryColor(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                          />
-                          <span className="text-[10px] font-black text-white pointer-events-none drop-shadow-sm">+</span>
-                        </div>
-                        <span className="text-[11px] font-mono font-bold text-gray-500 uppercase">{categoryColor}</span>
-                        <div 
-                          className="w-5 h-5 rounded-full border border-gray-100 shadow-inner"
-                          style={{ backgroundColor: categoryColor }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteCategory(editingCategory.id)}
-                    className="px-4 py-3 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors font-bold text-sm"
-                  >
-                    Xóa
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`flex-1 rounded-xl bg-[#A172FD] py-3.5 font-bold text-white transition-all shadow-md text-sm ${
-                      isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
-                    }`}
-                  >
-                    {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
+        {/* 2 & 2.5. Modal Add & Edit Category */}
+        <CategoryModals
+          showAddCategory={showAddCategory}
+          setShowAddCategory={setShowAddCategory}
+          categoryType={categoryType}
+          categoryName={categoryName}
+          setCategoryName={setCategoryName}
+          categoryColor={categoryColor}
+          setCategoryColor={setCategoryColor}
+          handleAddCategory={handleAddCategory}
+          showEditCategory={showEditCategory}
+          setShowEditCategory={setShowEditCategory}
+          editingCategory={editingCategory}
+          setEditingCategory={setEditingCategory}
+          handleEditCategory={handleEditCategory}
+          handleDeleteCategory={handleDeleteCategory}
+          isSubmitting={isSubmitting}
+          boldColors={boldColors}
+          pastelColors={pastelColors}
+        />
 
         {/* 3. Modal Log Transaction (Add Expense / Income / Transfer) */}
         <TransactionModal
@@ -2117,395 +1691,32 @@ export default function BudgetPage() {
         />
 
         {/* 4. Modal Edit Transaction (Edit Expense / Income / Transfer) */}
-        {showEditTransaction && editingTransaction && (
-          <div className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain" onClick={() => { setShowEditTransaction(false); setEditingTransaction(null); }}>
-            <motion.div
-              initial={{ y: 150, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 150, opacity: 0 }}
-              className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-black text-purple-950">Chỉnh sửa giao dịch</h3>
-                <button onClick={() => { setShowEditTransaction(false); setEditingTransaction(null); }} className="p-1 rounded-full hover:bg-gray-100 text-gray-400"><X className="h-5 w-5" /></button>
-              </div>
-
-              {/* Transaction Type tab buttons inside modal */}
-              <div className="grid grid-cols-3 gap-1 bg-purple-50 p-1 rounded-xl text-xs font-black mb-6">
-                <button
-                  type="button"
-                  onClick={() => setTransactionType("EXPENSE")}
-                  className={`py-2 rounded-lg text-center transition-all ${transactionType === "EXPENSE" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
-                >
-                  Chi tiêu
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTransactionType("INCOME")}
-                  className={`py-2 rounded-lg text-center transition-all ${transactionType === "INCOME" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
-                >
-                  Thu nhập
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTransactionType("TRANSFER")}
-                  className={`py-2 rounded-lg text-center transition-all ${transactionType === "TRANSFER" ? "bg-[#A172FD] text-white shadow-sm" : "text-[#6B7280] hover:text-[#A172FD]"}`}
-                >
-                  Chuyển khoản
-                </button>
-              </div>
-
-              <form onSubmit={handleEditTransaction} className="space-y-4">
-                {/* 1. Amount */}
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Số tiền (đ)</label>
-                  <input
-                    type="number"
-                    required
-                    value={txAmount}
-                    onChange={(e) => setTxAmount(e.target.value)}
-                    placeholder="Nhập số tiền..."
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-lg font-black text-purple-950 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                  />
-                </div>
-
-                {/* 2. Selection fields depending on type */}
-                {transactionType !== "TRANSFER" && (
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Danh mục phân loại</label>
-                    <div className="relative">
-                      {/* Trigger Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setCatDropdownOpen(!catDropdownOpen);
-                          setFromAccDropdownOpen(false);
-                          setToAccDropdownOpen(false);
-                        }}
-                        className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
-                      >
-                        {txCategory ? (
-                          (() => {
-                            const selectedCat = categories.find((c) => c.id === txCategory);
-                            if (selectedCat) {
-                              const styles = getTagStyles(selectedCat.color);
-                              return (
-                                <span
-                                  className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
-                                  style={{
-                                    backgroundColor: styles.backgroundColor,
-                                    color: styles.color,
-                                    border: styles.border,
-                                  }}
-                                >
-                                  {selectedCat.name}
-                                </span>
-                              );
-                            }
-                            return <span className="text-gray-400">-- Chọn phân loại --</span>;
-                          })()
-                        ) : (
-                          <span className="text-gray-400">-- Chọn phân loại --</span>
-                        )}
-                        <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
-                      </button>
-
-                      {/* Backdrop for click-outside */}
-                      {catDropdownOpen && (
-                        <div
-                          className="fixed inset-0 z-[240]"
-                          onClick={() => setCatDropdownOpen(false)}
-                        />
-                      )}
-
-                      {/* Dropdown Options List */}
-                      {catDropdownOpen && (
-                        <div className="absolute z-[250] mt-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto overscroll-contain space-y-1 scrollbar-thin">
-                          {categories
-                            .filter((c) => c.type === transactionType)
-                            .map((c) => (
-                              <button
-                                key={c.id}
-                                type="button"
-                                onClick={() => {
-                                  setTxCategory(c.id);
-                                  setCatDropdownOpen(false);
-                                }}
-                                className="w-full text-left p-2 hover:bg-purple-50/50 rounded-xl transition-colors flex items-center"
-                              >
-                                {(() => {
-                                  const styles = getTagStyles(c.color);
-                                  return (
-                                    <span
-                                      className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
-                                      style={{
-                                        backgroundColor: styles.backgroundColor,
-                                        color: styles.color,
-                                        border: styles.border,
-                                      }}
-                                    >
-                                      {c.name}
-                                    </span>
-                                  );
-                                })()}
-                              </button>
-                            ))}
-                          {categories.filter((c) => c.type === transactionType).length === 0 && (
-                            <div className="p-3 text-xs text-gray-400 text-center font-bold">
-                              Chưa có danh mục phân loại nào.
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  {transactionType !== "INCOME" && (
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
-                        {transactionType === "TRANSFER" ? "Từ tài khoản" : "Tài khoản nguồn chi"}
-                      </label>
-                      <div className="relative">
-                        {/* Trigger Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setFromAccDropdownOpen(!fromAccDropdownOpen);
-                            setCatDropdownOpen(false);
-                            setToAccDropdownOpen(false);
-                          }}
-                          className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
-                        >
-                          {txFromAccount ? (
-                            (() => {
-                              const selectedAcc = accounts.find((a) => a.id === txFromAccount);
-                              if (selectedAcc) {
-                                const styles = getTagStyles(selectedAcc.color || "#A172FD");
-                                return (
-                                  <div className="flex flex-col items-start leading-tight min-w-0">
-                                    <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                      <span
-                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans"
-                                        style={{
-                                          backgroundColor: styles.backgroundColor,
-                                          color: styles.color,
-                                          border: styles.border,
-                                        }}
-                                      >
-                                        {selectedAcc.name}
-                                      </span>
-                                    </div>
-                                    <span className="text-[10px] text-gray-500 font-semibold ml-1 mt-1">{formatVND(selectedAcc.balance)}</span>
-                                  </div>
-                                );
-                              }
-                              return <span className="text-gray-400">-- Chọn tài khoản --</span>;
-                            })()
-                          ) : (
-                            <span className="text-gray-400">-- Chọn tài khoản --</span>
-                          )}
-                          <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
-                        </button>
-
-                        {/* Backdrop for click-outside */}
-                        {fromAccDropdownOpen && (
-                          <div
-                            className="fixed inset-0 z-[240]"
-                            onClick={() => setFromAccDropdownOpen(false)}
-                          />
-                        )}
-
-                        {/* Dropdown Options List */}
-                        {fromAccDropdownOpen && (
-                          <div className="absolute z-[250] bottom-full mb-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto overscroll-contain space-y-1.5 scrollbar-thin">
-                            {accounts.map((a) => (
-                              <button
-                                key={a.id}
-                                type="button"
-                                onClick={() => {
-                                  setTxFromAccount(a.id);
-                                  setFromAccDropdownOpen(false);
-                                }}
-                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0 gap-1"
-                              >
-                                <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                  {(() => {
-                                    const styles = getTagStyles(a.color || "#A172FD");
-                                    return (
-                                      <span
-                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans truncate max-w-full"
-                                        style={{
-                                          backgroundColor: styles.backgroundColor,
-                                          color: styles.color,
-                                          border: styles.border,
-                                        }}
-                                      >
-                                        {a.name}
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg mt-1.5">
-                                  {formatVND(a.balance)}
-                                </span>
-                              </button>
-                            ))}
-                            {accounts.length === 0 && (
-                              <div className="p-3 text-xs text-gray-400 text-center font-bold">
-                                Chưa có tài khoản nào.
-                              </div>
-                            )}
-                            <div className="h-2" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {transactionType !== "EXPENSE" && (
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">
-                        {transactionType === "TRANSFER" ? "Đến tài khoản" : "Tài khoản nhận tiền"}
-                      </label>
-                      <div className="relative">
-                        {/* Trigger Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setToAccDropdownOpen(!toAccDropdownOpen);
-                            setCatDropdownOpen(false);
-                            setFromAccDropdownOpen(false);
-                          }}
-                          className="flex items-center justify-between w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD] text-left"
-                        >
-                          {txToAccount ? (
-                            (() => {
-                              const selectedAcc = accounts.find((a) => a.id === txToAccount);
-                              if (selectedAcc) {
-                                const styles = getTagStyles(selectedAcc.color || "#A172FD");
-                                return (
-                                  <div className="flex flex-col items-start leading-tight min-w-0">
-                                    <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                      <span
-                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans truncate max-w-full"
-                                        style={{
-                                          backgroundColor: styles.backgroundColor,
-                                          color: styles.color,
-                                          border: styles.border,
-                                        }}
-                                      >
-                                        {selectedAcc.name}
-                                      </span>
-                                    </div>
-                                    <span className="text-[10px] text-gray-500 font-semibold ml-1 mt-1">{formatVND(selectedAcc.balance)}</span>
-                                  </div>
-                                );
-                              }
-                              return <span className="text-gray-400">-- Chọn tài khoản --</span>;
-                            })()
-                          ) : (
-                            <span className="text-gray-400">-- Chọn tài khoản --</span>
-                          )}
-                          <ChevronDown className="h-4 w-4 text-[#A172FD] shrink-0 ml-2" />
-                        </button>
-
-                        {/* Backdrop for click-outside */}
-                        {toAccDropdownOpen && (
-                          <div
-                            className="fixed inset-0 z-[240]"
-                            onClick={() => setToAccDropdownOpen(false)}
-                          />
-                        )}
-
-                        {/* Dropdown Options List */}
-                        {toAccDropdownOpen && (
-                          <div className="absolute z-[250] bottom-full mb-1.5 w-full bg-white border border-gray-100 rounded-2xl shadow-xl p-2 max-h-[220px] overflow-y-auto overscroll-contain space-y-1.5 scrollbar-thin">
-                            {accounts.map((a) => (
-                              <button
-                                key={a.id}
-                                type="button"
-                                onClick={() => {
-                                  setTxToAccount(a.id);
-                                  setToAccDropdownOpen(false);
-                                }}
-                                className="w-full px-3 py-2 rounded-xl hover:bg-purple-50/50 transition-colors flex flex-col items-start text-left min-w-0 gap-1"
-                              >
-                                <div className="flex items-center gap-1.5 min-w-0 w-full">
-                                  {(() => {
-                                    const styles = getTagStyles(a.color || "#A172FD");
-                                    return (
-                                      <span
-                                        className="inline-block px-3 py-1 rounded-full text-xs font-bold font-sans truncate max-w-full"
-                                        style={{
-                                          backgroundColor: styles.backgroundColor,
-                                          color: styles.color,
-                                          border: styles.border,
-                                        }}
-                                      >
-                                        {a.name}
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-                                <span className="text-xs font-semibold text-purple-600 bg-purple-50/80 px-2 py-0.5 rounded-lg ml-1 font-semibold">
-                                  {formatVND(a.balance)}
-                                </span>
-                              </button>
-                            ))}
-                            {accounts.length === 0 && (
-                              <div className="p-3 text-xs text-gray-400 text-center font-bold">
-                                Chưa có tài khoản nào.
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  {/* 3. Date */}
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Thời gian</label>
-                    <input
-                      type="date"
-                      required
-                      value={txDate}
-                      onChange={(e) => setTxDate(e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 outline-none focus:border-[#A172FD]"
-                    />
-                  </div>
-
-                  {/* 4. Note */}
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-wider mb-1.5">Ghi chú chi tiết</label>
-                    <input
-                      type="text"
-                      value={txNote}
-                      onChange={(e) => setTxNote(e.target.value)}
-                      placeholder="Ăn tối, đi xem phim..."
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 placeholder:text-gray-400 outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className={`w-full mt-4 rounded-xl bg-[#A172FD] py-4 font-bold text-white transition-all active:scale-[0.99] shadow-lg text-sm ${
-                    isSubmitting ? "opacity-60 cursor-not-allowed" : "hover:bg-[#8b5cf6]"
-                  }`}
-                >
-                  {isSubmitting ? "Đang lưu thay đổi..." : "Lưu thay đổi ➔"}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
+        <EditTransactionModal
+          showEditTransaction={showEditTransaction}
+          setShowEditTransaction={setShowEditTransaction}
+          editingTransaction={editingTransaction}
+          setEditingTransaction={setEditingTransaction}
+          transactionType={transactionType}
+          setTransactionType={setTransactionType}
+          txAmount={txAmount}
+          setTxAmount={setTxAmount}
+          txCategory={txCategory}
+          setTxCategory={setTxCategory}
+          txFromAccount={txFromAccount}
+          setTxFromAccount={setTxFromAccount}
+          txToAccount={txToAccount}
+          setTxToAccount={setTxToAccount}
+          txDate={txDate}
+          setTxDate={setTxDate}
+          txNote={txNote}
+          setTxNote={setTxNote}
+          handleEditTransaction={handleEditTransaction}
+          categories={categories}
+          accounts={accounts}
+          getTagStyles={getTagStyles}
+          formatVND={formatVND}
+          isSubmitting={isSubmitting}
+        />
       </AnimatePresence>
     </div>
   );
