@@ -2,41 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
 import { addMonths, addDays, addWeeks } from "date-fns";
-
-// Helper to generate recurring task instances
-function generateRecurringTaskInstances(task: any, windowStart: Date, windowEnd: Date) {
-  if (!task.recurrence || task.recurrence === "NONE") {
-    return [task];
-  }
-
-  const instances = [];
-  let currentStart = new Date(task.dueAt || task.createdAt);
-  const limitDate = task.recurrenceEnd ? new Date(task.recurrenceEnd) : addMonths(new Date(), 6);
-
-  while (currentStart <= limitDate) {
-    if (currentStart >= windowStart && currentStart <= windowEnd) {
-      instances.push({
-        ...task,
-        id: `${task.id}_rec_${currentStart.getTime()}`,
-        isRecurringInstance: true,
-        originalId: task.id,
-        dueAt: new Date(currentStart),
-        completed: false, // Recurring occurrences generated from template start uncompleted; individual completions are stored as standalone tasks
-      });
-    }
-
-    if (task.recurrence === "DAILY") {
-      currentStart = addDays(currentStart, 1);
-    } else if (task.recurrence === "WEEKLY") {
-      currentStart = addWeeks(currentStart, 1);
-    } else if (task.recurrence === "MONTHLY") {
-      currentStart = addMonths(currentStart, 1);
-    } else {
-      break;
-    }
-  }
-  return instances;
-}
+import { generateRecurringTaskInstances } from "@/lib/recurrence";
 
 export async function GET(req: NextRequest) {
   const auth = await requireUserId();

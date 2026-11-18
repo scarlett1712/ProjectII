@@ -2,43 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
 import { addMonths, addDays, addWeeks } from "date-fns";
-
-// Helper to generate recurring instances
-function generateRecurringInstances(event: any, windowStart: Date, windowEnd: Date) {
-  if (!event.recurrence || event.recurrence === "NONE") {
-    return [event];
-  }
-
-  const instances = [];
-  let currentStart = new Date(event.startAt);
-  let currentEnd = new Date(event.endAt);
-  const limitDate = event.recurrenceEnd ? new Date(event.recurrenceEnd) : addMonths(new Date(), 6);
-  const durationMs = currentEnd.getTime() - currentStart.getTime();
-
-  while (currentStart <= limitDate) {
-    if (currentStart >= windowStart && currentStart <= windowEnd) {
-      instances.push({
-        ...event,
-        id: `${event.id}_rec_${currentStart.getTime()}`,
-        isRecurringInstance: true,
-        originalId: event.id,
-        startAt: new Date(currentStart),
-        endAt: new Date(currentStart.getTime() + durationMs),
-      });
-    }
-
-    if (event.recurrence === "DAILY") {
-      currentStart = addDays(currentStart, 1);
-    } else if (event.recurrence === "WEEKLY") {
-      currentStart = addWeeks(currentStart, 1);
-    } else if (event.recurrence === "MONTHLY") {
-      currentStart = addMonths(currentStart, 1);
-    } else {
-      break;
-    }
-  }
-  return instances;
-}
+import { generateRecurringInstances } from "@/lib/recurrence";
 
 export async function GET(req: NextRequest) {
   const auth = await requireUserId();

@@ -23,7 +23,7 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = db;
 }
 
-if (typeof window === "undefined") {
+if (typeof window === "undefined" && process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
   const globalForWorker = globalThis as unknown as {
     backgroundWorkerStarted?: boolean;
   };

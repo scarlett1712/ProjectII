@@ -1,8 +1,8 @@
 import { exec } from "child_process";
 import path from "path";
 import { db } from "./db";
-import { addDays, addWeeks, addMonths } from "date-fns";
 import { sendPushToUser } from "./webpush";
+import { generateRecurringInstances } from "./recurrence";
 
 const notifiedKeys = new Set<string>();
 
@@ -57,7 +57,7 @@ export function startBackgroundWorker() {
       });
 
       for (const event of events) {
-        const instances = getActiveRecurringInstances(event, startWindow, endWindow);
+        const instances = generateRecurringInstances(event, startWindow, endWindow);
         for (const inst of instances) {
           const key = `event_${event.id}_${inst.startAt.getTime()}`;
           if (!notifiedKeys.has(key)) {
@@ -120,45 +120,19 @@ export function startBackgroundWorker() {
 }
 
 function triggerNotification(title: string, message: string) {
+  // Only trigger local powershell toast if running locally on Windows in development
+  if (process.platform !== "win32" || process.env.NODE_ENV === "production" || process.env.VERCEL) {
+    return;
+  }
+
   const scriptPath = path.join(process.cwd(), "src/lib/notify.ps1");
-  const cmd = `powershell -ExecutionPolicy Bypass -File "${scriptPath}" -Title "${title.replace(/"/g, '`"')}" -Message "${message.replace(/"/g, '`"')}"`;
+  const safeTitle = title.replace(/[`"$]/g, "");
+  const safeMessage = message.replace(/[`"$]/g, "");
+  const cmd = `powershell -ExecutionPolicy Bypass -File "${scriptPath}" -Title "${safeTitle}" -Message "${safeMessage}"`;
   
-  exec(cmd, (error, stdout, stderr) => {
+  exec(cmd, (error) => {
     if (error) {
       console.error(`[Background Worker] Notification failed: ${error.message}`);
     }
   });
-}
-
-function getActiveRecurringInstances(event: any, startWindow: Date, endWindow: Date) {
-  if (!event.recurrence || event.recurrence === "NONE") {
-    return [event];
-  }
-
-  const instances = [];
-  let currentStart = new Date(event.startAt);
-  let currentEnd = new Date(event.endAt);
-  const limitDate = event.recurrenceEnd ? new Date(event.recurrenceEnd) : addMonths(new Date(), 6);
-  const durationMs = currentEnd.getTime() - currentStart.getTime();
-
-  while (currentStart <= limitDate) {
-    if (currentStart >= startWindow && currentStart <= endWindow) {
-      instances.push({
-        ...event,
-        startAt: new Date(currentStart),
-        endAt: new Date(currentStart.getTime() + durationMs),
-      });
-    }
-
-    if (event.recurrence === "DAILY") {
-      currentStart = addDays(currentStart, 1);
-    } else if (event.recurrence === "WEEKLY") {
-      currentStart = addWeeks(currentStart, 1);
-    } else if (event.recurrence === "MONTHLY") {
-      currentStart = addMonths(currentStart, 1);
-    } else {
-      break;
-    }
-  }
-  return instances;
 }

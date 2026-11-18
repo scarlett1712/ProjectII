@@ -237,6 +237,8 @@ model BudgetAccount {
   user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   fromTransactions BudgetTransaction[] @relation("FromAccount")
   toTransactions   BudgetTransaction[] @relation("ToAccount")
+
+  @@index([userId])
 }
 
 model BudgetCategory {
@@ -250,6 +252,8 @@ model BudgetCategory {
   user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   budgetGoals  BudgetGoal[]
   transactions BudgetTransaction[]
+
+  @@index([userId])
 }
 
 model BudgetTransaction {
@@ -270,6 +274,9 @@ model BudgetTransaction {
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, occurredAt])
+  @@index([categoryId])
+  @@index([fromAccountId])
+  @@index([toAccountId])
 }
 
 model CalendarTag {
@@ -281,6 +288,8 @@ model CalendarTag {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model BudgetGoal {
