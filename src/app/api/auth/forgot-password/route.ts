@@ -90,8 +90,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       message: "Mã xác thực đã được gửi về email của bạn. Vui lòng kiểm tra hộp thư (hoặc mục Spam).",
-      // If running in development without SMTP, expose devOtp for convenience
-      devOtp: emailRes.simulated ? otp : undefined,
+      // Only expose devOtp in non-production local development when SMTP is not configured
+      devOtp: process.env.NODE_ENV !== "production" && emailRes.simulated ? otp : undefined,
     });
   } catch (err: any) {
     console.error("Forgot password error:", err);

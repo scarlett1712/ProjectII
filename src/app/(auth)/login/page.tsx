@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
+import { clearCache } from "@/lib/cacheSync";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, Suspense } from "react";
 import Image from "next/image";
@@ -41,6 +42,7 @@ function LoginContent() {
       const res = await signIn("credentials", { email: email.trim(), password, redirect: false });
       if (res?.error) { setError("Email hoặc mật khẩu không đúng."); return; }
       
+      clearCache(); // Clear old cached data from previous session
       setShowLoading(true);
       setTimeout(() => {
         router.push("/dashboard");

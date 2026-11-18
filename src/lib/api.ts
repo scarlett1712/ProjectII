@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { verifyMobileToken } from "@/lib/token";
 
 export type RequireUserIdResult =
   | { userId: string; response: null }
@@ -12,27 +13,34 @@ export type RequireRoleResult =
   | { userId: string | null; role: string | null; response: NextResponse };
 
 export async function requireUserId(req?: Request): Promise<RequireUserIdResult> {
-  // 1. Check for Mobile Authorization Bearer or x-user-id Header
-  try {
-    const h = await headers();
-    const authHeader = h.get("authorization") || h.get("x-user-id");
-    if (authHeader) {
-      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-      if (token) {
-        return { userId: token, response: null };
-      }
-    }
-  } catch {
-    // Ignore error if headers() fails in some contexts
-  }
+  // 1. Check for Mobile Authorization Bearer token (cryptographically signed JWT)
+  let rawAuthHeader: string | null = null;
 
   if (req) {
-    const authHeader = req.headers.get("authorization") || req.headers.get("x-user-id");
-    if (authHeader) {
-      const token = authHeader.replace(/^Bearer\s+/i, "").trim();
-      if (token) {
-        return { userId: token, response: null };
+    rawAuthHeader = req.headers.get("authorization");
+  }
+
+  if (!rawAuthHeader) {
+    try {
+      const h = await headers();
+      rawAuthHeader = h.get("authorization");
+    } catch {
+      // Ignore error if headers() fails in some contexts
+    }
+  }
+
+  if (rawAuthHeader && /^Bearer\s+/i.test(rawAuthHeader)) {
+    const token = rawAuthHeader.replace(/^Bearer\s+/i, "").trim();
+    if (token) {
+      const verifiedUserId = verifyMobileToken(token);
+      if (verifiedUserId) {
+        return { userId: verifiedUserId, response: null };
       }
+      // If a Bearer token is provided but fails cryptographic verification, reject immediately!
+      return {
+        userId: null,
+        response: NextResponse.json({ error: "Invalid or expired token" }, { status: 401 }),
+      };
     }
   }
 

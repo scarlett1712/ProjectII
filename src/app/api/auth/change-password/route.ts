@@ -3,6 +3,7 @@ import { compare, hash } from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
+import { applyRateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const schema = z.object({
   currentPassword: z.string().min(1, "Vui lòng nhập mật khẩu hiện tại"),
@@ -11,6 +12,16 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
+    // Rate limit: 5 requests per minute per IP
+    const rateLimit = applyRateLimit(req, {
+      keyPrefix: "change-pw",
+      limit: 5,
+      windowMs: 60 * 1000,
+    });
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit.reset);
+    }
+
     const auth = await requireUserId(req);
     if (auth.response) return auth.response;
 

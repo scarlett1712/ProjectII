@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
 
-const defaultPublicKey = "BMwuCMhra9xTQ_pcq3hkKa58eZxzHwnHOdURjF4FO_bUJgduWH7VS5Y2GKrbRW-KA8kn2WM7HpwADnuwqTICEPM";
-
 export async function GET() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || defaultPublicKey;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
   return NextResponse.json({ publicKey });
 }
 

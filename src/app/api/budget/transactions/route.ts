@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireUserId();
+  const auth = await requireUserId(req);
   if (auth.response) return auth.response;
 
   try {
@@ -74,10 +74,42 @@ export async function POST(req: NextRequest) {
     }
 
     const value = Number(amount);
+    if (isNaN(value) || value <= 0) {
+      return NextResponse.json({ error: "Số tiền không hợp lệ" }, { status: 400 });
+    }
+
     const occurredTime = occurredAt ? new Date(occurredAt) : new Date();
 
     // Perform operations in a database transaction to ensure consistency
     const result = await db.$transaction(async (tx) => {
+      // Verify ownership of accounts and category
+      if (fromAccountId) {
+        const fromAcc = await tx.budgetAccount.findFirst({
+          where: { id: fromAccountId, userId: auth.userId! },
+        });
+        if (!fromAcc) {
+          throw new Error("Tài khoản nguồn không hợp lệ hoặc không thuộc về bạn");
+        }
+      }
+
+      if (toAccountId) {
+        const toAcc = await tx.budgetAccount.findFirst({
+          where: { id: toAccountId, userId: auth.userId! },
+        });
+        if (!toAcc) {
+          throw new Error("Tài khoản đích không hợp lệ hoặc không thuộc về bạn");
+        }
+      }
+
+      if (categoryId) {
+        const cat = await tx.budgetCategory.findFirst({
+          where: { id: categoryId, userId: auth.userId! },
+        });
+        if (!cat) {
+          throw new Error("Danh mục không hợp lệ hoặc không thuộc về bạn");
+        }
+      }
+
       // 1. Create the transaction record
       const transaction = await tx.budgetTransaction.create({
         data: {
@@ -92,26 +124,26 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 2. Adjust account balances
+      // 2. Adjust account balances strictly ensuring account belongs to current user
       if (type === "EXPENSE" && fromAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: fromAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: fromAccountId, userId: auth.userId! },
           data: { balance: { decrement: value } },
         });
       } else if (type === "INCOME" && toAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: toAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: toAccountId, userId: auth.userId! },
           data: { balance: { increment: value } },
         });
       } else if (type === "TRANSFER" && fromAccountId && toAccountId) {
         // Deduct from sender
-        await tx.budgetAccount.update({
-          where: { id: fromAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: fromAccountId, userId: auth.userId! },
           data: { balance: { decrement: value } },
         });
         // Add to receiver
-        await tx.budgetAccount.update({
-          where: { id: toAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: toAccountId, userId: auth.userId! },
           data: { balance: { increment: value } },
         });
       }
@@ -120,14 +152,14 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(result);
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
-    return NextResponse.json({ error: "Server Error" }, { status: 500 });
+    return NextResponse.json({ error: e.message || "Server Error" }, { status: 500 });
   }
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await requireUserId();
+  const auth = await requireUserId(req);
   if (auth.response) return auth.response;
 
   try {
@@ -139,6 +171,10 @@ export async function PATCH(req: NextRequest) {
     }
 
     const value = Number(amount);
+    if (isNaN(value) || value <= 0) {
+      return NextResponse.json({ error: "Số tiền không hợp lệ" }, { status: 400 });
+    }
+
     const occurredTime = occurredAt ? new Date(occurredAt) : new Date();
 
     const result = await db.$transaction(async (tx) => {
@@ -151,47 +187,75 @@ export async function PATCH(req: NextRequest) {
         throw new Error("Giao dịch không tồn tại hoặc không thuộc quyền sở hữu của bạn");
       }
 
+      // Verify ownership of updated accounts and category
+      if (fromAccountId) {
+        const fromAcc = await tx.budgetAccount.findFirst({
+          where: { id: fromAccountId, userId: auth.userId! },
+        });
+        if (!fromAcc) {
+          throw new Error("Tài khoản nguồn không hợp lệ hoặc không thuộc về bạn");
+        }
+      }
+
+      if (toAccountId) {
+        const toAcc = await tx.budgetAccount.findFirst({
+          where: { id: toAccountId, userId: auth.userId! },
+        });
+        if (!toAcc) {
+          throw new Error("Tài khoản đích không hợp lệ hoặc không thuộc về bạn");
+        }
+      }
+
+      if (categoryId) {
+        const cat = await tx.budgetCategory.findFirst({
+          where: { id: categoryId, userId: auth.userId! },
+        });
+        if (!cat) {
+          throw new Error("Danh mục không hợp lệ hoặc không thuộc về bạn");
+        }
+      }
+
       // 2. Reverse old balances
       const oldVal = oldTx.amount;
       if (oldTx.type === "EXPENSE" && oldTx.fromAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: oldTx.fromAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: oldTx.fromAccountId, userId: auth.userId! },
           data: { balance: { increment: oldVal } },
         });
       } else if (oldTx.type === "INCOME" && oldTx.toAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: oldTx.toAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: oldTx.toAccountId, userId: auth.userId! },
           data: { balance: { decrement: oldVal } },
         });
       } else if (oldTx.type === "TRANSFER" && oldTx.fromAccountId && oldTx.toAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: oldTx.fromAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: oldTx.fromAccountId, userId: auth.userId! },
           data: { balance: { increment: oldVal } },
         });
-        await tx.budgetAccount.update({
-          where: { id: oldTx.toAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: oldTx.toAccountId, userId: auth.userId! },
           data: { balance: { decrement: oldVal } },
         });
       }
 
       // 3. Apply new balances
       if (type === "EXPENSE" && fromAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: fromAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: fromAccountId, userId: auth.userId! },
           data: { balance: { decrement: value } },
         });
       } else if (type === "INCOME" && toAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: toAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: toAccountId, userId: auth.userId! },
           data: { balance: { increment: value } },
         });
       } else if (type === "TRANSFER" && fromAccountId && toAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: fromAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: fromAccountId, userId: auth.userId! },
           data: { balance: { decrement: value } },
         });
-        await tx.budgetAccount.update({
-          where: { id: toAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: toAccountId, userId: auth.userId! },
           data: { balance: { increment: value } },
         });
       }
@@ -221,7 +285,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const auth = await requireUserId();
+  const auth = await requireUserId(req);
   if (auth.response) return auth.response;
 
   try {
@@ -244,22 +308,22 @@ export async function DELETE(req: NextRequest) {
       // 2. Reverse balances
       const value = txRecord.amount;
       if (txRecord.type === "EXPENSE" && txRecord.fromAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: txRecord.fromAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: txRecord.fromAccountId, userId: auth.userId! },
           data: { balance: { increment: value } },
         });
       } else if (txRecord.type === "INCOME" && txRecord.toAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: txRecord.toAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: txRecord.toAccountId, userId: auth.userId! },
           data: { balance: { decrement: value } },
         });
       } else if (txRecord.type === "TRANSFER" && txRecord.fromAccountId && txRecord.toAccountId) {
-        await tx.budgetAccount.update({
-          where: { id: txRecord.fromAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: txRecord.fromAccountId, userId: auth.userId! },
           data: { balance: { increment: value } },
         });
-        await tx.budgetAccount.update({
-          where: { id: txRecord.toAccountId },
+        await tx.budgetAccount.updateMany({
+          where: { id: txRecord.toAccountId, userId: auth.userId! },
           data: { balance: { decrement: value } },
         });
       }

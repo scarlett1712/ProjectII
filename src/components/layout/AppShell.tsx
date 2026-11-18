@@ -26,6 +26,7 @@ import { StarBackground } from "@/components/StarBackground";
 import { DraggableStar } from "@/components/DraggableStar";
 import { format } from "date-fns";
 import { showSystemNotification, registerPushSubscription } from "@/lib/clientNotifications";
+import { clearCache } from "@/lib/cacheSync";
 
 const sidebarLinks = [
   { href: "/dashboard", label: "Trang chủ", icon: LayoutDashboard },
@@ -107,6 +108,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const isChatPage = pathname.startsWith("/chat");
 
+  const handleSignOut = (callbackUrl = "/login") => {
+    clearCache();
+    signOut({ callbackUrl });
+  };
+
   // Automatically check session validity on focus / tab switch
   // If password changed on another device or session revoked, signOut immediately
   useEffect(() => {
@@ -117,7 +123,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           const sess = await res.json();
           // If empty object or no user id returned, session has been revoked!
           if (!sess || !sess.user?.id) {
-            signOut({ callbackUrl: "/login?revoked=1" });
+            handleSignOut("/login?revoked=1");
           }
         }
       } catch (err) {
@@ -725,7 +731,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         {!isCollapsed && <span>Đổi mật khẩu</span>}
                       </button>
                       <button 
-                        onClick={() => signOut({ callbackUrl: "/login" })}
+                        onClick={() => handleSignOut("/login")}
                         className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-all cursor-pointer"
                       >
                         <LogOut className="h-4 w-4 shrink-0" />
@@ -1076,7 +1082,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => signOut({ callbackUrl: "/login" })}
+                          onClick={() => handleSignOut("/login")}
                           className="flex items-center gap-1.5 text-xs font-bold text-red-500 hover:underline cursor-pointer"
                         >
                           <LogOut className="h-3.5 w-3.5" />
