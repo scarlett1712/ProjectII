@@ -95,6 +95,21 @@ export async function processReminders(targetUserId?: string): Promise<ReminderP
       where: slotWhere,
     });
 
+    // Lấy các logs uống nước hôm nay để bỏ qua nếu đã uống rồi
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const todayWaterLogs = db.waterLog?.findMany
+      ? await db.waterLog.findMany({
+          where: {
+            ...(targetUserId ? { userId: targetUserId } : {}),
+            loggedAt: { gte: startOfToday, lte: endOfToday },
+          },
+        })
+      : [];
+
     for (const slot of slots) {
       if (!slot.slotTime) continue;
       const [sH, sM] = slot.slotTime.split(":").map(Number);
@@ -108,6 +123,28 @@ export async function processReminders(targetUserId?: string): Promise<ReminderP
 
       if (isDue) {
         const key = `water_${slot.userId}_${slot.id}_${todayStr}_${slot.slotTime}`;
+
+        // Nếu người dùng đã uống nước ở khung giờ này rồi -> không nhắc nữa
+        const targetHour = sH;
+        const isDrunk = todayWaterLogs.some((l) => {
+          if (l.userId !== slot.userId) return false;
+          const logDate = new Date(l.loggedAt);
+          const logHour = parseInt(
+            new Intl.DateTimeFormat("en-CA", {
+              timeZone: "Asia/Ho_Chi_Minh",
+              hour: "2-digit",
+              hourCycle: "h23",
+            }).format(logDate),
+            10
+          );
+          return logHour === targetHour;
+        });
+
+        if (isDrunk) {
+          notifiedKeys.set(key, nowMs);
+          continue;
+        }
+
         if (!notifiedKeys.has(key)) {
           notifiedKeys.set(key, nowMs);
           result.water++;

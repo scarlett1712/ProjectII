@@ -6,6 +6,9 @@ vi.mock("./db", () => ({
     waterReminderSlot: {
       findMany: vi.fn(),
     },
+    waterLog: {
+      findMany: vi.fn(),
+    },
     taskItem: {
       findMany: vi.fn(),
     },

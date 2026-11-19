@@ -25,7 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "@/components/ModalPortal";
 import { StarBackground } from "@/components/StarBackground";
 import { DraggableStar } from "@/components/DraggableStar";
-import { format } from "date-fns";
+import { format, isSameDay, parseISO } from "date-fns";
 import {
   showSystemNotification,
   registerPushSubscription,
@@ -582,6 +582,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           const [nowH, nowM] = localNowStr.split(":").map(Number);
           const currentMinutes = nowH * 60 + nowM;
 
+          const logs = waterData.logs || [];
+          const todayLogs = logs.filter((l: any) => {
+            try {
+              return isSameDay(parseISO(l.loggedAt), now);
+            } catch {
+              return false;
+            }
+          });
+
           const slots = waterData.slots || [];
           for (const slot of slots) {
             if (slot.enabled === false) continue;
@@ -589,11 +598,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             if (isNaN(sH) || isNaN(sM)) continue;
             const slotMinutes = sH * 60 + sM;
 
+            const cacheKey = `water_${slot.id}_${localTodayStr}_${slot.slotTime}`;
+
+            // Nếu người dùng đã tick hoặc đã ghi nhận uống nước ở khung giờ này hôm nay -> không nhắc nữa
+            const targetHourStr = sH.toString().padStart(2, "0");
+            const isAlreadyDrunk = todayLogs.some((l: any) => {
+              try {
+                const logHour = format(parseISO(l.loggedAt), "HH");
+                return logHour === targetHourStr;
+              } catch {
+                return false;
+              }
+            });
+
+            if (isAlreadyDrunk) {
+              if (!notifiedWaterCache.current.has(cacheKey)) {
+                notifiedWaterCache.current.add(cacheKey);
+              }
+              continue;
+            }
+
             // Nhắc nhở nếu giờ đã tới và trong phạm vi 30 phút (tránh bị lỡ khi mở máy trễ)
             const isDue = currentMinutes >= slotMinutes && (currentMinutes - slotMinutes) <= 30;
 
             if (isDue) {
-              const cacheKey = `water_${slot.id}_${localTodayStr}_${slot.slotTime}`;
               if (!notifiedWaterCache.current.has(cacheKey)) {
                 // Đánh dấu ngay vào cache và lưu vĩnh viễn trong ngày vào localStorage
                 notifiedWaterCache.current.add(cacheKey);
