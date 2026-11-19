@@ -36,7 +36,7 @@ export function PetAssistant() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 w-80 rounded-xl border bg-white shadow-lg">
+    <div className="fixed bottom-24 right-4 md:bottom-4 md:right-4 w-80 rounded-xl border bg-white shadow-lg z-50">
       <button className="w-full border-b px-3 py-2 text-left font-semibold" onClick={() => setOpen(!open)}>
         Pet Assistant
       </button>

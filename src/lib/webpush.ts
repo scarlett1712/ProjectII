@@ -1,9 +1,43 @@
 import { setVapidDetails, sendNotification } from "web-push";
 import { db } from "./db";
 
-const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
-const privateKey = process.env.VAPID_PRIVATE_KEY || "";
-const subject = process.env.VAPID_SUBJECT || "mailto:support@littlestar.app";
+const FALLBACK_PUBLIC_KEY = "BMwuCMhra9xTQ_pcq3hkKa58eZxzHwnHOdURjF4FO_bUJgduWH7VS5Y2GKrbRW-KA8kn2WM7HpwADnuwqTICEPM";
+const FALLBACK_PRIVATE_KEY = "4viDOlN20UhFNqesgiqTfsjkuMo39fd_2ytb4awZNGg";
+const FALLBACK_SUBJECT = "mailto:lilstar1712@gmail.com";
+
+export function isValidVapidPublicKey(key?: string): boolean {
+  if (!key) return false;
+  try {
+    const buf = Buffer.from(key, "base64url");
+    return buf.length === 65 && buf[0] === 0x04;
+  } catch {
+    return false;
+  }
+}
+
+export function isValidVapidPrivateKey(key?: string): boolean {
+  if (!key) return false;
+  try {
+    const buf = Buffer.from(key, "base64url");
+    return buf.length === 32;
+  } catch {
+    return false;
+  }
+}
+
+export function getVapidPublicKey(): string {
+  const envKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+  return isValidVapidPublicKey(envKey) ? envKey : FALLBACK_PUBLIC_KEY;
+}
+
+export function getVapidPrivateKey(): string {
+  const envKey = process.env.VAPID_PRIVATE_KEY || "";
+  return isValidVapidPrivateKey(envKey) ? envKey : FALLBACK_PRIVATE_KEY;
+}
+
+const publicKey = getVapidPublicKey();
+const privateKey = getVapidPrivateKey();
+const subject = process.env.VAPID_SUBJECT || FALLBACK_SUBJECT;
 
 if (publicKey && privateKey) {
   try {

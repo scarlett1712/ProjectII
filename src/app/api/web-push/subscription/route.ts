@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUserId } from "@/lib/api";
+import { getVapidPublicKey } from "@/lib/webpush";
 
 export async function GET() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+  const publicKey = getVapidPublicKey();
   return NextResponse.json({ publicKey });
 }
 

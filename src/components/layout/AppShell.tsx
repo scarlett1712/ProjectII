@@ -876,7 +876,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </aside>
 
           {/* Main Content Area */}
-          <main className={`flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 ${isKeyboardOpen ? "pb-2" : "pb-[calc(4.2rem+env(safe-area-inset-bottom,0px))]"} md:pb-8 transition-all duration-300 flex flex-col overscroll-contain`}>
+          <main className={`flex-1 overflow-y-auto bg-[#F5F3FF]/30 p-3 sm:p-6 md:p-8 ${isKeyboardOpen ? "pb-4" : "pb-28 sm:pb-32"} md:pb-8 transition-all duration-300 flex flex-col overscroll-contain`}>
             <div className={`mx-auto w-full flex-1 flex flex-col transition-all duration-300 ${isCollapsed ? "max-w-7xl" : "max-w-6xl"}`}>
               
               {/* Global Top Header Bar */}

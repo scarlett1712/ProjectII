@@ -1287,7 +1287,7 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-6 right-6 z-[220] flex items-center gap-3 rounded-2xl bg-white/85 border border-purple-100 p-4 shadow-2xl backdrop-blur-md"
+            className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[220] flex items-center gap-3 rounded-2xl bg-white/85 border border-purple-100 p-4 shadow-2xl backdrop-blur-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-[#A172FD]">
               <Bell className="h-5 w-5 animate-bounce" />

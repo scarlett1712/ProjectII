@@ -1022,7 +1022,7 @@ export function MealManagementTab() {
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0, rotate: 180 }}
               transition={{ type: "spring", damping: 20, stiffness: 100 }}
-              className="relative flex min-h-[460px] max-h-[88dvh] w-full max-w-[480px] sm:h-[500px] sm:w-[500px] rounded-[36px] sm:rounded-full items-center justify-center bg-white shadow-2xl ring-8 ring-[#F5F3FF] overflow-y-auto overscroll-contain scrollbar-thin p-6 sm:p-10"
+              className="relative flex flex-col min-h-0 max-h-[85dvh] w-full max-w-[480px] sm:h-[500px] sm:w-[500px] rounded-[36px] sm:rounded-full items-center justify-center bg-white shadow-2xl ring-8 ring-[#F5F3FF] overflow-y-auto overscroll-contain scrollbar-thin p-6 sm:p-10 my-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close button X */}
@@ -1111,7 +1111,7 @@ export function MealManagementTab() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="fixed bottom-6 right-6 z-[100] flex items-center gap-3 rounded-2xl bg-white/85 border border-purple-100 p-4 shadow-2xl backdrop-blur-md"
+            className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-[100] flex items-center gap-3 rounded-2xl bg-white/85 border border-purple-100 p-4 shadow-2xl backdrop-blur-md"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-[#A172FD]">
               <Bell className="h-5 w-5 animate-bounce" />
