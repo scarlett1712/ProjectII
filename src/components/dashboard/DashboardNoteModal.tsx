@@ -129,7 +129,7 @@ export function DashboardNoteModal({
           </div>
 
           <div className="flex items-center justify-between py-2 border-y border-gray-50">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông báo (Windows + Chatbot)</span>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông báo (Điện thoại + Máy tính)</span>
             <div
               onClick={() => {
                 const nextVal = !notify;

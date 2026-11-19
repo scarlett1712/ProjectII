@@ -23,7 +23,9 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = db;
 }
 
-if (typeof window === "undefined" && process.env.NODE_ENV !== "production" && !process.env.VERCEL) {
+// Automatically start background reminder daemon when running in standard Node.js process (non-serverless)
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
+if (typeof window === "undefined" && !isServerless) {
   const globalForWorker = globalThis as unknown as {
     backgroundWorkerStarted?: boolean;
   };

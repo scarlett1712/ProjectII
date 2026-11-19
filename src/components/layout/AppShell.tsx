@@ -25,7 +25,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StarBackground } from "@/components/StarBackground";
 import { DraggableStar } from "@/components/DraggableStar";
 import { format } from "date-fns";
-import { showSystemNotification, registerPushSubscription } from "@/lib/clientNotifications";
+import {
+  showSystemNotification,
+  registerPushSubscription,
+  sendTestPushNotification,
+  syncRemindersWithServer,
+} from "@/lib/clientNotifications";
 import { clearCache } from "@/lib/cacheSync";
 
 const sidebarLinks = [
@@ -167,11 +172,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Device notification permission state
+  const [permState, setPermState] = useState<NotificationPermission | "unsupported">("default");
+  const [isTestingPush, setIsTestingPush] = useState(false);
+  const [showTips, setShowTips] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if ("Notification" in window) {
+        setPermState(Notification.permission);
+      } else {
+        setPermState("unsupported");
+      }
+    }
+  }, []);
+
   // Register Service Worker for background push notifications
   useEffect(() => {
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").then(() => {
-        if (Notification.permission === "granted" && session) {
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted" && session) {
           registerPushSubscription();
         }
       }).catch((err) => {
@@ -179,6 +199,54 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       });
     }
   }, [session]);
+
+  const handleEnableNotification = async () => {
+    if (typeof window === "undefined") return;
+    if (!(window as any).Notification) {
+      window.dispatchEvent(new CustomEvent("show-app-toast", {
+        detail: "Trình duyệt không hỗ trợ thông báo hệ thống.",
+      }));
+      return;
+    }
+    try {
+      const res = await Notification.requestPermission();
+      setPermState(res);
+      if (res === "granted") {
+        await registerPushSubscription();
+        await showSystemNotification("Little Star Nhắc Nhở ⭐", {
+          body: "Đã bật thông báo thiết bị thành công! 🌟",
+        });
+        window.dispatchEvent(new CustomEvent("show-app-toast", {
+          detail: "Đã bật thông báo thiết bị thành công! ⭐",
+        }));
+      } else {
+        window.dispatchEvent(new CustomEvent("show-app-toast", {
+          detail: "Quyền thông báo bị từ chối trong trình duyệt.",
+        }));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setIsTestingPush(true);
+    window.dispatchEvent(new CustomEvent("show-app-toast", {
+      detail: "Đang kiểm tra và gửi thông báo thử nghiệm...",
+    }));
+    try {
+      const res = await sendTestPushNotification();
+      window.dispatchEvent(new CustomEvent("show-app-toast", {
+        detail: res.message,
+      }));
+    } catch (err: any) {
+      window.dispatchEvent(new CustomEvent("show-app-toast", {
+        detail: `Lỗi: ${err?.message || err}`,
+      }));
+    } finally {
+      setIsTestingPush(false);
+    }
+  };
 
   type NotificationLog = {
     id: string;
@@ -450,16 +518,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!session) return;
 
-    // Request notification permission & register push
+    // Check notification permission & register push if granted
     if (typeof window !== "undefined" && "Notification" in window) {
-      if (Notification.permission === "default") {
-        Notification.requestPermission().then((perm) => {
-          if (perm === "granted") {
-            registerPushSubscription();
-          }
-        });
-      } else if (Notification.permission === "granted") {
-        registerPushSubscription();
+      setPermState(Notification.permission);
+      if (Notification.permission === "granted") {
+        registerPushSubscription().catch(() => {});
       }
     }
 
@@ -468,6 +531,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         const now = new Date();
         const todayStr = format(now, "yyyy-MM-dd");
         const nowStr = format(now, "HH:mm");
+
+        // Sync with server reminders & web push
+        syncRemindersWithServer();
 
         // 1. Check Tasks and Calendar Events
         const [calRes, taskRes] = await Promise.all([
@@ -512,7 +578,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   ? `Nhiệm vụ "${item.title}" ${threshold === 'overdue' ? 'đã đến hạn!' : threshold === 'critical' ? 'sắp hết hạn (còn dưới 2 giờ)!' : 'sắp hết hạn (còn dưới 24 giờ)!'}`
                   : `Sự kiện "${item.title}" ${threshold === 'overdue' ? 'đang diễn ra!' : threshold === 'critical' ? 'sắp diễn ra (còn dưới 2 giờ)!' : 'sắp diễn ra (còn dưới 24 giờ)!'}`;
 
-                showSystemNotification("Little Star Nhắc Nhở", { body: message });
+                showSystemNotification("Little Star Nhắc Nhở ⭐", { body: message });
 
                 window.dispatchEvent(new CustomEvent("star-notification", {
                   detail: { message, type: "task", id: item.id }
@@ -529,11 +595,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           // Luôn lấy giờ thực tế trên điện thoại/máy tính của người dùng (Local Time)
           const localTodayStr = format(now, "yyyy-MM-dd");
           const localNowStr = format(now, "HH:mm");
+          const [nowH, nowM] = localNowStr.split(":").map(Number);
+          const currentMinutes = nowH * 60 + nowM;
 
           const slots = waterData.slots || [];
           for (const slot of slots) {
-            // Chỉ so khớp duy nhất với giờ thực tế của thiết bị
-            if (slot.slotTime === localNowStr) {
+            if (slot.enabled === false) continue;
+            const [sH, sM] = (slot.slotTime || "").split(":").map(Number);
+            if (isNaN(sH) || isNaN(sM)) continue;
+            const slotMinutes = sH * 60 + sM;
+
+            // Nhắc nhở nếu giờ đã tới và trong phạm vi 30 phút (tránh bị lỡ khi mở máy trễ)
+            const isDue = currentMinutes >= slotMinutes && (currentMinutes - slotMinutes) <= 30;
+
+            if (isDue) {
               const cacheKey = `water_${slot.id}_${localTodayStr}_${slot.slotTime}`;
               if (!notifiedWaterCache.current.has(cacheKey)) {
                 // Đánh dấu ngay vào cache và lưu vĩnh viễn trong ngày vào localStorage
@@ -795,18 +870,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {/* When small or half screen: Search bar + Notifications on row 3. When xl+: on the right side of header */}
                 <div className="flex items-center gap-3 w-full xl:w-auto justify-between xl:justify-end shrink-0">
                   {/* Notification permission prompt button */}
-                  {typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted" && (
+                  {permState !== "granted" && permState !== "unsupported" && (
                     <button
-                      onClick={async () => {
-                        const res = await Notification.requestPermission();
-                        if (res === "granted") {
-                          await registerPushSubscription();
-                          await showSystemNotification("Little Star Nhắc Nhở", {
-                            body: "Cảm ơn bạn đã bật thông báo hệ thống! 🌟",
-                          });
-                        }
-                        window.location.reload();
-                      }}
+                      onClick={handleEnableNotification}
                       className="flex items-center gap-1.5 rounded-full bg-yellow-50 hover:bg-yellow-100 px-3.5 py-1.5 text-[11px] font-black text-yellow-700 transition-all border border-yellow-200 shadow-sm animate-pulse cursor-pointer shrink-0"
                       title="Bật thông báo hệ thống"
                     >
@@ -923,6 +989,62 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     <p className="text-xs font-bold mt-1 line-clamp-2 leading-relaxed">{n.message}</p>
                                   </div>
                                 ))
+                              )}
+                            </div>
+
+                            {/* Device Web Push status & test button */}
+                            <div className="mt-3 pt-3 border-t border-purple-100 flex flex-col gap-2">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="font-bold text-gray-500">Thông báo thiết bị:</span>
+                                <span className={`font-black px-2 py-0.5 rounded-full text-[10px] ${
+                                  permState === "granted"
+                                    ? "bg-green-100 text-green-700"
+                                    : permState === "denied"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}>
+                                  {permState === "granted" ? "Đã bật ✓" : permState === "denied" ? "Bị chặn ✕" : "Chưa bật"}
+                                </span>
+                              </div>
+
+                              <div className="flex gap-2">
+                                {permState !== "granted" ? (
+                                  <button
+                                    onClick={handleEnableNotification}
+                                    className="flex-1 py-1.5 px-3 rounded-xl bg-[#A172FD] text-white text-[11px] font-bold hover:bg-[#8e5bed] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                  >
+                                    <Bell className="h-3.5 w-3.5" />
+                                    <span>Bật thông báo</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={handleSendTestPush}
+                                    disabled={isTestingPush}
+                                    className="flex-1 py-1.5 px-3 rounded-xl bg-purple-50 text-[#A172FD] border border-purple-200 hover:bg-purple-100 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                                  >
+                                    {isTestingPush ? (
+                                      <div className="h-3 w-3 animate-spin rounded-full border border-[#A172FD] border-t-transparent" />
+                                    ) : (
+                                      <span>🚀 Gửi thử thông báo</span>
+                                    )}
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setShowTips(!showTips)}
+                                  className="py-1.5 px-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-[11px] font-bold transition-all border border-gray-100 cursor-pointer"
+                                  title="Mẹo nhận thông báo trên điện thoại"
+                                >
+                                  ❓ Mẹo
+                                </button>
+                              </div>
+
+                              {showTips && (
+                                <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-100 text-[10px] text-gray-600 space-y-1.5 leading-relaxed animate-in fade-in">
+                                  <p className="font-bold text-[#A172FD]">📱 Mẹo nhận thông báo khi khóa máy/đóng app:</p>
+                                  <p>• <b>iPhone (iOS 16.4+):</b> Bắt buộc phải bấm nút Chia sẻ ở Safari ➔ chọn <i>&apos;Thêm vào MH chính&apos;</i>, sau đó mở app từ MH chính rồi bật thông báo.</p>
+                                  <p>• <b>Android:</b> Vào Cài đặt máy ➔ Ứng dụng ➔ Chrome / Little Star ➔ Thông báo: Bật tất cả. Đảm bảo không bật <i>&apos;Tiết kiệm pin nghiêm ngặt&apos;</i>.</p>
+                                </div>
                               )}
                             </div>
                           </div>

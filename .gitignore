@@ -40,4 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# documentation/plans
+audit-report.md
+implementation-plan.md
+
 .vercel

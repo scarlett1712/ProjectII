@@ -18,30 +18,44 @@ export interface PushPayload {
   body: string;
   icon?: string;
   badge?: string;
+  tag?: string;
   data?: {
     url?: string;
     [key: string]: any;
   };
 }
 
+export interface PushResult {
+  sent: number;
+  failed: number;
+  total: number;
+  error?: string;
+}
+
 /**
  * Send a web push notification to a specific user across all their registered devices
  */
-export async function sendPushToUser(userId: string, payload: PushPayload) {
+export async function sendPushToUser(userId: string, payload: PushPayload): Promise<PushResult> {
   try {
     const subscriptions = await db.pushSubscription.findMany({
       where: { userId },
     });
 
-    if (subscriptions.length === 0) return;
+    if (subscriptions.length === 0) {
+      return { sent: 0, failed: 0, total: 0 };
+    }
 
     const payloadString = JSON.stringify({
       title: payload.title || "Little Star Nhắc Nhở ⭐",
       body: payload.body,
       icon: payload.icon || "/chatbot-star.png",
       badge: payload.badge || "/chatbot-star.png",
+      tag: payload.tag || `star-${Date.now()}`,
       data: payload.data || { url: "/dashboard" },
     });
+
+    let sent = 0;
+    let failed = 0;
 
     const sendPromises = subscriptions.map(async (sub) => {
       const pushConfig = {
@@ -54,19 +68,23 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
 
       try {
         await sendNotification(pushConfig, payloadString);
+        sent++;
       } catch (err: any) {
+        failed++;
         // If status is 404 or 410, the subscription has expired or unsubscribed
         if (err.statusCode === 404 || err.statusCode === 410) {
           console.log(`[WebPush] Removing expired subscription ${sub.id}`);
           await db.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
         } else {
-          console.error(`[WebPush] Error sending push to sub ${sub.id}:`, err);
+          console.error(`[WebPush] Error sending push to sub ${sub.id}:`, err?.message || err);
         }
       }
     });
 
     await Promise.allSettled(sendPromises);
-  } catch (error) {
+    return { sent, failed, total: subscriptions.length };
+  } catch (error: any) {
     console.error("[WebPush] Failed to send push to user:", error);
+    return { sent: 0, failed: 0, total: 0, error: error?.message || "Unknown error" };
   }
 }

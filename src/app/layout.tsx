@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import "./globals.css";
 import { AppSessionProvider } from "@/components/providers/SessionProvider";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { ServiceWorkerInit } from "@/components/providers/ServiceWorkerInit";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -45,6 +46,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AppSessionProvider>
+          <ServiceWorkerInit />
           <PWAInstallPrompt />
           {children}
         </AppSessionProvider>

@@ -1,5 +1,5 @@
 // Little Star Service Worker for Background Push Notifications & Offline Caching
-const CACHE_NAME = "little-star-static-v1";
+const CACHE_NAME = "little-star-static-v2";
 const STATIC_ASSETS = [
   "/chatbot-star.png",
   "/bg-stars.png",
@@ -86,6 +86,7 @@ self.addEventListener("push", (event) => {
     body: "Đã đến giờ uống nước hoặc kiểm tra công việc rồi nè!",
     icon: "/chatbot-star.png",
     badge: "/chatbot-star.png",
+    tag: "little-star-reminder",
     data: { url: "/dashboard" },
   };
 
@@ -101,7 +102,9 @@ self.addEventListener("push", (event) => {
     body: data.body,
     icon: data.icon || "/chatbot-star.png",
     badge: data.badge || "/chatbot-star.png",
-    vibrate: [100, 50, 100],
+    tag: data.tag || `star-${Date.now()}`,
+    renotify: true,
+    vibrate: [150, 50, 150, 50, 150],
     data: data.data || { url: "/dashboard" },
   };
 
@@ -124,5 +127,31 @@ self.addEventListener("notificationclick", (event) => {
         return self.clients.openWindow(urlToOpen);
       }
     })
+  );
+});
+
+// Listen for push subscription change (browser/OS rotated credentials)
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    fetch("/api/web-push/subscription")
+      .then((res) => res.json())
+      .then(({ publicKey }) => {
+        if (!publicKey) return;
+        return self.registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicKey,
+        });
+      })
+      .then((newSub) => {
+        if (!newSub) return;
+        return fetch("/api/web-push/subscription", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newSub.toJSON()),
+        });
+      })
+      .catch((err) => {
+        console.error("[SW] Failed to handle pushsubscriptionchange:", err);
+      })
   );
 });

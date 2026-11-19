@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { StarBackground } from "@/components/StarBackground";
@@ -10,6 +10,7 @@ import { registerPushSubscription, showSystemNotification } from "@/lib/clientNo
 export default function SetupNotificationsPage() {
   const router = useRouter();
   const { status } = useSession();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -29,12 +30,13 @@ export default function SetupNotificationsPage() {
   }
 
   async function handleAllow() {
-    if ("Notification" in window) {
+    setIsSubmitting(true);
+    if (typeof window !== "undefined" && "Notification" in window) {
       try {
         const res = await Notification.requestPermission();
         if (res === "granted") {
           await registerPushSubscription();
-          await showSystemNotification("Little Star Nhắc Nhở", {
+          await showSystemNotification("Little Star Nhắc Nhở ⭐", {
             body: "Cảm ơn bạn đã bật thông báo hệ thống! 🌟",
           });
         }
@@ -61,23 +63,32 @@ export default function SetupNotificationsPage() {
 
           <h1 className="mb-2 text-center text-2xl font-bold text-[#A172FD]">Thiết lập thông báo</h1>
           <p className="mb-8 text-center text-sm leading-relaxed text-[#9ca3af]">
-            Star sẽ giúp thông báo cho bạn về công việc hay thời gian ăn, uống. Bạn sẽ cho phép mình chứ?
+            Star sẽ giúp thông báo cho bạn về công việc hay thời gian ăn, uống trên điện thoại và máy tính. Bạn sẽ cho phép mình chứ?
           </p>
 
           <div className="flex gap-3">
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={() => router.push("/setup/water")}
-              className="flex-1 rounded-xl border border-[#e5e7eb] py-2.5 font-medium text-[#6b7280] transition hover:bg-gray-50"
+              className="flex-1 rounded-xl border border-[#e5e7eb] py-2.5 font-medium text-[#6b7280] transition hover:bg-gray-50 disabled:opacity-50"
             >
               Sau
             </button>
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={handleAllow}
-              className="flex-1 rounded-xl bg-[#A172FD] py-2.5 font-semibold text-white transition hover:bg-[#6d28d9]"
+              className="flex-1 rounded-xl bg-[#A172FD] py-2.5 font-semibold text-white transition hover:bg-[#6d28d9] disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              Cho phép
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  <span>Đang xử lý...</span>
+                </>
+              ) : (
+                "Cho phép"
+              )}
             </button>
           </div>
         </div>

@@ -337,7 +337,7 @@ export function EventFormModal({
               {/* Options: Notification & Completed */}
               <div className="flex items-center justify-between py-2 border-y border-gray-50">
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông báo (Windows + Chatbot)</span>
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông báo (Điện thoại + Máy tính)</span>
                   <button 
                     type="button"
                     onClick={() => {
