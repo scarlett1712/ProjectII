@@ -1,5 +1,5 @@
 // Little Star Service Worker for Background Push Notifications & Offline Caching
-const CACHE_NAME = "little-star-static-v2";
+const CACHE_NAME = "little-star-static-v3";
 const STATIC_ASSETS = [
   "/chatbot-star.png",
   "/bg-stars.png",
@@ -108,7 +108,16 @@ self.addEventListener("push", (event) => {
     data: data.data || { url: "/dashboard" },
   };
 
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  const showPromise = self.registration.showNotification(data.title, options).catch((err) => {
+    console.warn("[SW] showNotification with full options failed, falling back to minimal options for iOS WebKit:", err);
+    return self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/chatbot-star.png",
+      data: data.data || { url: "/dashboard" },
+    });
+  });
+
+  event.waitUntil(showPromise);
 });
 
 // Click notification to open or focus the app

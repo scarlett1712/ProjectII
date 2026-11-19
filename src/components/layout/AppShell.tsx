@@ -19,7 +19,8 @@ import {
   Bell,
   KeyRound,
   Lock,
-  Camera
+  Camera,
+  Send
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "@/components/ModalPortal";
@@ -176,6 +177,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Device notification permission state
   const [isMounted, setIsMounted] = useState(false);
   const [permState, setPermState] = useState<NotificationPermission | "unsupported">("default");
+  const [isTestingPush, setIsTestingPush] = useState(false);
+
+  const handleSendTestPush = async () => {
+    setIsTestingPush(true);
+    window.dispatchEvent(new CustomEvent("show-app-toast", {
+      detail: "Đang kiểm tra và gửi thông báo thử nghiệm...",
+    }));
+    try {
+      const res = await sendTestPushNotification();
+      window.dispatchEvent(new CustomEvent("show-app-toast", {
+        detail: res.message,
+      }));
+    } catch (err: any) {
+      window.dispatchEvent(new CustomEvent("show-app-toast", {
+        detail: `Lỗi: ${err?.message || err}`,
+      }));
+    } finally {
+      setIsTestingPush(false);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -1019,7 +1040,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 </span>
                               </div>
 
-                              {permState !== "granted" && (
+                              {permState !== "granted" ? (
                                 <div className="flex gap-2">
                                   <button
                                     onClick={handleEnableNotification}
@@ -1027,6 +1048,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                   >
                                     <Bell className="h-3.5 w-3.5" />
                                     <span>Bật thông báo</span>
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={handleSendTestPush}
+                                    disabled={isTestingPush}
+                                    className="flex-1 py-1.5 px-3 rounded-xl bg-purple-50 text-[#A172FD] border border-purple-200 hover:bg-purple-100 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                                  >
+                                    {isTestingPush ? (
+                                      <div className="h-3 w-3 animate-spin rounded-full border border-[#A172FD] border-t-transparent" />
+                                    ) : (
+                                      <>
+                                        <Send className="h-3.5 w-3.5" />
+                                        <span>Gửi thử nghiệm</span>
+                                      </>
+                                    )}
                                   </button>
                                 </div>
                               )}
