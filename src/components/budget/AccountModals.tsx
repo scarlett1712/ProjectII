@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { Account } from "./types";
+import { ModalPortal } from "@/components/ModalPortal";
 
 interface AccountModalsProps {
   showAddAccount: boolean;
@@ -55,17 +56,18 @@ export function AccountModals({
     <>
       {/* 1. Modal Add Account */}
       {showAddAccount && (
-        <div 
-          className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" 
-          onClick={() => setShowAddAccount(false)}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
-            onClick={(e) => e.stopPropagation()}
+        <ModalPortal>
+          <div 
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-4 overscroll-contain" 
+            onClick={() => setShowAddAccount(false)}
           >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-[400px] rounded-[32px] p-6 sm:p-8 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-black text-purple-950">Thêm nguồn tiền mới</h3>
               <button 
@@ -172,21 +174,23 @@ export function AccountModals({
             </form>
           </motion.div>
         </div>
+        </ModalPortal>
       )}
 
       {/* 1.5. Modal Edit Account */}
       {showEditAccount && editingAccount && (
-        <div 
-          className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" 
-          onClick={() => { setShowEditAccount(false); setEditingAccount(null); }}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
-            onClick={(e) => e.stopPropagation()}
+        <ModalPortal>
+          <div 
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-4 overscroll-contain" 
+            onClick={() => { setShowEditAccount(false); setEditingAccount(null); }}
           >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-[400px] rounded-[32px] p-6 sm:p-8 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-black text-purple-950">Chỉnh sửa tài khoản</h3>
               <button 
@@ -302,6 +306,7 @@ export function AccountModals({
             </form>
           </motion.div>
         </div>
+        </ModalPortal>
       )}
     </>
   );

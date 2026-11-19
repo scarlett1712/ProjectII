@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
+import { ModalPortal } from "@/components/ModalPortal";
 
 type Meal = { id: string; mealName: string; calories: number; grams: number; eatenAt: string; note?: string | null };
 
@@ -904,17 +905,18 @@ export function MealManagementTab() {
       {/* DETAIL MODAL */}
       <AnimatePresence>
         {selectedMealForDetails && (
-          <div 
-            onClick={() => setSelectedMealForDetails(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+          <ModalPortal>
+            <div 
+              onClick={() => setSelectedMealForDetails(null)}
+              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overscroll-contain animate-in fade-in duration-200"
             >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+                onClick={(e) => e.stopPropagation()}
+              >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-[#581C87]">Chi tiết bữa ăn</h3>
                 <button 
@@ -1001,24 +1003,26 @@ export function MealManagementTab() {
               })()}
             </motion.div>
           </div>
+        </ModalPortal>
         )}
       </AnimatePresence>
 
       {/* Add Meal Modal */}
       {showAddModal && (
-         <motion.div 
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           exit={{ opacity: 0 }}
-           className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto"
-           onClick={() => { setShowAddModal(false); setClickedHour(null); setEditingMeal(null); }}
-         >
+        <ModalPortal>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overscroll-contain"
+            onClick={() => { setShowAddModal(false); setClickedHour(null); setEditingMeal(null); }}
+          >
             <motion.div 
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               exit={{ scale: 0, rotate: 180 }}
               transition={{ type: "spring", damping: 20, stiffness: 100 }}
-              className="relative flex min-h-[460px] max-h-[88dvh] w-full max-w-[480px] sm:h-[500px] sm:w-[500px] rounded-[36px] sm:rounded-full items-center justify-center bg-white shadow-2xl ring-8 ring-[#F5F3FF] overflow-y-auto p-6 sm:p-10"
+              className="relative flex min-h-[460px] max-h-[88dvh] w-full max-w-[480px] sm:h-[500px] sm:w-[500px] rounded-[36px] sm:rounded-full items-center justify-center bg-white shadow-2xl ring-8 ring-[#F5F3FF] overflow-y-auto overscroll-contain scrollbar-thin p-6 sm:p-10"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close button X */}
@@ -1097,6 +1101,7 @@ export function MealManagementTab() {
               </div>
             </motion.div>
          </motion.div>
+        </ModalPortal>
       )}
 
       {/* Toast Notification */}
@@ -1119,38 +1124,40 @@ export function MealManagementTab() {
       {/* Custom Confirmation Modal */}
       <AnimatePresence>
         {confirmDialog && (
-          <div 
-            onClick={() => setConfirmDialog(null)}
-            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100"
+          <ModalPortal>
+            <div 
+              onClick={() => setConfirmDialog(null)}
+              className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overscroll-contain"
             >
-              <div className="flex items-center gap-2 mb-4 text-[#A172FD]">
-                <AlertCircle className="h-6 w-6 animate-pulse" />
-                <h3 className="text-lg font-bold">Xác nhận</h3>
-              </div>
-              <p className="text-sm text-gray-600 mb-6 leading-relaxed font-semibold">{confirmDialog.message}</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setConfirmDialog(null)}
-                  className="flex-1 rounded-xl border border-gray-200 py-3 font-bold text-gray-500 hover:bg-gray-50 transition-colors text-sm"
-                >
-                  Đóng
-                </button>
-                <button
-                  onClick={confirmDialog.onConfirm}
-                  className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 py-3 font-bold text-white transition-colors shadow-md text-sm"
-                >
-                  Xác nhận
-                </button>
-              </div>
-            </motion.div>
-          </div>
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+              >
+                <div className="flex items-center gap-2 mb-4 text-[#A172FD]">
+                  <AlertCircle className="h-6 w-6 animate-pulse" />
+                  <h3 className="text-lg font-bold">Xác nhận</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-6 leading-relaxed font-semibold">{confirmDialog.message}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setConfirmDialog(null)}
+                    className="flex-1 rounded-xl border border-gray-200 py-3 font-bold text-gray-500 hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    onClick={confirmDialog.onConfirm}
+                    className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 py-3 font-bold text-white transition-colors shadow-md text-sm"
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </ModalPortal>
         )}
       </AnimatePresence>
 

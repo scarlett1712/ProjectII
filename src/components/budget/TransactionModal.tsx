@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronDown } from "lucide-react";
 import { notifyDataChanged } from "@/lib/cacheSync";
+import { ModalPortal } from "@/components/ModalPortal";
 
 export interface TransactionModalProps {
   isOpen: boolean;
@@ -345,23 +346,24 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain"
-        onClick={onClose}
-      >
+      <ModalPortal>
         <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Thêm giao dịch mới"
-          initial={{ y: 200, opacity: 0, scale: 0.9 }}
-          animate={{ y: 0, opacity: 1, scale: 1 }}
-          exit={{ y: 200, opacity: 0, scale: 0.9 }}
-          className="relative w-full max-w-xl rounded-[28px] sm:rounded-[32px] bg-white p-0 shadow-2xl my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain scrollbar-thin"
-          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overscroll-contain"
+          onClick={onClose}
         >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Thêm giao dịch mới"
+            initial={{ y: 200, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 200, opacity: 0, scale: 0.9 }}
+            className="relative w-full max-w-xl rounded-[28px] sm:rounded-[32px] bg-white p-0 shadow-2xl my-auto max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Close button X */}
           <button
             onClick={onClose}
@@ -532,6 +534,7 @@ export function TransactionModal({ isOpen, onClose, onSuccess, accounts, categor
           </div>
         </motion.div>
       </motion.div>
+      </ModalPortal>
     </AnimatePresence>
   );
 }

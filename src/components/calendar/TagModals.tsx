@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { boldColors, pastelColors } from "./calendarUtils";
+import { ModalPortal } from "@/components/ModalPortal";
 
 export type EditingTagType = {
   id: string;
@@ -47,17 +48,18 @@ export function TagModals({
       {/* MODAL: ADD CUSTOM TAG */}
       <AnimatePresence>
         {showTagModal && (
-          <div 
-            onClick={() => setShowTagModal(false)}
-            className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100"
+          <ModalPortal>
+            <div 
+              onClick={() => setShowTagModal(false)}
+              className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog overscroll-contain"
             >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+              >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-[#A172FD]">Thêm nhãn mới</h3>
                 <button 
@@ -156,23 +158,25 @@ export function TagModals({
               </form>
             </motion.div>
           </div>
+        </ModalPortal>
         )}
       </AnimatePresence>
 
       {/* MODAL: EDIT TAG */}
       <AnimatePresence>
         {showEditTagModal && editingTag && (
-          <div 
-            onClick={() => { setShowEditTagModal(false); setEditingTag(null); }}
-            className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100"
+          <ModalPortal>
+            <div 
+              onClick={() => { setShowEditTagModal(false); setEditingTag(null); }}
+              className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 popup-dialog overscroll-contain"
             >
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+              >
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-[#A172FD]">Sửa nhãn</h3>
                 <button 
@@ -278,6 +282,7 @@ export function TagModals({
               </form>
             </motion.div>
           </div>
+        </ModalPortal>
         )}
       </AnimatePresence>
     </>

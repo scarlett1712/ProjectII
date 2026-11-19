@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { registerPushSubscription } from "@/lib/clientNotifications";
+import { ModalPortal } from "@/components/ModalPortal";
 
 interface TaskFormState {
   title: string;
@@ -69,17 +70,18 @@ export function DashboardNoteModal({
   if (!showAddNote) return null;
 
   return (
-    <div
-      onClick={() => { setShowAddNote(false); setEditingTask(null); }}
-      className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain"
-    >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
-        onClick={(e) => e.stopPropagation()}
+    <ModalPortal>
+      <div
+        onClick={() => { setShowAddNote(false); setEditingTask(null); }}
+        className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overscroll-contain"
       >
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.95, opacity: 0 }}
+          className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] overflow-y-auto overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
+          onClick={(e) => e.stopPropagation()}
+        >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-[#A172FD]">
             {editingTask ? "Sửa công việc" : "Thêm việc mới"}
@@ -326,5 +328,6 @@ export function DashboardNoteModal({
         </div>
       </motion.div>
     </div>
+    </ModalPortal>
   );
 }

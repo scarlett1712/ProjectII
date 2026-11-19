@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import type { Category } from "./types";
+import { ModalPortal } from "@/components/ModalPortal";
 
 interface CategoryModalsProps {
   showAddCategory: boolean;
@@ -51,17 +52,18 @@ export function CategoryModals({
     <>
       {/* 2. Modal Add Category */}
       {showAddCategory && (
-        <div 
-          className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" 
-          onClick={() => setShowAddCategory(false)}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
-            onClick={(e) => e.stopPropagation()}
+        <ModalPortal>
+          <div 
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-4 overscroll-contain" 
+            onClick={() => setShowAddCategory(false)}
           >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-[400px] rounded-[32px] p-6 sm:p-8 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-black text-purple-950">
                 Thêm danh mục {categoryType === "INCOME" ? "Thu nhập" : "Chi tiêu"}
@@ -160,21 +162,23 @@ export function CategoryModals({
             </form>
           </motion.div>
         </div>
+        </ModalPortal>
       )}
 
       {/* 2.5. Modal Edit Category */}
       {showEditCategory && editingCategory && (
-        <div 
-          className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-4" 
-          onClick={() => { setShowEditCategory(false); setEditingCategory(null); }}
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white w-full max-w-[400px] rounded-[32px] p-8 shadow-2xl border border-gray-100"
-            onClick={(e) => e.stopPropagation()}
+        <ModalPortal>
+          <div 
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-4 overscroll-contain" 
+            onClick={() => { setShowEditCategory(false); setEditingCategory(null); }}
           >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-[400px] rounded-[32px] p-6 sm:p-8 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-black text-purple-950">Chỉnh sửa danh mục</h3>
               <button 
@@ -280,6 +284,7 @@ export function CategoryModals({
             </form>
           </motion.div>
         </div>
+        </ModalPortal>
       )}
     </>
   );

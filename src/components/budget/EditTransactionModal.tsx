@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { X, ChevronDown } from "lucide-react";
 import type { Account, Category, Transaction } from "./types";
+import { ModalPortal } from "@/components/ModalPortal";
 
 interface EditTransactionModalProps {
   showEditTransaction: boolean;
@@ -65,17 +66,18 @@ export function EditTransactionModal({
   if (!showEditTransaction || !editingTransaction) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-[230] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overflow-y-auto overscroll-contain" 
-      onClick={() => { setShowEditTransaction(false); setEditingTransaction(null); }}
-    >
-      <motion.div
-        initial={{ y: 150, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 150, opacity: 0 }}
-        className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
-        onClick={(e) => e.stopPropagation()}
+    <ModalPortal>
+      <div 
+        className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overscroll-contain" 
+        onClick={() => { setShowEditTransaction(false); setEditingTransaction(null); }}
       >
+        <motion.div
+          initial={{ y: 150, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 150, opacity: 0 }}
+          className="bg-white w-full max-w-[500px] rounded-[28px] sm:rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] overflow-y-auto overscroll-contain pb-12 sm:pb-8 scrollbar-thin"
+          onClick={(e) => e.stopPropagation()}
+        >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-black text-purple-950">Chỉnh sửa giao dịch</h3>
           <button 
@@ -464,5 +466,6 @@ export function EditTransactionModal({
         </form>
       </motion.div>
     </div>
+    </ModalPortal>
   );
 }

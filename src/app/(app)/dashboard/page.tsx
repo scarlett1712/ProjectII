@@ -22,6 +22,7 @@ import { registerPushSubscription } from "@/lib/clientNotifications";
 import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
 import { motion, AnimatePresence } from "framer-motion";
 import { OnboardingTour, TourStep } from "@/components/OnboardingTour";
+import { ModalPortal } from "@/components/ModalPortal";
 
 const dashboardSteps: TourStep[] = [
   {
@@ -1299,38 +1300,40 @@ export default function DashboardPage() {
       {/* Custom Confirmation Modal */}
       <AnimatePresence>
         {confirmDialog && (
-          <div
-            onClick={() => setConfirmDialog(null)}
-            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100"
+          <ModalPortal>
+            <div
+              onClick={() => setConfirmDialog(null)}
+              className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overscroll-contain"
             >
-              <div className="flex items-center gap-2 mb-4 text-[#A172FD]">
-                <AlertCircle className="h-6 w-6 animate-pulse" />
-                <h3 className="text-lg font-bold">Xác nhận</h3>
-              </div>
-              <p className="text-sm text-gray-600 mb-6 leading-relaxed font-semibold">{confirmDialog.message}</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setConfirmDialog(null)}
-                  className="flex-1 rounded-xl border border-gray-200 py-3 font-bold text-gray-500 hover:bg-gray-50 transition-colors text-sm"
-                >
-                  Đóng
-                </button>
-                <button
-                  onClick={confirmDialog.onConfirm}
-                  className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 py-3 font-bold text-white transition-colors shadow-md text-sm"
-                >
-                  Xác nhận
-                </button>
-              </div>
-            </motion.div>
-          </div>
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+              >
+                <div className="flex items-center gap-2 mb-4 text-[#A172FD]">
+                  <AlertCircle className="h-6 w-6 animate-pulse" />
+                  <h3 className="text-lg font-bold">Xác nhận</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-6 leading-relaxed font-semibold">{confirmDialog.message}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setConfirmDialog(null)}
+                    className="flex-1 rounded-xl border border-gray-200 py-3 font-bold text-gray-500 hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    onClick={confirmDialog.onConfirm}
+                    className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 py-3 font-bold text-white transition-colors shadow-md text-sm"
+                  >
+                    Xác nhận
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </ModalPortal>
         )}
       </AnimatePresence>
       <OnboardingTour pageKey="dashboard" steps={dashboardSteps} />

@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { format, isSameDay, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { fetchWithCache, notifyDataChanged } from "@/lib/cacheSync";
+import { ModalPortal } from "@/components/ModalPortal";
 
 type WaterGoal = { dailyTargetMl: number };
 type WaterLog = { id: string; amountMl: number; loggedAt: string };
@@ -352,129 +353,133 @@ export function WaterReminderTab() {
 
       {/* Goal & Slots settings modal */}
       {showGoalModal && (
-        <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-[420px] rounded-[28px] p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[85dvh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">Thiết lập mục tiêu & Nhắc nhở</h2>
-            <form onSubmit={saveGoal} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Mục tiêu hàng ngày (ml)</label>
-                <input 
-                  required 
-                  type="number" 
-                  min="500" 
-                  step="50"
-                  value={targetInput} 
-                  onChange={e => setTargetInput(Number(e.target.value))} 
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 font-bold outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]" 
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Các mốc nhắc giờ uống nước</label>
-                <div className="flex gap-2 mb-3">
+        <ModalPortal>
+          <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4 overscroll-contain animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-[420px] rounded-[28px] p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin">
+              <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">Thiết lập mục tiêu & Nhắc nhở</h2>
+              <form onSubmit={saveGoal} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Mục tiêu hàng ngày (ml)</label>
                   <input 
-                    type="time" 
-                    value={newTimeInput} 
-                    onChange={e => setNewTimeInput(e.target.value)} 
-                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 font-bold outline-none focus:border-[#A172FD]" 
+                    required 
+                    type="number" 
+                    min="500" 
+                    step="50"
+                    value={targetInput} 
+                    onChange={e => setTargetInput(Number(e.target.value))} 
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 font-bold outline-none focus:border-[#A172FD] focus:ring-1 focus:ring-[#A172FD]" 
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Các mốc nhắc giờ uống nước</label>
+                  <div className="flex gap-2 mb-3">
+                    <input 
+                      type="time" 
+                      value={newTimeInput} 
+                      onChange={e => setNewTimeInput(e.target.value)} 
+                      className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 font-bold outline-none focus:border-[#A172FD]" 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={addSlotTime}
+                      className="bg-[#A172FD] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[#8b5cf6] transition-colors"
+                    >
+                      Thêm
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto p-2 bg-gray-50 rounded-2xl border border-gray-100">
+                    {slotsInput.length === 0 ? (
+                      <span className="text-xs text-gray-400 p-2">Chưa thêm khung giờ nào. Hệ thống sẽ tự tạo 15 mốc đều nhau từ 08:00 - 22:00 nếu để trống.</span>
+                    ) : (
+                      slotsInput.map(time => (
+                        <span key={time} className="flex items-center gap-1 text-xs font-bold bg-purple-50 text-[#A172FD] px-3 py-1.5 rounded-full select-none">
+                          <span>{time}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => removeSlotTime(time)}
+                            className="hover:text-red-500 text-gray-400 font-bold ml-1"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
                   <button 
                     type="button" 
-                    onClick={addSlotTime}
-                    className="bg-[#A172FD] text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-[#8b5cf6] transition-colors"
+                    onClick={() => setShowGoalModal(false)} 
+                    className="flex-1 rounded-xl border border-gray-200 py-3 font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    Thêm
+                    Hủy
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="flex-1 rounded-xl bg-[#A172FD] py-3 font-semibold text-white hover:bg-[#8b5cf6] transition-colors shadow-md"
+                  >
+                    Lưu thiết lập
                   </button>
                 </div>
-
-                <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto p-2 bg-gray-50 rounded-2xl border border-gray-100">
-                  {slotsInput.length === 0 ? (
-                    <span className="text-xs text-gray-400 p-2">Chưa thêm khung giờ nào. Hệ thống sẽ tự tạo 15 mốc đều nhau từ 08:00 - 22:00 nếu để trống.</span>
-                  ) : (
-                    slotsInput.map(time => (
-                      <span key={time} className="flex items-center gap-1 text-xs font-bold bg-purple-50 text-[#A172FD] px-3 py-1.5 rounded-full select-none">
-                        <span>{time}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => removeSlotTime(time)}
-                          className="hover:text-red-500 text-gray-400 font-bold ml-1"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button 
-                  type="button" 
-                  onClick={() => setShowGoalModal(false)} 
-                  className="flex-1 rounded-xl border border-gray-200 py-3 font-medium text-gray-600 hover:bg-gray-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 rounded-xl bg-[#A172FD] py-3 font-semibold text-white hover:bg-[#8b5cf6] transition-colors shadow-md"
-                >
-                  Lưu thiết lập
-                </button>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Custom delete confirmation modal */}
       {deleteConfirmId && (
-        <div 
-          onClick={() => setDeleteConfirmId(null)}
-          className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-        >
+        <ModalPortal>
           <div 
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100 relative animate-in zoom-in-95 duration-200"
+            onClick={() => setDeleteConfirmId(null)}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overscroll-contain"
           >
-            <button 
-              onClick={() => setDeleteConfirmId(null)} 
-              aria-label="Đóng hộp thoại xác nhận"
-              className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 text-gray-400 transition-colors cursor-pointer"
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-[360px] rounded-[28px] p-6 shadow-2xl border border-gray-100 relative animate-in zoom-in-95 duration-200 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <div className="flex items-center gap-3 mb-4 mt-2">
-              <div className="p-3 bg-red-50 text-red-500 rounded-2xl">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <button 
+                onClick={() => setDeleteConfirmId(null)} 
+                aria-label="Đóng hộp thoại xác nhận"
+                className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 text-gray-400 transition-colors cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
+              </button>
+              <div className="flex items-center gap-3 mb-4 mt-2">
+                <div className="p-3 bg-red-50 text-red-500 rounded-2xl">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                  Xác nhận xóa
+                </h3>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 leading-tight">
-                Xác nhận xóa
-              </h3>
-            </div>
-            <p className="text-sm text-gray-600 mb-6 font-semibold">
-              Bạn có chắc chắn muốn xóa lượt uống nước này không?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirmId(null)}
-                className="flex-1 rounded-xl border border-gray-200 py-3 font-bold text-gray-500 hover:bg-gray-50 transition-colors text-sm"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={confirmDeleteLog}
-                className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 py-3 font-bold text-white transition-colors shadow-md text-sm"
-              >
-                Xác nhận
-              </button>
+              <p className="text-sm text-gray-600 mb-6 font-semibold">
+                Bạn có chắc chắn muốn xóa lượt uống nước này không?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="flex-1 rounded-xl border border-gray-200 py-3 font-bold text-gray-500 hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={confirmDeleteLog}
+                  className="flex-1 rounded-xl bg-red-500 hover:bg-red-600 py-3 font-bold text-white transition-colors shadow-md text-sm"
+                >
+                  Xác nhận
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

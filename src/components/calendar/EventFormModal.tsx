@@ -6,6 +6,7 @@ import { X, ChevronDown, Bell, BellOff } from "lucide-react";
 import { registerPushSubscription } from "@/lib/clientNotifications";
 import { boldColors, pastelColors, getTagStyles } from "./calendarUtils";
 import type { CalendarItem, Tag } from "./types";
+import { ModalPortal } from "@/components/ModalPortal";
 
 interface EventFormModalProps {
   showPopup: boolean;
@@ -91,17 +92,18 @@ export function EventFormModal({
   return (
     <AnimatePresence>
       {showPopup && (
-        <div 
-          onClick={() => { setShowPopup(false); setEditingItem(null); clearForm(); }}
-          className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4 popup-dialog overflow-y-auto overscroll-contain"
-        >
-          <motion.div 
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-white w-full max-w-[500px] rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] sm:max-h-none overflow-y-auto sm:overflow-visible overscroll-contain pb-10 sm:pb-8 scrollbar-thin"
-            onClick={(e) => e.stopPropagation()}
+        <ModalPortal>
+          <div 
+            onClick={() => { setShowPopup(false); setEditingItem(null); clearForm(); }}
+            className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 sm:p-4 popup-dialog overscroll-contain"
           >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white w-full max-w-[500px] rounded-[32px] p-5 sm:p-8 shadow-2xl border border-gray-100 my-auto max-h-[85dvh] overflow-y-auto overscroll-contain pb-10 sm:pb-8 scrollbar-thin"
+              onClick={(e) => e.stopPropagation()}
+            >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-[#A172FD]">
                 {editingItem ? "Chỉnh sửa công việc" : "Tạo công việc/lịch trình"}
@@ -483,6 +485,7 @@ export function EventFormModal({
             </form>
           </motion.div>
         </div>
+        </ModalPortal>
       )}
     </AnimatePresence>
   );

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { X, Utensils } from "lucide-react";
+import { ModalPortal } from "@/components/ModalPortal";
 
 interface MealFormData {
   name: string;
@@ -31,21 +32,22 @@ export function QuickMealModal({
   if (!showAddMeal) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 backdrop-blur-md"
-      onClick={() => setShowAddMeal(false)}
-    >
+    <ModalPortal>
       <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
-        exit={{ scale: 0, rotate: 180 }}
-        transition={{ type: "spring", damping: 20, stiffness: 100 }}
-        className="relative flex h-[500px] w-[500px] items-center justify-center rounded-full bg-white shadow-2xl ring-8 ring-[#F5F3FF]"
-        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overscroll-contain"
+        onClick={() => setShowAddMeal(false)}
       >
+        <motion.div
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          exit={{ scale: 0, rotate: 180 }}
+          transition={{ type: "spring", damping: 20, stiffness: 100 }}
+          className="relative flex min-h-[440px] max-h-[85dvh] w-full max-w-[480px] sm:h-[500px] sm:w-[500px] rounded-[36px] sm:rounded-full items-center justify-center bg-white shadow-2xl ring-8 ring-[#F5F3FF] overflow-y-auto overscroll-contain scrollbar-thin p-6 sm:p-10"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Close button X */}
         <button
           onClick={() => setShowAddMeal(false)}
@@ -122,5 +124,6 @@ export function QuickMealModal({
         </div>
       </motion.div>
     </motion.div>
+    </ModalPortal>
   );
 }

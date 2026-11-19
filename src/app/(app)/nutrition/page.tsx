@@ -101,7 +101,7 @@ function NutritionTabsContent() {
       {/* Tab Contents */}
       <div className="transition-all duration-300">
         {activeTab === "meal" ? (
-          <div className="space-y-4 bg-white/60 p-8 rounded-[32px] border border-white/40 shadow-sm backdrop-blur-sm">
+          <div className="space-y-4 bg-white/90 p-5 sm:p-8 rounded-[32px] border border-white/40 shadow-sm">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-4">
               <span className="text-2xl">🍽️</span>
               <h2 className="text-xl font-bold text-gray-800">Nhật ký Ăn uống & Dinh dưỡng</h2>
@@ -109,7 +109,7 @@ function NutritionTabsContent() {
             <MealManagementTab />
           </div>
         ) : (
-          <div className="space-y-4 bg-white/60 p-8 rounded-[32px] border border-white/40 shadow-sm backdrop-blur-sm">
+          <div className="space-y-4 bg-white/90 p-5 sm:p-8 rounded-[32px] border border-white/40 shadow-sm">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-4">
               <span className="text-2xl">💧</span>
               <h2 className="text-xl font-bold text-gray-800">Nhắc lịch & Theo dõi Nước uống</h2>

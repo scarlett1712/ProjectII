@@ -22,6 +22,7 @@ import {
   Camera
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ModalPortal } from "@/components/ModalPortal";
 import { StarBackground } from "@/components/StarBackground";
 import { DraggableStar } from "@/components/DraggableStar";
 import { format } from "date-fns";
@@ -173,11 +174,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Device notification permission state
+  const [isMounted, setIsMounted] = useState(false);
   const [permState, setPermState] = useState<NotificationPermission | "unsupported">("default");
-  const [isTestingPush, setIsTestingPush] = useState(false);
-  const [showTips, setShowTips] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== "undefined") {
       if ("Notification" in window) {
         setPermState(Notification.permission);
@@ -229,24 +230,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleSendTestPush = async () => {
-    setIsTestingPush(true);
-    window.dispatchEvent(new CustomEvent("show-app-toast", {
-      detail: "Đang kiểm tra và gửi thông báo thử nghiệm...",
-    }));
-    try {
-      const res = await sendTestPushNotification();
-      window.dispatchEvent(new CustomEvent("show-app-toast", {
-        detail: res.message,
-      }));
-    } catch (err: any) {
-      window.dispatchEvent(new CustomEvent("show-app-toast", {
-        detail: `Lỗi: ${err?.message || err}`,
-      }));
-    } finally {
-      setIsTestingPush(false);
-    }
-  };
+
 
   type NotificationLog = {
     id: string;
@@ -870,7 +854,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {/* When small or half screen: Search bar + Notifications on row 3. When xl+: on the right side of header */}
                 <div className="flex items-center gap-3 w-full xl:w-auto justify-between xl:justify-end shrink-0">
                   {/* Notification permission prompt button */}
-                  {permState !== "granted" && permState !== "unsupported" && (
+                  {isMounted && permState !== "granted" && permState !== "unsupported" && (
                     <button
                       onClick={handleEnableNotification}
                       className="flex items-center gap-1.5 rounded-full bg-yellow-50 hover:bg-yellow-100 px-3.5 py-1.5 text-[11px] font-black text-yellow-700 transition-all border border-yellow-200 shadow-sm animate-pulse cursor-pointer shrink-0"
@@ -1007,8 +991,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                 </span>
                               </div>
 
-                              <div className="flex gap-2">
-                                {permState !== "granted" ? (
+                              {permState !== "granted" && (
+                                <div className="flex gap-2">
                                   <button
                                     onClick={handleEnableNotification}
                                     className="flex-1 py-1.5 px-3 rounded-xl bg-[#A172FD] text-white text-[11px] font-bold hover:bg-[#8e5bed] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
@@ -1016,34 +1000,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                                     <Bell className="h-3.5 w-3.5" />
                                     <span>Bật thông báo</span>
                                   </button>
-                                ) : (
-                                  <button
-                                    onClick={handleSendTestPush}
-                                    disabled={isTestingPush}
-                                    className="flex-1 py-1.5 px-3 rounded-xl bg-purple-50 text-[#A172FD] border border-purple-200 hover:bg-purple-100 text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                                  >
-                                    {isTestingPush ? (
-                                      <div className="h-3 w-3 animate-spin rounded-full border border-[#A172FD] border-t-transparent" />
-                                    ) : (
-                                      <span>🚀 Gửi thử thông báo</span>
-                                    )}
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => setShowTips(!showTips)}
-                                  className="py-1.5 px-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 text-[11px] font-bold transition-all border border-gray-100 cursor-pointer"
-                                  title="Mẹo nhận thông báo trên điện thoại"
-                                >
-                                  ❓ Mẹo
-                                </button>
-                              </div>
-
-                              {showTips && (
-                                <div className="p-2.5 rounded-xl bg-purple-50/70 border border-purple-100 text-[10px] text-gray-600 space-y-1.5 leading-relaxed animate-in fade-in">
-                                  <p className="font-bold text-[#A172FD]">📱 Mẹo nhận thông báo khi khóa máy/đóng app:</p>
-                                  <p>• <b>iPhone (iOS 16.4+):</b> Bắt buộc phải bấm nút Chia sẻ ở Safari ➔ chọn <i>&apos;Thêm vào MH chính&apos;</i>, sau đó mở app từ MH chính rồi bật thông báo.</p>
-                                  <p>• <b>Android:</b> Vào Cài đặt máy ➔ Ứng dụng ➔ Chrome / Little Star ➔ Thông báo: Bật tất cả. Đảm bảo không bật <i>&apos;Tiết kiệm pin nghiêm ngặt&apos;</i>.</p>
                                 </div>
                               )}
                             </div>
@@ -1105,23 +1061,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Profile Modal */}
         <AnimatePresence>
           {showProfile && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md"
-              onClick={() => { setShowProfile(false); setIsEditingProfile(false); }}
-            >
+            <ModalPortal>
               <motion.div 
-                role="dialog"
-                aria-modal="true"
-                aria-label="Hồ sơ cá nhân"
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="w-full max-w-md overflow-hidden rounded-[40px] bg-white p-10 shadow-2xl border border-purple-100"
-                onClick={(e) => e.stopPropagation()}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overscroll-contain"
+                onClick={() => { setShowProfile(false); setIsEditingProfile(false); }}
               >
+                <motion.div 
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Hồ sơ cá nhân"
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="w-full max-w-md rounded-[40px] bg-white p-6 sm:p-10 shadow-2xl border border-purple-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+                  onClick={(e) => e.stopPropagation()}
+                >
                 <div className="flex flex-col items-center">
                   {/* Avatar Picker & Preview */}
                   <input
@@ -1312,29 +1269,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               </motion.div>
             </motion.div>
+            </ModalPortal>
           )}
         </AnimatePresence>
 
         {/* Change Password Modal */}
         <AnimatePresence>
           {showChangePassword && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-4"
-              onClick={() => { setShowChangePassword(false); setPwError(null); setPwSuccess(null); }}
-            >
+            <ModalPortal>
               <motion.div 
-                role="dialog"
-                aria-modal="true"
-                aria-label="Đổi mật khẩu"
-                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="w-full max-w-md overflow-hidden rounded-[36px] bg-white p-7 sm:p-9 shadow-2xl border border-purple-100"
-                onClick={(e) => e.stopPropagation()}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[250] flex items-center justify-center bg-black/40 backdrop-blur-md p-3 sm:p-4 overscroll-contain"
+                onClick={() => { setShowChangePassword(false); setPwError(null); setPwSuccess(null); }}
               >
+                <motion.div 
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Đổi mật khẩu"
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="w-full max-w-md rounded-[36px] bg-white p-6 sm:p-9 shadow-2xl border border-purple-100 max-h-[85dvh] overflow-y-auto overscroll-contain scrollbar-thin"
+                  onClick={(e) => e.stopPropagation()}
+                >
                 <div className="flex flex-col items-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F5F3FF] text-[#A172FD] shadow-inner">
                     <KeyRound className="h-8 w-8" />
@@ -1430,6 +1389,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               </motion.div>
             </motion.div>
+            </ModalPortal>
           )}
         </AnimatePresence>
 
