@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Wallet,
   Plus,
@@ -624,6 +624,60 @@ export default function BudgetPage() {
     return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(val).replace("₫", "đ");
   };
 
+  // Running balance after each transaction for its relevant account
+  const txBalances = useMemo(() => {
+    const accountRunning: Record<string, number> = {};
+    accounts.forEach((acc) => {
+      accountRunning[acc.id] = acc.startingBalance !== undefined ? acc.startingBalance : acc.balance;
+    });
+
+    const sortedTx = [...transactions].sort((a, b) => {
+      const timeDiff = new Date(a.occurredAt).getTime() - new Date(b.occurredAt).getTime();
+      if (timeDiff !== 0) return timeDiff;
+      return a.id.localeCompare(b.id);
+    });
+
+    const balanceMap = new Map<string, { accountBalanceAfter: number; totalBalanceAfter: number }>();
+
+    let totalBal = accounts.reduce(
+      (sum, a) => sum + (a.startingBalance !== undefined ? a.startingBalance : a.balance),
+      0
+    );
+
+    sortedTx.forEach((tx) => {
+      let relevantBalAfter: number | null = null;
+
+      if (tx.type === "INCOME") {
+        if (tx.toAccountId && accountRunning[tx.toAccountId] !== undefined) {
+          accountRunning[tx.toAccountId] += tx.amount;
+          relevantBalAfter = accountRunning[tx.toAccountId];
+        }
+        totalBal += tx.amount;
+      } else if (tx.type === "EXPENSE") {
+        if (tx.fromAccountId && accountRunning[tx.fromAccountId] !== undefined) {
+          accountRunning[tx.fromAccountId] -= tx.amount;
+          relevantBalAfter = accountRunning[tx.fromAccountId];
+        }
+        totalBal -= tx.amount;
+      } else if (tx.type === "TRANSFER") {
+        if (tx.fromAccountId && accountRunning[tx.fromAccountId] !== undefined) {
+          accountRunning[tx.fromAccountId] -= tx.amount;
+          relevantBalAfter = accountRunning[tx.fromAccountId];
+        }
+        if (tx.toAccountId && accountRunning[tx.toAccountId] !== undefined) {
+          accountRunning[tx.toAccountId] += tx.amount;
+        }
+      }
+
+      balanceMap.set(tx.id, {
+        accountBalanceAfter: relevantBalAfter !== null ? relevantBalAfter : totalBal,
+        totalBalanceAfter: totalBal,
+      });
+    });
+
+    return balanceMap;
+  }, [accounts, transactions]);
+
   // Process Accounts data for monthly overview
   const processedAccounts = accounts.map((acc) => {
     const inThisMonth = transactions
@@ -1223,6 +1277,7 @@ export default function BudgetPage() {
                           <th className="px-3 py-2.5 bg-white">Ngày</th>
                           <th className="px-3 py-2.5 bg-white text-right">Xèng</th>
                           <th className="px-3 py-2.5 bg-white">TK nhận</th>
+                          <th className="px-3 py-2.5 bg-white text-right">Số dư</th>
                           <th className="px-3 py-2.5 bg-white">Chi tiết</th>
                           <th className="px-3 py-2.5 bg-white text-center">Tác vụ</th>
                         </tr>
@@ -1274,6 +1329,9 @@ export default function BudgetPage() {
                                 <span className="text-gray-400 font-bold">Ví</span>
                               )}
                             </td>
+                            <td className="px-3 py-2.5 text-right font-bold text-purple-950 whitespace-nowrap">
+                              {formatVND(txBalances.get(t.id)?.accountBalanceAfter ?? 0)}
+                            </td>
                             <td className="px-3 py-2.5 truncate max-w-[80px]" title={t.note || ""}>{t.note || "-"}</td>
                             <td className="px-3 py-2.5 text-center flex items-center justify-center gap-2">
                               <button
@@ -1303,7 +1361,7 @@ export default function BudgetPage() {
                         ))}
                         {transactions.filter(t => t.type === "INCOME").length === 0 && (
                           <tr>
-                            <td colSpan={6} className="px-3 py-6 text-center text-gray-400">Không có bản ghi thu nhập nào.</td>
+                            <td colSpan={7} className="px-3 py-6 text-center text-gray-400">Không có bản ghi thu nhập nào.</td>
                           </tr>
                         )}
                       </tbody>
@@ -1322,6 +1380,7 @@ export default function BudgetPage() {
                           <th className="px-3 py-2.5 bg-white">Ngày</th>
                           <th className="px-3 py-2.5 bg-white text-right">Xèng</th>
                           <th className="px-3 py-2.5 bg-white">TK Nguồn</th>
+                          <th className="px-3 py-2.5 bg-white text-right">Số dư</th>
                           <th className="px-3 py-2.5 bg-white">Đến/Note</th>
                           <th className="px-3 py-2.5 bg-white text-center">Tác vụ</th>
                         </tr>
@@ -1382,6 +1441,9 @@ export default function BudgetPage() {
                                 <span className="text-gray-400 font-bold">Ví</span>
                               )}
                             </td>
+                            <td className="px-3 py-2.5 text-right font-bold text-purple-950 whitespace-nowrap">
+                              {formatVND(txBalances.get(t.id)?.accountBalanceAfter ?? 0)}
+                            </td>
                             <td className="px-3 py-2.5 truncate max-w-[120px]" title={t.type === "TRANSFER" ? `Đến: ${t.toAccount?.name}` : t.note || ""}>
                               {t.type === "TRANSFER" ? (
                                 <div className="flex items-center gap-1">
@@ -1438,7 +1500,7 @@ export default function BudgetPage() {
                         ))}
                         {transactions.filter(t => t.type === "EXPENSE" || t.type === "TRANSFER").length === 0 && (
                           <tr>
-                            <td colSpan={6} className="px-3 py-6 text-center text-gray-400">Không có bản ghi chi tiêu/chuyển khoản nào.</td>
+                            <td colSpan={7} className="px-3 py-6 text-center text-gray-400">Không có bản ghi chi tiêu/chuyển khoản nào.</td>
                           </tr>
                         )}
                       </tbody>
