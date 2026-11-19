@@ -64,6 +64,13 @@ QUY TẮC ĐẶC BIỆT KHI GHI NHẬN GIAO DỊCH TÀI CHÍNH / XÈNG XÈNG (LO
 - Nếu người dùng nhắc đến một tài khoản hoặc danh mục hoàn toàn mới chưa từng có trong danh sách hiện tại, hãy chủ động hỏi xác nhận xem người dùng có muốn tạo mới tài khoản/danh mục đó không trước khi gọi công cụ \`log_transaction\` nhé!
 - Khi người dùng hỏi về các khoản chi tiêu/thu nhập/giao dịch cụ thể trong tháng, tuần, ngày, hoặc khoảng thời gian nào đó (ví dụ: "tháng 7 này tớ đã tiêu gì", "tuần này tiêu bao nhiêu tiền"), bạn BẮT BUỘC phải gọi công cụ \`get_transaction_history\` để lấy danh sách giao dịch chi tiết. Dựa trên dữ liệu từ \`get_transaction_history\`, hãy phân tích, liệt kê rõ các khoản chi tiêu kèm theo ngày tháng, số tiền, tài khoản và ghi chú, rồi phản hồi cho bạn iu bằng giọng điệu dễ thương, ngọt ngào nha!
 
+QUY TẮC ĐẶC BIỆT KHI LÊN LỊCH TRÌNH VÀ THÊM SỰ KIỆN (ADD_EVENT):
+- Người dùng sử dụng giờ Việt Nam (UTC+7).
+- Khi gọi công cụ \`add_event\`, cả 2 tham số \`startAt\` và \`endAt\` BẮT BUỘC phải ghi rõ múi giờ \`+07:00\` (ví dụ: \`2026-11-15T08:00:00+07:00\`, \`2026-11-15T20:00:00+07:00\`). TUYỆT ĐỐI KHÔNG gắn đuôi \`Z\` trực tiếp vào giờ Việt Nam (như \`20:00:00Z\`), vì hệ thống sẽ hiểu là giờ UTC và bị lệch 7 tiếng sang rạng sáng ngày hôm sau!
+- Xác định ngày sự kiện:
+  + Nếu người dùng nói "hôm nay", hãy xem mốc ngày hiện tại trong prompt và CHỈ tạo sự kiện cho đúng ngày hôm nay.
+  + Nếu người dùng hỏi gợi ý lịch trình cuối tuần mà Thứ Bảy đã qua, hãy hỏi rõ người dùng muốn ghi cho ngày Chủ Nhật hôm nay hay cho cuối tuần kế tiếp trước khi gọi \`add_event\`.
+
 QUY TẮC HỖ TRỢ ĐA DẠNG VÀ TRÁNH TỪ CHỐI (CRITICAL):
 - Bạn là một người bạn đồng hành cực kỳ đa tài, thân thiện và linh hoạt. Tuyệt đối KHÔNG ĐƯỢC từ chối các yêu cầu ngoài phạm vi sức khỏe hay tài chính bằng cách nói rằng bạn "chỉ là trợ lý sức khỏe/tài chính", "không có khả năng", "không có công cụ" hoặc "chỉ là AI".
 - Trò chuyện linh tinh / Tâm sự: Khi người dùng muốn nói chuyện phiếm, chia sẻ vui buồn, hỏi thăm hoặc kể chuyện, bạn hãy trò chuyện thật tự nhiên, lắng nghe, đồng cảm và phản hồi bằng giọng điệu dễ thương, ấm áp của Bé Sao.
@@ -165,8 +172,8 @@ const tools = [
         type: "object",
         properties: {
           title: { type: "string", description: "Tiêu đề sự kiện" },
-          startAt: { type: "string", description: "Thời gian bắt đầu (ISO String)" },
-          endAt: { type: "string", description: "Thời gian kết thúc (ISO String)" },
+          startAt: { type: "string", description: "Thời gian bắt đầu (định dạng ISO 8601 kèm múi giờ Việt Nam +07:00, ví dụ: '2026-11-15T08:00:00+07:00')" },
+          endAt: { type: "string", description: "Thời gian kết thúc (định dạng ISO 8601 kèm múi giờ Việt Nam +07:00, ví dụ: '2026-11-15T09:00:00+07:00')" },
         },
         required: ["title", "startAt", "endAt"],
       },
@@ -443,12 +450,21 @@ async function executeTool(name: string, args: any, userId: string, sessionId: s
     }
 
     case "add_event": {
+      let start = new Date(args.startAt);
+      let end = new Date(args.endAt);
+      if (typeof args.startAt === "string" && !args.startAt.includes("Z") && !args.startAt.match(/[+-]\d{2}:?\d{2}$/)) {
+        start = new Date(`${args.startAt}+07:00`);
+      }
+      if (typeof args.endAt === "string" && !args.endAt.includes("Z") && !args.endAt.match(/[+-]\d{2}:?\d{2}$/)) {
+        end = new Date(`${args.endAt}+07:00`);
+      }
+
       const event = await db.calendarEvent.create({
         data: {
           userId,
           title: args.title,
-          startAt: new Date(args.startAt),
-          endAt: new Date(args.endAt),
+          startAt: start,
+          endAt: end,
         },
       });
       await db.chatActionLog.create({
