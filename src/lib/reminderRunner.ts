@@ -15,6 +15,46 @@ function cleanupOldKeys() {
       notifiedKeys.delete(key);
     }
   }
+
+  if (db.reminderNotificationLog?.deleteMany) {
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    db.reminderNotificationLog.deleteMany({
+      where: { createdAt: { lt: twoDaysAgo } }
+    }).catch(() => {});
+  }
+}
+
+async function shouldNotifyAndMark(key: string, nowMs: number): Promise<boolean> {
+  // 1. In-memory check for fast duplicate rejection
+  if (notifiedKeys.has(key)) {
+    return false;
+  }
+
+  // 2. Database check across Vercel serverless cold starts
+  if (db.reminderNotificationLog?.findUnique) {
+    try {
+      const existing = await db.reminderNotificationLog.findUnique({
+        where: { key },
+      });
+      if (existing) {
+        notifiedKeys.set(key, nowMs);
+        return false;
+      }
+
+      await db.reminderNotificationLog.upsert({
+        where: { key },
+        create: { key },
+        update: {},
+      });
+      notifiedKeys.set(key, nowMs);
+      return true;
+    } catch (e) {
+      console.warn("[ReminderRunner] DB dedup check failed, fallback to memory:", e);
+    }
+  }
+
+  notifiedKeys.set(key, nowMs);
+  return true;
 }
 
 export interface ReminderProcessResult {
@@ -145,8 +185,8 @@ export async function processReminders(targetUserId?: string): Promise<ReminderP
           continue;
         }
 
-        if (!notifiedKeys.has(key)) {
-          notifiedKeys.set(key, nowMs);
+        const shouldSend = await shouldNotifyAndMark(key, nowMs);
+        if (shouldSend) {
           result.water++;
 
           const title = "Nhắc nhở uống nước ⭐";
@@ -190,8 +230,8 @@ export async function processReminders(targetUserId?: string): Promise<ReminderP
       const dueTime = task.dueAt.getTime();
       const key = `task_${task.userId}_${task.id}_${dueTime}`;
 
-      if (!notifiedKeys.has(key)) {
-        notifiedKeys.set(key, nowMs);
+      const shouldSend = await shouldNotifyAndMark(key, nowMs);
+      if (shouldSend) {
         result.tasks++;
 
         const title = "Nhắc nhở công việc ⭐";
@@ -229,8 +269,8 @@ export async function processReminders(targetUserId?: string): Promise<ReminderP
         const instTime = new Date(inst.startAt).getTime();
         const key = `event_${event.userId}_${event.id}_${instTime}`;
 
-        if (!notifiedKeys.has(key)) {
-          notifiedKeys.set(key, nowMs);
+        const shouldSend = await shouldNotifyAndMark(key, nowMs);
+        if (shouldSend) {
           result.events++;
 
           const timeStr = new Date(inst.startAt).toLocaleTimeString("vi-VN", {
