@@ -1,10 +1,6 @@
 import { setVapidDetails, sendNotification } from "web-push";
 import { db } from "./db";
 
-const FALLBACK_PUBLIC_KEY = "BMwuCMhra9xTQ_pcq3hkKa58eZxzHwnHOdURjF4FO_bUJgduWH7VS5Y2GKrbRW-KA8kn2WM7HpwADnuwqTICEPM";
-const FALLBACK_PRIVATE_KEY = "4viDOlN20UhFNqesgiqTfsjkuMo39fd_2ytb4awZNGg";
-const FALLBACK_SUBJECT = "mailto:lilstar1712@gmail.com";
-
 export function isValidVapidPublicKey(key?: string): boolean {
   if (!key) return false;
   try {
@@ -26,26 +22,38 @@ export function isValidVapidPrivateKey(key?: string): boolean {
 }
 
 export function getVapidPublicKey(): string {
-  const envKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
-  return isValidVapidPublicKey(envKey) ? envKey : FALLBACK_PUBLIC_KEY;
+  const envKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY || "";
+  return isValidVapidPublicKey(envKey) ? envKey : "";
 }
 
 export function getVapidPrivateKey(): string {
   const envKey = process.env.VAPID_PRIVATE_KEY || "";
-  return isValidVapidPrivateKey(envKey) ? envKey : FALLBACK_PRIVATE_KEY;
+  return isValidVapidPrivateKey(envKey) ? envKey : "";
 }
 
-const publicKey = getVapidPublicKey();
-const privateKey = getVapidPrivateKey();
-const subject = process.env.VAPID_SUBJECT || FALLBACK_SUBJECT;
+let vapidConfigured = false;
 
-if (publicKey && privateKey) {
-  try {
-    setVapidDetails(subject, publicKey, privateKey);
-  } catch (e) {
-    console.error("[WebPush] Failed to set VAPID details:", e);
+function ensureVapidConfig(): boolean {
+  if (vapidConfigured) return true;
+  const publicKey = getVapidPublicKey();
+  const privateKey = getVapidPrivateKey();
+  const subject = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
+
+  if (publicKey && privateKey) {
+    try {
+      setVapidDetails(subject, publicKey, privateKey);
+      vapidConfigured = true;
+      return true;
+    } catch (e) {
+      console.error("[WebPush] Failed to set VAPID details:", e);
+      return false;
+    }
   }
+  return false;
 }
+
+// Initial setup attempt on load
+ensureVapidConfig();
 
 export interface PushPayload {
   title: string;
@@ -71,6 +79,11 @@ export interface PushResult {
  */
 export async function sendPushToUser(userId: string, payload: PushPayload): Promise<PushResult> {
   try {
+    if (!ensureVapidConfig()) {
+      console.warn("[WebPush] VAPID is not configured properly. Skipping push notification.");
+      return { sent: 0, failed: 0, total: 0, error: "VAPID not configured" };
+    }
+
     const subscriptions = await db.pushSubscription.findMany({
       where: { userId },
     });
