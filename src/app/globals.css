@@ -1,22 +1,14 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "../shared/theme/tokens.css";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-nunito);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* The app uses a light theme. Ask the browser to render light controls even when the OS uses dark mode. */
+:root {
+  color-scheme: light;
 }
 
 html, body {
@@ -25,11 +17,11 @@ html, body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* AppShell and StarBackground already apply safe-area insets, so the body needs no additional padding. */
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: #ffffff;
+  color: #171717;
   font-family: var(--font-nunito), Arial, sans-serif;
-  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Premium styled global select dropdowns */
@@ -37,6 +29,7 @@ select {
   appearance: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
+  /* The SVG data URI cannot read CSS variables. Its encoded color matches --color-primary (%23A172FD). */
   background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A172FD' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 1rem center !important;
@@ -47,8 +40,8 @@ select {
 }
 
 select:focus {
-  border-color: #A172FD !important;
-  box-shadow: 0 0 0 1px #A172FD !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 1px var(--color-primary) !important;
 }
 
 /* Standardize date and datetime inputs across iOS Safari and Android */
@@ -87,17 +80,29 @@ input[type="time"]::-webkit-datetime-edit {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(161, 114, 253, 0.5); /* Purple primary color #A172FD with opacity */
+  background-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(161, 114, 253, 0.8);
+  background-color: color-mix(in srgb, var(--color-primary) 80%, transparent);
 }
 
 /* For Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(161, 114, 253, 0.5) transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 50%, transparent) transparent;
 }
 
+/* Thin scrollbar for compact scroll areas, matching the app default. */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+/* Hide the scrollbar while allowing horizontal scrolling through the chips. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

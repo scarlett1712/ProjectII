@@ -1,24 +1,28 @@
 import type { MetadataRoute } from "next";
+import { colors } from "@/shared/theme/tokens";
+import { getTranslations } from "next-intl/server";
+import { ASSETS, ROUTES } from "@/shared/config/routes";
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const t = await getTranslations("app.manifest");
   return {
-    name: "Little Star - Trợ lý cá nhân AI",
-    short_name: "Little Star",
-    description: "Trợ lý cá nhân đa năng kết hợp AI, theo dõi sức khỏe và tài chính cá nhân",
-    start_url: "/dashboard",
+    name: t("name"),
+    short_name: t("shortName"),
+    description: t("description"),
+    start_url: ROUTES.dashboard,
     display: "standalone",
-    background_color: "#F5F3FF",
-    theme_color: "#A172FD",
+    background_color: colors.primarySoft,
+    theme_color: colors.primary,
     orientation: "portrait",
     icons: [
       {
-        src: "/chatbot-star.png",
+        src: ASSETS.mascotIcon,
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/chatbot-star.png",
+        src: ASSETS.mascotIcon,
         sizes: "512x512",
         type: "image/png",
         purpose: "any",

@@ -1,31 +1,39 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
-import { AppSessionProvider } from "@/components/providers/SessionProvider";
-import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
-import { ServiceWorkerInit } from "@/components/providers/ServiceWorkerInit";
+import { AppSessionProvider } from "@/shared/ui/providers/SessionProvider";
+import { ServiceWorkerInit } from "@/shared/ui/providers/ServiceWorkerInit";
+import { PWAInstallPrompt } from "@/shared/ui/PWAInstallPrompt";
+import { UiProvider } from "@/shared/ui/components";
+import { colors } from "@/shared/theme/tokens";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { ASSETS } from "@/shared/config/routes";
 
 const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["vietnamese", "latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Little Star",
-  description: "Little Star - Personal health management with virtual pet",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Little Star",
-  },
-  icons: {
-    icon: "/chatbot-star.png",
-    apple: "/chatbot-star.png",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("app");
+  return {
+    title: t("name"),
+    description: t("description"),
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: t("name"),
+    },
+    icons: {
+      icon: ASSETS.mascotIcon,
+      apple: ASSETS.mascotIcon,
+    },
+  };
+}
 
 export const viewport: Viewport = {
-  themeColor: "#A172FD",
+  themeColor: colors.primary,
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -33,23 +41,30 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  // The server uses the api namespace for API errors and push notifications. Omit it from the browser payload.
+  const { api: _serverOnly, ...clientMessages } = await getMessages();
   return (
     <html
-      lang="vi"
+      lang={locale}
       className={`${nunito.variable} h-full antialiased font-sans`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <AppSessionProvider>
-          <ServiceWorkerInit />
-          <PWAInstallPrompt />
-          {children}
-        </AppSessionProvider>
+        <NextIntlClientProvider messages={clientMessages}>
+          <AppSessionProvider>
+            <UiProvider>
+              <ServiceWorkerInit />
+              <PWAInstallPrompt />
+              {children}
+            </UiProvider>
+          </AppSessionProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

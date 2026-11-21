@@ -219,7 +219,7 @@ model Session {
 
 model VerificationToken {
   identifier String
-  token      String   @unique
+  token      String
   attempts   Int      @default(0)
   expires    DateTime
 
@@ -318,6 +318,16 @@ enum TransactionType {
   TRANSFER
 }
 
+/// Record sent reminders by DueReminder.key so repeated cron, worker or sync runs within the reminder window deliver each reminder once.
+/// The name and structure match the table on main.
+model ReminderNotificationLog {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}
+
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
@@ -329,12 +339,4 @@ model PushSubscription {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-}
-
-model ReminderNotificationLog {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  createdAt DateTime @default(now())
-
-  @@index([key, createdAt])
 }

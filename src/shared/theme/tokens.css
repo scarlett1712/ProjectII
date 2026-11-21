@@ -1,0 +1,98 @@
+/*
+ * Star AI design tokens. Each @theme variable generates a corresponding Tailwind utility:
+ *   --color-primary   → bg-primary, text-primary, border-primary, ring-primary/20, from-primary…
+ *   --text-2xs        → text-2xs
+ *   --radius-panel    → rounded-panel, rounded-t-panel…
+ *   --shadow-card     → shadow-card
+ * JavaScript consumers such as inline styles, SVG and Recharts use the matching values in tokens.ts.
+ * tokens.test.ts checks that the values stay in sync.
+ */
+@theme {
+  /* Star mascot brand colors */
+  --color-primary: #A172FD;
+  --color-primary-hover: #8B5CF6;
+  --color-primary-light: #A78BFA;
+  --color-primary-strong: #6D28D9;
+  --color-primary-ink: #581C87;
+  --color-primary-muted: #C4B5FD;
+  --color-primary-border: #D8CFFD;
+  --color-primary-line: #E9D5FF;
+  --color-primary-line-strong: #D8B4FE;
+  --color-primary-tint: #EDE9FE;
+  --color-primary-faint: #EAE5FF;
+  --color-primary-subtle: #F0ECFF;
+  --color-primary-soft: #F5F3FF;
+
+  /* Text, borders and secondary backgrounds */
+  --color-ink-strong: #1F2937;
+  --color-ink: #374151;
+  --color-ink-secondary: #4B5563;
+  --color-ink-muted: #6B7280;
+  --color-ink-subtle: #9CA3AF;
+  --color-line: #E5E7EB;
+  --color-surface-muted: #F3F4F6;
+
+  /* Status colors */
+  --color-success: #10B981;
+  --color-danger: #EF4444;
+
+  /* Sticky note */
+  --color-note: #fdfd96;
+  --color-note-ink: #b45309;
+
+  /* Water intake */
+  --color-water-strong: #0369A1;
+  --color-water: #0284C7;
+  --color-water-ring: #38BDF8;
+  --color-water-muted: #BAE6FD;
+  --color-water-soft: #E0F2FE;
+
+  /* Deadline urgency */
+  --color-urgency-critical: #F87171;
+  --color-urgency-warning: #93C5FD;
+  --color-urgency-normal: #A7F3D0;
+
+  /* Meal categories */
+  --color-meal-breakfast: #D97706;
+  --color-meal-breakfast-soft: #FEF3C7;
+  --color-meal-lunch: #059669;
+  --color-meal-lunch-soft: #D1FAE5;
+  --color-meal-dinner: #2563EB;
+  --color-meal-dinner-soft: #DBEAFE;
+  --color-meal-snack: #7C3AED;
+  --color-meal-snack-soft: #F3E8FF;
+
+  /* Dashboard shortcuts */
+  --color-accent-indigo: #4F46E5;
+  --color-accent-indigo-soft: #E0E7FF;
+  --color-accent-green: #22C55E;
+  --color-accent-green-soft: #DCFCE7;
+
+  /* Welcome screen */
+  --color-splash-from: #9BA4FF;
+  --color-splash-to: #FF9BE2;
+
+  /* Font sizes below text-xs (12px) */
+  --text-caption: 11px;
+  --text-2xs: 10px;
+  --text-3xs: 9px;
+  --text-4xs: 8px;
+
+  /* Extra corner radii beyond the built-in 3xl (24px) and 4xl (32px) */
+  --radius-panel: 28px;
+  --radius-hero: 36px;
+  --radius-5xl: 40px;
+  --radius-6xl: 48px;
+
+  /* Shadows */
+  --shadow-card: 0 20px 60px rgba(100, 70, 180, 0.18);
+  --shadow-float: 0 14px 34px rgba(89, 64, 156, 0.25);
+  --shadow-float-lg: 0 20px 50px rgba(89, 64, 156, 0.3);
+  --shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.15);
+  --shadow-brand: 0 10px 30px rgba(161, 114, 253, 0.25);
+  --shadow-brand-hover: 0 15px 40px rgba(139, 92, 246, 0.25);
+  --shadow-brand-glow: 0 0 20px rgba(161, 114, 253, 0.5);
+  --shadow-white-glow: 0 0 8px rgba(255, 255, 255, 0.8);
+  --shadow-divider: 0 1px 0 0 rgba(243, 232, 255, 1);
+  --shadow-bar-top: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}

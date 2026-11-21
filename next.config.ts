@@ -1,7 +1,14 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const withNextIntl = createNextIntlPlugin({
+  requestConfig: "./src/shared/i18n/request.ts",
+  experimental: {
+    // Generate messages/vi.d.json.ts so TypeScript also checks ICU arguments such as {title} and {count}.
+    createMessagesDeclaration: "./messages/vi.json",
+  },
+});
 
-export default nextConfig;
+const nextConfig: NextConfig = {};
+
+export default withNextIntl(nextConfig);
