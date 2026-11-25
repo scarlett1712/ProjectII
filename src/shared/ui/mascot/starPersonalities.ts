@@ -153,24 +153,39 @@ export async function fetchWeatherSummary(city: WeatherCity): Promise<string | n
   }
 }
 
-/** Play a soft, non-intrusive chime using Web Audio API. */
+let sharedAudioCtx: AudioContext | null = null;
+
+/**
+ * Play a soft, non-intrusive chime on desktop.
+ * On mobile touch devices, use a light haptic pulse instead of Web Audio so the browser
+ * never hijacks OS audio focus or accidentally resumes another app's music player.
+ */
 export function playStarChime() {
   if (typeof window === "undefined") return;
   try {
+    if (window.matchMedia?.("(pointer: coarse)").matches) {
+      navigator.vibrate?.(15);
+      return;
+    }
     const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
+      sharedAudioCtx = new AudioCtx();
+    }
+    if (sharedAudioCtx.state === "suspended") {
+      void sharedAudioCtx.resume();
+    }
+    const osc = sharedAudioCtx.createOscillator();
+    const gain = sharedAudioCtx.createGain();
     osc.type = "sine";
-    osc.frequency.setValueAtTime(660, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.12);
-    gain.gain.setValueAtTime(0.05, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+    osc.frequency.setValueAtTime(660, sharedAudioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880, sharedAudioCtx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.04, sharedAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, sharedAudioCtx.currentTime + 0.2);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(sharedAudioCtx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.24);
+    osc.stop(sharedAudioCtx.currentTime + 0.22);
   } catch {
     // Ignore audio policy errors
   }
