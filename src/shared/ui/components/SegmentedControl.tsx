@@ -13,6 +13,8 @@ interface SegmentedControlProps<T extends string> {
   /** Accessible label for the entire group. */
   ariaLabel?: string;
   size?: "sm" | "md";
+  /** Background surface behind the segments: "soft" for cards/modals, "white" for page-level tab bars. */
+  surface?: "soft" | "white";
   className?: string;
 }
 
@@ -23,6 +25,7 @@ export function SegmentedControl<T extends string>({
   onChange,
   ariaLabel,
   size = "md",
+  surface = "soft",
   className,
 }: SegmentedControlProps<T>) {
   return (
@@ -30,7 +33,8 @@ export function SegmentedControl<T extends string>({
       role="radiogroup"
       aria-label={ariaLabel}
       className={cn(
-        "grid gap-1 rounded-xl bg-primary-soft p-1 font-bold",
+        "grid gap-1 rounded-xl p-1 font-bold",
+        surface === "white" ? "bg-white/95 shadow-sm border border-white/60" : "bg-primary-soft",
         size === "sm" ? "text-xs" : "text-sm",
         className,
       )}

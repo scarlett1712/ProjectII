@@ -83,6 +83,7 @@ function NutritionTabsContent() {
       {/* Tab Selector */}
       <div id="tour-nutrition-tabs" className="mx-auto mb-6 w-full max-w-sm">
         <SegmentedControl
+          surface="white"
           options={[
             { value: "meal", label: <>🍽️ {t("screen.mealTab")}</> },
             { value: "water", label: <>💧 {t("screen.waterTab")}</> },

@@ -450,9 +450,9 @@ export function MealManagementTab() {
           </div>
 
           {/* Meals List & Charts row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              <div className="flex items-center justify-between">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-gray-800">
                   {t("meal.dayMenu", { dayMonth: format(selectedDate, "dd/MM") })}
                 </h3>
@@ -473,8 +473,11 @@ export function MealManagementTab() {
                   {t("meal.addMeal")}
                 </Button>
               </div>
+            </div>
 
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-full">
                 <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
                   <span className="text-gray-500 font-bold">{t("meal.totalEnergy")}</span>
                   <span className="text-2xl font-black text-primary">{selectedDayTotal} <span className="text-base text-gray-400 font-normal">{tc("unit.kcal")}</span></span>
@@ -544,10 +547,10 @@ export function MealManagementTab() {
             </div>
 
             {/* Charts (last 7 days) */}
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-full flex flex-col">
                 <h3 className="text-gray-800 font-semibold mb-4 text-sm">{t("meal.chartTitle")}</h3>
-                <div className="h-[200px] w-full">
+                <div className="flex-1 min-h-[200px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                       <defs>
@@ -565,6 +568,7 @@ export function MealManagementTab() {
                   </ResponsiveContainer>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </div>

@@ -149,6 +149,7 @@ export default function BudgetScreen() {
       {/* Tab Navigation header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <SegmentedControl
+          surface="white"
           options={[
             {
               value: "monthly",
