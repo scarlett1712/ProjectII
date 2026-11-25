@@ -49,7 +49,11 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
   const tShell = useTranslations("shell");
   const tc = useTranslations("common");
   const toast = useToast();
-  const { settings } = useUserSettings();
+  const { settings, loading: settingsLoading } = useUserSettings();
+  const settingsRef = useRef(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -172,33 +176,34 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
   // Morning / session startup briefing: greeting + weather + today's schedule summary
   useEffect(() => {
-    if (!isMounted || typeof window === "undefined") return;
+    if (!isMounted || settingsLoading || typeof window === "undefined") return;
     if (sessionStorage.getItem("star-briefed")) return;
-    sessionStorage.setItem("star-briefed", "1");
 
     const now = new Date();
     const todayStr = now.toDateString();
     let cancelled = false;
 
     async function runBriefing() {
+      const currentSettings = settingsRef.current;
       const [weather, tasks, events] = await Promise.all([
-        fetchWeatherSummary(settings.weatherCity),
+        fetchWeatherSummary(currentSettings.weatherCity),
         apiRequest<{ completed: boolean; dueAt?: string | null }[]>(API_ROUTES.tasks).catch(() => []),
         apiRequest<{ startAt: string }[]>(API_ROUTES.calendar).catch(() => []),
       ]);
       if (cancelled) return;
+      sessionStorage.setItem("star-briefed", "1");
       const pendingTasks = tasks.filter((t) => !t.completed && (!t.dueAt || new Date(t.dueAt).toDateString() === todayStr)).length;
       const todayEvents = events.filter((e) => new Date(e.startAt).toDateString() === todayStr).length;
-      speak(formatBriefingMessage(settings.starPersonality, now.getHours(), weather, pendingTasks, todayEvents), 8000);
-      if (settings.starSoundEnabled && !isWithinQuietHours(settings)) playStarChime();
+      speak(formatBriefingMessage(currentSettings.starPersonality, now.getHours(), weather, pendingTasks, todayEvents), 8000);
+      if (currentSettings.starSoundEnabled && !isWithinQuietHours(currentSettings)) playStarChime();
     }
 
-    const t = setTimeout(() => void runBriefing(), 900);
+    const t = setTimeout(() => void runBriefing(), 700);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [isMounted, settings]);
+  }, [isMounted, settingsLoading]);
 
   // Autonomous roaming, singing/dancing, and sleepy night state
   useEffect(() => {
