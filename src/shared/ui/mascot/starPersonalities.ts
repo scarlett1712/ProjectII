@@ -93,22 +93,31 @@ export function getCelebrateLine(personality: StarPersonality): string {
   return PICK(lines[personality]);
 }
 
+export interface BriefingItem {
+  title: string;
+  tagName?: string | null;
+}
+
 export function formatBriefingMessage(
   personality: StarPersonality,
   hour: number,
   weatherText: string | null,
-  taskCount: number,
-  eventCount: number,
+  tasks: BriefingItem[],
+  events: BriefingItem[],
 ): string {
   const greet = getGreetingByHour(personality, hour);
   const weatherPart = weatherText ? ` 🌤️ ${weatherText}.` : "";
-  const schedulePart =
-    taskCount === 0 && eventCount === 0
-      ? personality === "cool"
-        ? " Hôm nay lịch trống."
-        : " Hôm nay chưa có lịch hay deadline gấp nào."
-      : ` Hôm nay có ${eventCount} lịch hẹn & ${taskCount} việc cần làm.`;
-  return `${greet}${weatherPart}${schedulePart}`;
+  const allItems = [...events, ...tasks];
+  if (allItems.length === 0) {
+    const emptyText = personality === "cool" ? " Hôm nay lịch trống." : " Hôm nay chưa có lịch trình hay việc cần làm nào.";
+    return `${greet}${weatherPart}${emptyText}`;
+  }
+  const preview = allItems
+    .slice(0, 4)
+    .map((item) => (item.tagName ? `${item.title} [${item.tagName}]` : item.title))
+    .join(", ");
+  const more = allItems.length > 4 ? ` (+${allItems.length - 4})` : "";
+  return `${greet}${weatherPart} Hôm nay có ${events.length} lịch trình & ${tasks.length} việc cần làm: ${preview}${more}.`;
 }
 
 function describeWmoCode(code: number): string {

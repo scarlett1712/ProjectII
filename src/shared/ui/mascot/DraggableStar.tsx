@@ -185,16 +185,22 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
     async function runBriefing() {
       const currentSettings = settingsRef.current;
-      const [weather, tasks, events] = await Promise.all([
+      const [weather, tasks, events, tags] = await Promise.all([
         fetchWeatherSummary(currentSettings.weatherCity),
-        apiRequest<{ completed: boolean; dueAt?: string | null }[]>(API_ROUTES.tasks).catch(() => []),
-        apiRequest<{ startAt: string }[]>(API_ROUTES.calendar).catch(() => []),
+        apiRequest<{ title: string; completed: boolean; dueAt?: string | null; tagId?: string | null }[]>(API_ROUTES.tasks).catch(() => []),
+        apiRequest<{ title: string; startAt: string; tagId?: string | null }[]>(API_ROUTES.calendar).catch(() => []),
+        apiRequest<{ id: string; name: string }[]>(API_ROUTES.tags).catch(() => []),
       ]);
       if (cancelled) return;
       sessionStorage.setItem("star-briefed", "1");
-      const pendingTasks = tasks.filter((t) => !t.completed && (!t.dueAt || new Date(t.dueAt).toDateString() === todayStr)).length;
-      const todayEvents = events.filter((e) => new Date(e.startAt).toDateString() === todayStr).length;
-      speak(formatBriefingMessage(currentSettings.starPersonality, now.getHours(), weather, pendingTasks, todayEvents), 8000);
+      const tagMap = new Map(tags.map((tag) => [tag.id, tag.name]));
+      const pendingTasks = tasks
+        .filter((t) => !t.completed && (!t.dueAt || new Date(t.dueAt).toDateString() === todayStr))
+        .map((t) => ({ title: t.title, tagName: t.tagId ? tagMap.get(t.tagId) ?? null : null }));
+      const todayEvents = events
+        .filter((e) => new Date(e.startAt).toDateString() === todayStr)
+        .map((e) => ({ title: e.title, tagName: e.tagId ? tagMap.get(e.tagId) ?? null : null }));
+      speak(formatBriefingMessage(currentSettings.starPersonality, now.getHours(), weather, pendingTasks, todayEvents), 10000);
       if (currentSettings.starSoundEnabled && !isWithinQuietHours(currentSettings)) playStarChime();
     }
 
