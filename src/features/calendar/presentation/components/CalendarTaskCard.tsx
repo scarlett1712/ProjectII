@@ -67,6 +67,7 @@ export function CalendarTaskCard({ task, variant, layout, onOpen, onFloat }: Cal
   };
 
   if (variant === "month") {
+    const monthTextColor = contrastTextColor(background);
     return (
       <motion.div
         {...dragProps}
@@ -76,7 +77,7 @@ export function CalendarTaskCard({ task, variant, layout, onOpen, onFloat }: Cal
           cursor,
         )}
       >
-        <span className={cn("flex-1 truncate font-bold text-gray-800", done && "line-through opacity-50")}>📌 {task.title}</span>
+        <span style={{ color: monthTextColor }} className={cn("flex-1 truncate font-bold", done && "line-through opacity-50")}>📌 {task.title}</span>
         <div className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dotClass)} />
       </motion.div>
     );

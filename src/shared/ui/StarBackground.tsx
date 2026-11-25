@@ -13,6 +13,7 @@ export function StarBackground({ children }: { children: React.ReactNode }) {
         backgroundAttachment: "fixed"
       }}
     >
+      <div className="star-bg-dimmer pointer-events-none fixed inset-0 z-0 transition-colors" />
       <div className="relative z-10 h-full w-full">
         {children}
       </div>
