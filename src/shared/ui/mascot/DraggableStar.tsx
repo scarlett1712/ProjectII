@@ -1,16 +1,28 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Check, X } from "lucide-react";
 import { effects } from "@/shared/theme/tokens";
 import { Button, IconButton, Spinner, useToast } from "@/shared/ui/components";
-import { API_ROUTES, ASSETS } from "@/shared/config/routes";
-import { notifyDataChanged } from "@/shared/client/cacheSync";
+import { API_ROUTES } from "@/shared/config/routes";
+import { DATA_SYNC_EVENT, notifyDataChanged } from "@/shared/client/cacheSync";
 import { onStarNotification } from "@/shared/client/appEvents";
 import { apiErrorMessage, apiRequest } from "@/shared/client/api";
+import { useUserSettings } from "@/shared/client/settingsContext";
+import { isWithinQuietHours } from "@/shared/domain/settings";
+import { StarPetSprite } from "./StarPetSprite";
+import {
+  fetchWeatherSummary,
+  formatBriefingMessage,
+  getCelebrateLine,
+  getDragLine,
+  getPokeLine,
+  getSingLine,
+  playStarChime,
+  type PetMood,
+} from "./starPersonalities";
 
 const DESKTOP_STAR_SIZE = 130;
 const MOBILE_STAR_SIZE = 88;
@@ -37,11 +49,25 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
   const tShell = useTranslations("shell");
   const tc = useTranslations("common");
   const toast = useToast();
+  const { settings } = useUserSettings();
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [alert, setAlert] = useState<AlertPayload | null>(null);
   const [customPortion, setCustomPortion] = useState("");
+  const [mood, setMood] = useState<PetMood>("idle");
+  const [facing, setFacing] = useState<"left" | "right">("left");
+  const [petSpeech, setPetSpeech] = useState<string | null>(null);
+  const speechTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const speak = (text: string, durationMs = 4500) => {
+    clearTimeout(speechTimer.current);
+    setPetSpeech(text);
+    if (durationMs > 0) {
+      speechTimer.current = setTimeout(() => setPetSpeech(null), durationMs);
+    }
+  };
+  useEffect(() => () => clearTimeout(speechTimer.current), []);
   
   const pointerRef = useRef({
     pointerId: -1, offsetX: 0, offsetY: 0,
@@ -144,6 +170,95 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
     return onStarNotification((detail) => void handleNotification(detail));
   }, [tShell]);
 
+  // Morning / session startup briefing: greeting + weather + today's schedule summary
+  useEffect(() => {
+    if (!isMounted || typeof window === "undefined") return;
+    if (sessionStorage.getItem("star-briefed")) return;
+    sessionStorage.setItem("star-briefed", "1");
+
+    const now = new Date();
+    const todayStr = now.toDateString();
+    let cancelled = false;
+
+    async function runBriefing() {
+      const [weather, tasks, events] = await Promise.all([
+        fetchWeatherSummary(settings.weatherCity),
+        apiRequest<{ completed: boolean; dueAt?: string | null }[]>(API_ROUTES.tasks).catch(() => []),
+        apiRequest<{ startAt: string }[]>(API_ROUTES.calendar).catch(() => []),
+      ]);
+      if (cancelled) return;
+      const pendingTasks = tasks.filter((t) => !t.completed && (!t.dueAt || new Date(t.dueAt).toDateString() === todayStr)).length;
+      const todayEvents = events.filter((e) => new Date(e.startAt).toDateString() === todayStr).length;
+      speak(formatBriefingMessage(settings.starPersonality, now.getHours(), weather, pendingTasks, todayEvents), 8000);
+      if (settings.starSoundEnabled && !isWithinQuietHours(settings)) playStarChime();
+    }
+
+    const t = setTimeout(() => void runBriefing(), 900);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [isMounted, settings]);
+
+  // Autonomous roaming, singing/dancing, and sleepy night state
+  useEffect(() => {
+    if (!isMounted || alert) return;
+    if (!settings.starRoamEnabled) {
+      const hour = new Date().getHours();
+      setMood(hour >= 23 || hour < 5 ? "sleepy" : "idle");
+      return;
+    }
+
+    let walkStopTimer: ReturnType<typeof setTimeout>;
+    const interval = setInterval(() => {
+      if (pointerRef.current.pointerId !== -1) return;
+      const maxX = Math.max(16, window.innerWidth - starSize - 16);
+      const maxY = Math.max(16, window.innerHeight - starSize - (isMobile ? 90 : 20));
+      const nextX = Math.round(16 + Math.random() * (maxX - 16));
+      const nextY = Math.round(Math.max(80, maxY * (0.45 + Math.random() * 0.55)));
+
+      setPosition((prev) => {
+        setFacing(nextX < prev.x ? "left" : "right");
+        return { x: nextX, y: nextY };
+      });
+      setMood("walking");
+
+      walkStopTimer = setTimeout(() => {
+        if (pointerRef.current.pointerId !== -1) return;
+        const roll = Math.random();
+        const hour = new Date().getHours();
+        if (hour >= 23 || hour < 5) {
+          setMood("sleepy");
+        } else if (roll < 0.32) {
+          setMood("singing");
+          speak(getSingLine(settings.starPersonality), 3800);
+        } else {
+          setMood("idle");
+        }
+      }, 2200);
+    }, 9500);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(walkStopTimer);
+    };
+  }, [isMounted, isMobile, starSize, alert, settings.starRoamEnabled, settings.starPersonality]);
+
+  // Celebrate when user completes a task, logs water, or saves a diary photo
+  useEffect(() => {
+    const onSync = (ev: Event) => {
+      const domain = (ev as CustomEvent<{ domain?: string }>).detail?.domain;
+      if (domain === "tasks" || domain === "water" || domain === "diary") {
+        setMood("celebrating");
+        speak(getCelebrateLine(settings.starPersonality), 3600);
+        if (settings.starSoundEnabled && !isWithinQuietHours(settings)) playStarChime();
+        setTimeout(() => setMood((m) => (m === "celebrating" ? "idle" : m)), 3200);
+      }
+    };
+    window.addEventListener(DATA_SYNC_EVENT, onSync);
+    return () => window.removeEventListener(DATA_SYNC_EVENT, onSync);
+  }, [settings]);
+
   const clamp = (x: number, y: number) => ({
     x: Math.min(Math.max(10, x), Math.max(10, window.innerWidth - starSize - 10)),
     y: Math.min(Math.max(10, y), Math.max(10, window.innerHeight - starSize - (isMobile ? 85 : 15))),
@@ -213,9 +328,33 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
           left: position.x,
           top: position.y,
         }}
-        transition={{ type: "spring", stiffness: 120, damping: 18 }}
+        transition={mood === "walking" ? { duration: 2.1, ease: "easeInOut" } : { type: "spring", stiffness: 120, damping: 18 }}
         style={{ width: starSize, height: starSize }}
       >
+        {/* Ambient Pet Speech Bubble (greeting, weather, singing, dragging/pouting) */}
+        <AnimatePresence>
+          {!isAlerting && petSpeech && (
+            <motion.div
+              initial={{ opacity: 0, y: 8, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6, scale: 0.92 }}
+              className={`absolute bottom-full mb-3 w-64 max-w-[75vw] rounded-2xl border border-purple-100 bg-white/95 px-3.5 py-2.5 text-xs font-bold text-gray-700 shadow-lg backdrop-blur-md pointer-events-auto ${
+                isLeftHalf ? "left-0" : "right-0"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setPetSpeech(null)}
+                aria-label={tc("action.close")}
+                className="float-right ml-1.5 text-gray-400 hover:text-primary"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+              <p className="leading-relaxed">{petSpeech}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Alert / Notification Speech Bubble */}
         <AnimatePresence>
           {isAlerting && alert && (
@@ -460,7 +599,11 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
             if (isAlerting) return;
             const p = pointerRef.current;
             if (p.pointerId !== e.pointerId) return;
-            if (Math.abs(e.clientX - p.startX) > 4 || Math.abs(e.clientY - p.startY) > 4) p.moved = true;
+            if (!p.moved && (Math.abs(e.clientX - p.startX) > 4 || Math.abs(e.clientY - p.startY) > 4)) {
+              p.moved = true;
+              setMood("dragging");
+              speak(getDragLine(settings.starPersonality), 2200);
+            }
             setPosition(clamp(e.clientX - p.offsetX, e.clientY - p.offsetY));
           }}
           onPointerUp={(e) => {
@@ -468,17 +611,27 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
             const p = pointerRef.current;
             if (p.pointerId !== e.pointerId) return;
             e.currentTarget.releasePointerCapture(e.pointerId);
-            if (!p.moved && onClick) onClick();
+            if (p.moved) {
+              setMood("pouting");
+              setTimeout(() => setMood((m) => (m === "pouting" ? "idle" : m)), 1600);
+            } else if (onClick) {
+              onClick();
+            }
             p.pointerId = -1;
           }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            if (isAlerting) return;
+            setMood("celebrating");
+            speak(getPokeLine(settings.starPersonality), 3000);
+            setTimeout(() => setMood((m) => (m === "celebrating" ? "idle" : m)), 1800);
+          }}
         >
-          <Image
-            src={ASSETS.mascotIcon}
+          <StarPetSprite
+            size={starSize}
             alt={tShell("mascot.imageAlt")}
-            width={starSize}
-            height={starSize}
-            priority
-            className="h-full w-full object-contain select-none pointer-events-none"
+            mood={isAlerting ? "celebrating" : mood}
+            facing={facing}
           />
         </motion.button>
       </motion.div>

@@ -18,6 +18,7 @@ export const ROUTES = {
   calendar: "/calendar",
   budget: "/budget",
   chat: "/chat",
+  settings: "/settings",
   setup: {
     profile: "/setup/profile",
     notifications: "/setup/notifications",
@@ -55,6 +56,7 @@ export const API_ROUTES = {
     photos: "/api/diary/photos",
   },
   profile: "/api/profile",
+  settings: "/api/settings",
   chat: "/api/chat",
   search: "/api/search",
   webPush: {

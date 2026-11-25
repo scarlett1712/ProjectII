@@ -65,6 +65,18 @@ describe("diaryUseCases", () => {
     );
   });
 
+  it("rejects creating a photo on a future date", async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const futureKey = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, "0")}-${String(tomorrow.getDate()).padStart(2, "0")}`;
+    await expect(
+      createDiaryPhoto("u1", {
+        imageData: "data:image/jpeg;base64,abc",
+        dateKey: futureKey,
+      }),
+    ).rejects.toThrow("diary.futureDateNotAllowed");
+  });
+
   it("rejects linking an unowned meal", async () => {
     vi.mocked(diaryRepository.findMealOwned).mockResolvedValueOnce(null);
     await expect(

@@ -17,7 +17,7 @@ import { useExclusiveMenu } from "./useExclusiveMenu";
 export interface TransactionFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (transaction?: Transaction) => void;
   accounts: Account[];
   categories: Category[];
   /** Initial transaction type when opening the creation form. */
@@ -126,10 +126,11 @@ export function TransactionFormModal({
       });
 
       if (res.ok) {
+        const saved = (await res.json().catch(() => undefined)) as Transaction | undefined;
         resetDraft();
         notifyDataChanged("budget");
         onClose();
-        onSuccess?.();
+        onSuccess?.(saved);
       } else {
         const body = await res.json();
         toast.error(body.error || t(isEdit ? "toast.transactionUpdateFailed" : "toast.transactionAddFailed"));

@@ -6,7 +6,7 @@ import { TransactionFormModal } from "./TransactionFormModal";
 export interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (transaction?: import("../types").Transaction) => void;
   accounts: Account[];
   categories: Category[];
   initialTab?: TransactionType;

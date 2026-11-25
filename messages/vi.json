@@ -1197,11 +1197,16 @@
       "invalidImage": "Ảnh không hợp lệ hoặc quá lớn",
       "photoNotFound": "Không tìm thấy ảnh nhật ký",
       "invalidDateKey": "Ngày nhật ký không hợp lệ",
+      "futureDateNotAllowed": "Không thể thêm ảnh cho ngày trong tương lai",
       "mealNotFound": "Không tìm thấy bữa ăn được chọn",
       "transactionNotFound": "Không tìm thấy giao dịch được chọn",
       "loadFailed": "Không thể tải dữ liệu nhật ký",
       "saveFailed": "Không thể lưu nhật ký",
       "deleteFailed": "Không thể xóa ảnh nhật ký"
+    },
+    "settings": {
+      "loadFailed": "Không thể tải cài đặt người dùng",
+      "saveFailed": "Không thể lưu cài đặt người dùng"
     }
   },
   "diary": {
@@ -1258,5 +1263,63 @@
       "openDiary": "Mở Nhật ký",
       "photoCount": "{count} ảnh"
     }
+  },
+  "settings": {
+    "menuLabel": "Cài đặt",
+    "title": "Cài đặt hệ thống & Bé Sao",
+    "subtitle": "Tùy chỉnh giao diện, thông báo, tài khoản và tính cách của Bé Sao",
+    "saved": "Đã lưu cài đặt!",
+    "saveFailed": "Không thể lưu cài đặt",
+    "systemSection": "Cài đặt hệ thống",
+    "themeLabel": "Giao diện",
+    "themeLight": "Sáng",
+    "themeDark": "Tối",
+    "fontSizeLabel": "Cỡ chữ",
+    "fontSmall": "Nhỏ",
+    "fontMedium": "Vừa",
+    "fontLarge": "Lớn",
+    "notificationsLabel": "Bật thông báo & nhắc nhở",
+    "notificationsHint": "Nhận nhắc uống nước, lịch hẹn và deadline trên trình duyệt",
+    "quietHoursLabel": "Giờ yên tĩnh (Không làm phiền)",
+    "quietHoursHint": "Tạm dừng âm thanh và thông báo nhắc nhở trong khung giờ này",
+    "quietStart": "Từ",
+    "quietEnd": "Đến",
+    "weatherCityLabel": "Khu vực thời tiết cho Bé Sao",
+    "weatherAuto": "Tự động (GPS / mặc định)",
+    "weatherHanoi": "Hà Nội",
+    "weatherHcm": "TP. Hồ Chí Minh",
+    "weatherDanang": "Đà Nẵng",
+    "defaultStartLabel": "Trang mở đầu mặc định",
+    "starSection": "Cài đặt Bé Sao (Pet)",
+    "starRoamLabel": "Cho phép Bé Sao tự đi lại",
+    "starRoamHint": "Bé Sao sẽ đi dạo, nhảy nhót và hát quanh màn hình",
+    "starSoundLabel": "Hiệu ứng âm thanh nhỏ của Bé Sao",
+    "starSoundHint": "Phát tiếng ting nhẹ khi Bé Sao tương tác hoặc ăn mừng",
+    "starPersonalityLabel": "Tính cách của Bé Sao",
+    "personalities": {
+      "cute": {
+        "name": "Cute",
+        "desc": "Ngọt ngào, hay dùng emoji và cổ vũ bạn"
+      },
+      "cool": {
+        "name": "Lạnh lùng / Cool ngầu",
+        "desc": "Ít nói, súc tích, phong thái điềm đạm"
+      },
+      "tsundere": {
+        "name": "Tsundere",
+        "desc": "Ngoài lạnh lùng hay dỗi nhưng bên trong rất quan tâm"
+      },
+      "energetic": {
+        "name": "Tấu hài / Năng lượng",
+        "desc": "Tăng động, hay hát và chọc cười suốt ngày"
+      },
+      "zen": {
+        "name": "Điềm tĩnh / Triết gia",
+        "desc": "Nhẹ nhàng, hay chia sẻ góc nhìn sâu sắc"
+      }
+    },
+    "accountSection": "Tài khoản & Bảo mật",
+    "accountHint": "Quản lý mật khẩu, phiên đăng nhập và thông tin cá nhân",
+    "openProfile": "Hồ sơ cá nhân"
   }
 }

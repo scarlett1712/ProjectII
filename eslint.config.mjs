@@ -55,7 +55,7 @@ function designTokenRules() {
     { selector: `TemplateElement[value.raw=/${vietnamese}/]`, message: textMessage },
   ];
   // Page, API and asset paths come from src/shared/config/routes.ts.
-  const routeLiteral = String.raw`^\x2F(api\x2F|login|register|forgot-password|setup\x2F|dashboard|diary|budget|calendar|chat|nutrition|tasks|water|chatbot-star)`;
+  const routeLiteral = String.raw`^\x2F(api\x2F|login|register|forgot-password|setup\x2F|dashboard|diary|budget|calendar|chat|nutrition|settings|tasks|water|chatbot-star)`;
   // ESLint selectors require the slash in this regex to be written as \x2F.
   const routeMessage = "Dùng ROUTES / API_ROUTES / ASSETS và withQuery() từ @/shared/config/routes thay vì viết cứng đường dẫn.";
   tokenSelectors.push(

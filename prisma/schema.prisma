@@ -37,6 +37,7 @@ model User {
   pushSubscriptions PushSubscription[]
   diaryEntries      DiaryEntry[]
   diaryPhotos       DiaryPhoto[]
+  settings          UserSettings?
 }
 
 model Profile {
@@ -377,4 +378,23 @@ model DiaryPhoto {
   @@index([userId, dateKey, takenAt])
   @@index([mealId])
   @@index([transactionId])
+}
+
+model UserSettings {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  theme                String   @default("light")
+  fontSize             String   @default("md")
+  notificationsEnabled Boolean  @default(true)
+  quietHoursEnabled    Boolean  @default(false)
+  quietStart           String   @default("23:00")
+  quietEnd             String   @default("07:00")
+  defaultStartRoute    String   @default("/dashboard")
+  weatherCity          String   @default("auto")
+  starRoamEnabled      Boolean  @default(true)
+  starPersonality      String   @default("cute")
+  starSoundEnabled     Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

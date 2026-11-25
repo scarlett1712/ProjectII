@@ -22,6 +22,7 @@ import { GlobalSearch } from "@/shared/ui/layout/GlobalSearch";
 import { NotificationBell } from "@/shared/ui/layout/NotificationBell";
 import { MobileBottomNav } from "@/shared/ui/layout/MobileBottomNav";
 import { Sidebar } from "@/shared/ui/layout/Sidebar";
+import { UserSettingsProvider } from "@/shared/client/settingsContext";
 
 /** Page-specific header title and subtitle. */
 const pageHeaders = [
@@ -101,6 +102,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setPwLoading(false);
     }
   };
+
+  useEffect(() => {
+    const onOpenChangePw = () => setShowChangePassword(true);
+    window.addEventListener("open-change-password", onOpenChangePw);
+    return () => window.removeEventListener("open-change-password", onOpenChangePw);
+  }, []);
   const pageHeader = pageHeaders.find(({ route }) => isRouteActive(pathname, route));
   const isKeyboardOpen = useKeyboardOpen();
   const handleSignOut = useSessionGuard();
@@ -168,6 +175,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   return (
+    <UserSettingsProvider>
     <StarBackground>
       <div className="flex h-[100dvh] items-center justify-center p-0 md:p-8 overflow-hidden">
         {/* Main Inner Frame */}
@@ -266,5 +274,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <QuickChat userId={userId} />
       </div>
     </StarBackground>
+    </UserSettingsProvider>
   );
 }

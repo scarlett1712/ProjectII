@@ -38,6 +38,7 @@ export default function DiaryScreen() {
 
   const selectedDateKey = toLocalDateKey(selectedDate);
   const selectedMonthKey = toLocalMonthKey(selectedDate);
+  const isFutureDay = selectedDateKey > toLocalDateKey(new Date());
 
   const loadMonth = useCallback(() => {
     fetchWithCache<DiaryMonthResponse>(
@@ -160,7 +161,7 @@ export default function DiaryScreen() {
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-800">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-0.5">{t("subtitle")}</p>
         </div>
-        <Button icon={<Camera className="h-4 w-4" />} onClick={() => setCaptureOpen(true)}>
+        <Button icon={<Camera className="h-4 w-4" />} disabled={isFutureDay} onClick={() => setCaptureOpen(true)}>
           {t("captureBtn")}
         </Button>
       </div>
@@ -247,29 +248,32 @@ export default function DiaryScreen() {
               <h2 className="text-lg font-bold text-gray-800">
                 {t("photosTab", { count: String(dayPhotos.length) })} — {format(parseISO(selectedDateKey), "dd/MM/yyyy")}
               </h2>
-              <Button size="sm" variant="secondary" icon={<Camera className="h-4 w-4" />} onClick={() => setCaptureOpen(true)}>
-                {t("captureBtn")}
-              </Button>
+              {!isFutureDay && (
+                <Button size="sm" variant="secondary" icon={<Camera className="h-4 w-4" />} onClick={() => setCaptureOpen(true)}>
+                  {t("captureBtn")}
+                </Button>
+              )}
             </div>
 
             {dayPhotos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 py-12 text-center">
+              <div className="flex h-60 flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 text-center">
                 <Camera className="mb-3 h-10 w-10 text-gray-300" />
                 <p className="text-sm font-bold text-gray-500">{t("noPhotosDay")}</p>
-                <p className="mt-1 text-xs text-gray-400">{t("noPhotosHint")}</p>
+                {!isFutureDay && <p className="mt-1 text-xs text-gray-400">{t("noPhotosHint")}</p>}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin">
                 {dayPhotos.map((photo) => (
-                  <DiaryPhotoCard
-                    key={photo.id}
-                    photo={photo}
-                    onEditCaption={(p) => {
-                      setEditingPhoto(p);
-                      setEditCaption(p.caption ?? "");
-                    }}
-                    onDelete={handleDeletePhoto}
-                  />
+                  <div key={photo.id} className="w-60 shrink-0 snap-start">
+                    <DiaryPhotoCard
+                      photo={photo}
+                      onEditCaption={(p) => {
+                        setEditingPhoto(p);
+                        setEditCaption(p.caption ?? "");
+                      }}
+                      onDelete={handleDeletePhoto}
+                    />
+                  </div>
                 ))}
               </div>
             )}

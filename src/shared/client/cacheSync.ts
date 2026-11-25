@@ -123,7 +123,7 @@ export function setCacheScope(userId: string | null) {
 }
 
 /** Data domain used to notify screens and tabs of changes. "all" includes every domain. */
-export type DataDomain = "tasks" | "meals" | "water" | "budget" | "calendar" | "profile" | "tags" | "diary";
+export type DataDomain = "tasks" | "meals" | "water" | "budget" | "calendar" | "profile" | "tags" | "diary" | "settings";
 export type SyncDomain = DataDomain | "all";
 
 /** Window event reporting a change within this tab, with detail: { domain }. */
@@ -140,6 +140,7 @@ const domainCachePrefix: Record<DataDomain, string> = {
   profile: API_ROUTES.profile,
   tags: API_ROUTES.tags,
   diary: API_ROUTES.diary.root,
+  settings: API_ROUTES.settings,
 };
 
 /**

@@ -18,6 +18,7 @@ export const config = {
     "/calendar/:path*",
     "/nutrition/:path*",
     "/chat/:path*",
+    "/settings/:path*",
     "/setup/:path*",
   ],
 };

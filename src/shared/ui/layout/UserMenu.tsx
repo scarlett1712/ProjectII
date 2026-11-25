@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { LogOut, User as UserIcon, KeyRound } from "lucide-react";
+import { LogOut, User as UserIcon, KeyRound, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ROUTES } from "@/shared/config/routes";
 import { useClickOutside } from "@/shared/client/hooks";
 
 interface UserMenuProps {
@@ -15,6 +17,7 @@ interface UserMenuProps {
 
 export function UserMenu({ isCollapsed, userAvatar, onProfile, onPassword, onSignOut }: UserMenuProps) {
   const tShell = useTranslations("shell");
+  const tSettings = useTranslations("settings");
   const tc = useTranslations("common");
   const { data: session } = useSession();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -37,6 +40,14 @@ export function UserMenu({ isCollapsed, userAvatar, onProfile, onPassword, onSig
               <UserIcon className="h-4 w-4 shrink-0" />
               {!isCollapsed && <span>{tShell("sidebar.profile")}</span>}
             </button>
+            <Link
+              href={ROUTES.settings}
+              onClick={() => setUserMenuOpen(false)}
+              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-ink-secondary hover:bg-primary-soft hover:text-primary transition-all cursor-pointer"
+            >
+              <Settings className="h-4 w-4 shrink-0 text-primary" />
+              {!isCollapsed && <span>{tSettings("menuLabel")}</span>}
+            </Link>
             <button
               onClick={() => { onPassword(); setUserMenuOpen(false); }}
               className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-ink-secondary hover:bg-primary-soft hover:text-primary transition-all cursor-pointer"

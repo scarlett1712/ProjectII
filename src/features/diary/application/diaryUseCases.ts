@@ -30,6 +30,8 @@ export async function saveDiaryEntry(userId: string, input: UpsertDiaryEntryInpu
 export async function createDiaryPhoto(userId: string, input: CreateDiaryPhotoInput) {
   const takenAt = input.takenAt ? new Date(input.takenAt) : new Date();
   const dateKey = input.dateKey ?? toLocalDateKey(takenAt);
+  const todayKey = toLocalDateKey(new Date());
+  if (dateKey > todayKey) throw badRequest("diary.futureDateNotAllowed");
 
   let mealId: string | null = input.mealId ?? null;
   if (mealId) {

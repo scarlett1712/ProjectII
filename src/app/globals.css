@@ -6,9 +6,68 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-/* The app uses a light theme. Ask the browser to render light controls even when the OS uses dark mode. */
+/* The app uses a light theme by default, with .dark class toggled by UserSettingsProvider. */
 :root {
   color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/95,
+html.dark .bg-white\/90,
+html.dark .bg-white\/80,
+html.dark .bg-white\/40 {
+  background-color: rgba(30, 41, 59, 0.92) !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+html.dark .bg-gray-50,
+html.dark .bg-gray-50\/70,
+html.dark .bg-gray-100 {
+  background-color: #1e293b !important;
+}
+
+html.dark .text-gray-800,
+html.dark .text-gray-900,
+html.dark .text-ink-strong {
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-600,
+html.dark .text-ink,
+html.dark .text-ink-secondary {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-gray-400,
+html.dark .text-ink-muted,
+html.dark .text-ink-subtle {
+  color: #94a3b8 !important;
+}
+
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-white\/40,
+html.dark .border-white\/60 {
+  border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
 }
 
 html, body {

@@ -28,6 +28,7 @@ export function DiaryCard() {
 
   const selectedMonthKey = toLocalMonthKey(selectedDate);
   const selectedDateKey = toLocalDateKey(selectedDate);
+  const isFutureDay = selectedDateKey > toLocalDateKey(new Date());
 
   const loadMonth = useCallback(() => {
     fetchWithCache<DiaryMonthResponse>(
@@ -95,7 +96,7 @@ export function DiaryCard() {
                 setPhotoIdx(0);
               }}
             />
-            <IconButton label={t("quickCapture")} onClick={() => setCaptureOpen(true)}>
+            <IconButton label={t("quickCapture")} disabled={isFutureDay} onClick={() => setCaptureOpen(true)}>
               <Camera className="h-4 w-4 text-primary" />
             </IconButton>
           </div>
@@ -196,15 +197,17 @@ export function DiaryCard() {
               <div className="flex flex-1 flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 py-10 text-center">
                 <Camera className="mb-2 h-8 w-8 text-gray-300" />
                 <p className="text-xs font-semibold text-gray-400">{t("emptyDay")}</p>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="mt-3"
-                  icon={<Camera className="h-3.5 w-3.5" />}
-                  onClick={() => setCaptureOpen(true)}
-                >
-                  {t("emptyDayCta")}
-                </Button>
+                {!isFutureDay && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="mt-3"
+                    icon={<Camera className="h-3.5 w-3.5" />}
+                    onClick={() => setCaptureOpen(true)}
+                  >
+                    {t("emptyDayCta")}
+                  </Button>
+                )}
               </div>
             )}
           </div>
