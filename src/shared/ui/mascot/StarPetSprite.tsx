@@ -75,12 +75,12 @@ export function StarPetSprite({ size, alt, mood, facing }: StarPetSpriteProps) {
         transition: "transform 0.2s ease",
       }}
     >
-      {/* Left rainbow leg */}
+      {/* Left rainbow leg (pixel-aligned below the left star point) */}
       <motion.div
         className="absolute inset-0"
         style={{
-          clipPath: "inset(66% 50% 0% 28%)",
-          transformOrigin: "43% 68%",
+          clipPath: "polygon(49% 68%, 49% 96%, 30% 96%, 35% 74%)",
+          transformOrigin: "43% 69%",
         }}
         animate={leftLegAnimate}
         transition={legTransition}
@@ -88,12 +88,12 @@ export function StarPetSprite({ size, alt, mood, facing }: StarPetSpriteProps) {
         <Image src={ASSETS.mascotIcon} alt="" width={size} height={size} priority className="h-full w-full object-contain" />
       </motion.div>
 
-      {/* Right rainbow leg */}
+      {/* Right rainbow leg (pixel-aligned below the right star point) */}
       <motion.div
         className="absolute inset-0"
         style={{
-          clipPath: "inset(66% 28% 0% 50%)",
-          transformOrigin: "57% 68%",
+          clipPath: "polygon(50% 68%, 65% 74%, 68% 96%, 50% 96%)",
+          transformOrigin: "57% 69%",
         }}
         animate={rightLegAnimate}
         transition={legTransition}
@@ -101,11 +101,11 @@ export function StarPetSprite({ size, alt, mood, facing }: StarPetSpriteProps) {
         <Image src={ASSETS.mascotIcon} alt="" width={size} height={size} priority className="h-full w-full object-contain" />
       </motion.div>
 
-      {/* Star body (excludes rainbow legs area) */}
+      {/* Star body (keeps 100% of both bottom yellow star points) */}
       <motion.div
         className="absolute inset-0"
         style={{
-          clipPath: "polygon(0% 0%, 100% 0%, 100% 88%, 68% 88%, 64% 71%, 50% 66%, 36% 71%, 32% 88%, 0% 88%)",
+          clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 68% 100%, 65% 74%, 50% 68%, 49% 68%, 35% 74%, 30% 100%, 0% 100%)",
           transformOrigin: "50% 65%",
         }}
         animate={bodyAnimate}

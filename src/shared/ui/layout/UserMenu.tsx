@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { LogOut, User as UserIcon, KeyRound, Settings } from "lucide-react";
+import { LogOut, User as UserIcon, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ROUTES } from "@/shared/config/routes";
 import { useClickOutside } from "@/shared/client/hooks";
@@ -15,7 +15,7 @@ interface UserMenuProps {
   onSignOut: () => void;
 }
 
-export function UserMenu({ isCollapsed, userAvatar, onProfile, onPassword, onSignOut }: UserMenuProps) {
+export function UserMenu({ isCollapsed, userAvatar, onProfile, onSignOut }: UserMenuProps) {
   const tShell = useTranslations("shell");
   const tSettings = useTranslations("settings");
   const tc = useTranslations("common");
@@ -48,13 +48,6 @@ export function UserMenu({ isCollapsed, userAvatar, onProfile, onPassword, onSig
               <Settings className="h-4 w-4 shrink-0 text-primary" />
               {!isCollapsed && <span>{tSettings("menuLabel")}</span>}
             </Link>
-            <button
-              onClick={() => { onPassword(); setUserMenuOpen(false); }}
-              className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-ink-secondary hover:bg-primary-soft hover:text-primary transition-all cursor-pointer"
-            >
-              <KeyRound className="h-4 w-4 shrink-0 text-primary" />
-              {!isCollapsed && <span>{tc("auth.changePassword")}</span>}
-            </button>
             <button
               onClick={onSignOut}
               className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-all cursor-pointer"

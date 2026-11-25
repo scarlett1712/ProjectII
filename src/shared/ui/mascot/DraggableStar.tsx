@@ -304,6 +304,10 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
   if (!isMounted) return null;
   const isAlerting = !!alert;
   const isLeftHalf = position.x < window.innerWidth / 2;
+  const bubbleWidth = Math.min(260, window.innerWidth - 24);
+  const bubbleLeft =
+    Math.min(Math.max(12, position.x + starSize / 2 - bubbleWidth / 2), Math.max(12, window.innerWidth - bubbleWidth - 12)) -
+    position.x;
 
   return (
     <>
@@ -338,9 +342,8 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
               initial={{ opacity: 0, y: 8, scale: 0.92 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.92 }}
-              className={`absolute bottom-full mb-3 w-64 max-w-[75vw] rounded-2xl border border-purple-100 bg-white/95 px-3.5 py-2.5 text-xs font-bold text-gray-700 shadow-lg backdrop-blur-md pointer-events-auto ${
-                isLeftHalf ? "left-0" : "right-0"
-              }`}
+              style={{ left: bubbleLeft, width: bubbleWidth }}
+              className="absolute bottom-full mb-3 rounded-2xl border border-purple-100 bg-white/95 px-3.5 py-2.5 text-xs font-bold text-gray-700 shadow-lg backdrop-blur-md pointer-events-auto break-words"
             >
               <button
                 type="button"

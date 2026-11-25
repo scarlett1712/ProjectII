@@ -1,7 +1,9 @@
 "use client";
 
-import { KeyRound, LogOut } from "lucide-react";
+import Link from "next/link";
+import { LogOut, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { ROUTES } from "@/shared/config/routes";
 import { Button } from "@/shared/ui/components";
 
 /** Message key in the common namespace for each activity level. */
@@ -31,8 +33,9 @@ interface ProfileDetailsProps {
 }
 
 /** Read-only profile details in the profile modal. */
-export function ProfileDetails({ userName, profile, onEdit, onClose, onChangePassword, onSignOut }: ProfileDetailsProps) {
+export function ProfileDetails({ userName, profile, onEdit, onClose, onSignOut }: ProfileDetailsProps) {
   const tShell = useTranslations("shell");
+  const tSettings = useTranslations("settings");
   const tc = useTranslations("common");
 
   const level = profile?.activityLevel;
@@ -104,9 +107,14 @@ export function ProfileDetails({ userName, profile, onEdit, onClose, onChangePas
       </div>
 
       <div className="mt-4 flex w-full items-center justify-between border-t border-line pt-4">
-        <Button variant="ghost" size="sm" icon={<KeyRound className="h-3.5 w-3.5" />} onClick={onChangePassword}>
-          {tc("auth.changePassword")}
-        </Button>
+        <Link
+          href={ROUTES.settings}
+          onClick={onClose}
+          className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold text-ink-muted hover:bg-surface-muted transition"
+        >
+          <Settings className="h-3.5 w-3.5 text-primary" />
+          {tSettings("menuLabel")}
+        </Link>
         <Button variant="ghost" size="sm" icon={<LogOut className="h-3.5 w-3.5" />} onClick={onSignOut}>
           {tShell("sidebar.signOut")}
         </Button>
