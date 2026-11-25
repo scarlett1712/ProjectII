@@ -27,6 +27,17 @@ export async function updateProfile(userId: string, input: UpdateProfileInput) {
   if (input.name !== undefined) identity.name = input.name;
   if (input.image !== undefined) identity.image = input.image;
 
+  const hasHealthFields =
+    input.gender !== undefined ||
+    input.weightKg !== undefined ||
+    input.heightCm !== undefined ||
+    input.age !== undefined ||
+    input.activityLevel !== undefined;
+
+  if (!hasHealthFields) {
+    return profileRepository.updateUserIdentity(userId, identity);
+  }
+
   const data = buildProfileData(input);
   const profile = await profileRepository.saveProfileWithIdentity(userId, identity, data);
 

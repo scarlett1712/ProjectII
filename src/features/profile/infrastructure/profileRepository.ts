@@ -23,6 +23,14 @@ export const profileRepository = {
     });
   },
 
+  /** Update only user identity fields (name/image) without modifying health measurements. */
+  async updateUserIdentity(userId: string, identity: UserIdentityUpdate) {
+    if (Object.keys(identity).length > 0) {
+      await db.user.update({ where: { id: userId }, data: identity });
+    }
+    return db.profile.findUnique({ where: { userId } });
+  },
+
   /** Update the supplied name and image along with the health profile in one transaction. */
   saveProfileWithIdentity(userId: string, identity: UserIdentityUpdate, data: ProfileData) {
     return db.$transaction(async (tx) => {

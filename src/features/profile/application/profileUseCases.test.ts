@@ -5,6 +5,7 @@ vi.mock("../infrastructure/profileRepository", () => ({
     findProfile: vi.fn(),
     findUserIdentity: vi.fn(),
     upsertProfile: vi.fn(),
+    updateUserIdentity: vi.fn(),
     saveProfileWithIdentity: vi.fn(),
   },
 }));
@@ -45,14 +46,11 @@ describe("profile use cases", () => {
     expect(setWaterGoal).toHaveBeenCalledWith("u1", { dailyTargetMl: recommendedDailyWaterMl(70) });
   });
 
-  it("updateProfile with only an image clears health fields and skips the water goal", async () => {
+  it("updateProfile with only an image updates identity without clearing health fields", async () => {
     await updateProfile("u1", updateProfileSchema.parse({ image: "" }));
 
-    expect(profileRepository.saveProfileWithIdentity).toHaveBeenCalledWith(
-      "u1",
-      { image: null },
-      { gender: null, weightKg: null, heightCm: null, age: null, activityLevel: null, dailyCalories: null },
-    );
+    expect(profileRepository.updateUserIdentity).toHaveBeenCalledWith("u1", { image: null });
+    expect(profileRepository.saveProfileWithIdentity).not.toHaveBeenCalled();
     expect(setWaterGoal).not.toHaveBeenCalled();
   });
 
