@@ -33,8 +33,10 @@ model User {
   tasks            TaskItem[]
   waterGoals       WaterGoal[]
   waterLogs        WaterLog[]
-  reminderSlots    WaterReminderSlot[]
+  reminderSlots     WaterReminderSlot[]
   pushSubscriptions PushSubscription[]
+  diaryEntries      DiaryEntry[]
+  diaryPhotos       DiaryPhoto[]
 }
 
 model Profile {
@@ -72,7 +74,8 @@ model MealEntry {
   note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diaryPhotos DiaryPhoto[]
 
   @@index([userId, eatenAt])
 }
@@ -272,6 +275,7 @@ model BudgetTransaction {
   fromAccount   BudgetAccount?  @relation("FromAccount", fields: [fromAccountId], references: [id])
   toAccount     BudgetAccount?  @relation("ToAccount", fields: [toAccountId], references: [id])
   user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diaryPhotos   DiaryPhoto[]
 
   @@index([userId, occurredAt])
   @@index([categoryId])
@@ -339,4 +343,38 @@ model PushSubscription {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model DiaryEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  dateKey   String
+  content   String
+  mood      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([userId, dateKey])
+}
+
+model DiaryPhoto {
+  id            String             @id @default(cuid())
+  userId        String
+  takenAt       DateTime           @default(now())
+  dateKey       String
+  imageData     String
+  caption       String?
+  mealId        String?
+  transactionId String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meal          MealEntry?         @relation(fields: [mealId], references: [id], onDelete: SetNull)
+  transaction   BudgetTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, dateKey, takenAt])
+  @@index([mealId])
+  @@index([transactionId])
 }

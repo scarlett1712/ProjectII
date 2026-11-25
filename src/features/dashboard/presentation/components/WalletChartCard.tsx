@@ -15,13 +15,13 @@ export function WalletChartCard({ walletChartView, onViewChange, walletData }: W
   const t = useTranslations("dashboard");
   const tc = useTranslations("common");
   return (
-    <div className="col-span-1 xl:col-span-8">
-      <section id="tour-wallet-chart" className="h-full rounded-4xl bg-white p-5 sm:p-8 shadow-sm">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="col-span-1 xl:col-span-4">
+      <section id="tour-wallet-chart" className="h-full rounded-4xl bg-white p-5 sm:p-6 shadow-sm">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-xl font-bold text-primary">{t("wallet.title")}</h2>
           <SegmentedControl
             size="sm"
-            className="w-48"
+            className="w-40"
             ariaLabel={t("wallet.title")}
             options={[
               { value: "day", label: tc("period.day") },

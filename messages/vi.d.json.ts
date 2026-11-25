@@ -158,6 +158,7 @@ declare const messages: {
   "shell": {
     "nav": {
       "dashboard": "Trang chủ",
+      "diary": "Nhật ký",
       "nutrition": "Măm măm",
       "calendar": "Lịch lịch",
       "budget": "Xèng xèng",
@@ -1194,6 +1195,71 @@ declare const messages: {
       "goalMustBePositive": "Mục tiêu nước phải lớn hơn 0",
       "invalidAmount": "Lượng nước không hợp lệ",
       "amountMustBePositive": "Lượng nước phải lớn hơn 0"
+    },
+    "diary": {
+      "invalidImage": "Ảnh không hợp lệ hoặc quá lớn",
+      "photoNotFound": "Không tìm thấy ảnh nhật ký",
+      "invalidDateKey": "Ngày nhật ký không hợp lệ",
+      "mealNotFound": "Không tìm thấy bữa ăn được chọn",
+      "transactionNotFound": "Không tìm thấy giao dịch được chọn",
+      "loadFailed": "Không thể tải dữ liệu nhật ký",
+      "saveFailed": "Không thể lưu nhật ký",
+      "deleteFailed": "Không thể xóa ảnh nhật ký"
+    }
+  },
+  "diary": {
+    "screen": {
+      "title": "Nhật ký khoảnh khắc",
+      "subtitle": "Chụp lại từng khoảnh khắc trong ngày và lưu giữ câu chuyện của bạn",
+      "captureBtn": "Chụp / Thêm ảnh",
+      "photosTab": "Khoảnh khắc ({count})",
+      "journalTitle": "Nhật ký ngày {date}",
+      "journalPlaceholder": "Hôm nay bạn thế nào? Viết lại điều đáng nhớ trong ngày nhé...",
+      "saveJournal": "Lưu nhật ký ngày",
+      "journalSaved": "Đã lưu nhật ký ngày!",
+      "journalSaveFailed": "Không thể lưu nhật ký ngày",
+      "noPhotosDay": "Chưa có ảnh nào trong ngày này",
+      "noPhotosHint": "Bấm nút chụp hoặc tải ảnh lên để lưu khoảnh khắc đầu tiên nhé!",
+      "previousMonth": "Tháng trước",
+      "nextMonth": "Tháng sau",
+      "monthTitle": "Tháng {monthYear}",
+      "moodLabel": "Tâm trạng"
+    },
+    "camera": {
+      "title": "Thêm khoảnh khắc",
+      "switchCamera": "Đổi cam",
+      "takePhoto": "Chụp ảnh",
+      "retake": "Chụp lại",
+      "uploadFromDevice": "Chọn ảnh từ máy",
+      "cameraUnavailable": "Không mở được camera trên thiết bị này. Bạn có thể chọn ảnh từ máy nhé!",
+      "captionPlaceholder": "Ghi note cho bức ảnh này...",
+      "addBudget": "+ Xèng",
+      "addMeal": "+ Bữa ăn",
+      "linkBudgetTitle": "Gắn chi tiêu / thu nhập",
+      "linkMealTitle": "Gắn bữa ăn",
+      "modeNew": "Tạo mới",
+      "modeExisting": "Chọn có sẵn",
+      "noExistingMeals": "Chưa có bữa ăn nào gần đây",
+      "noExistingTransactions": "Chưa có giao dịch nào gần đây",
+      "savePhoto": "Lưu khoảnh khắc",
+      "photoSaved": "Đã lưu khoảnh khắc!",
+      "photoSaveFailed": "Không thể lưu khoảnh khắc",
+      "photoDeleted": "Đã xóa ảnh",
+      "deletePhotoConfirm": "Bạn có chắc muốn xóa bức ảnh này khỏi nhật ký không?",
+      "editCaption": "Sửa ghi chú",
+      "saveCaption": "Lưu ghi chú",
+      "captionUpdated": "Đã cập nhật ghi chú!",
+      "removeLink": "Gỡ gắn kết"
+    },
+    "dashboard": {
+      "title": "Nhật ký",
+      "monthView": "Tháng",
+      "dayView": "Ngày",
+      "quickCapture": "Chụp",
+      "emptyDay": "Hôm nay chưa có ảnh",
+      "emptyDayCta": "Chụp khoảnh khắc đầu tiên",
+      "openDiary": "Mở Nhật ký",
+      "photoCount": "{count} ảnh"
     }
   }
 };

@@ -13,6 +13,7 @@ export const ROUTES = {
   register: "/register",
   forgotPassword: "/forgot-password",
   dashboard: "/dashboard",
+  diary: "/diary",
   nutrition: "/nutrition",
   calendar: "/calendar",
   budget: "/budget",
@@ -49,6 +50,10 @@ export const API_ROUTES = {
     suggestPortions: "/api/meals/suggest-portions",
   },
   water: "/api/water",
+  diary: {
+    root: "/api/diary",
+    photos: "/api/diary/photos",
+  },
   profile: "/api/profile",
   chat: "/api/chat",
   search: "/api/search",

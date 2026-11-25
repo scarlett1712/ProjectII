@@ -34,6 +34,7 @@ import { DeadlinesSection } from "@/features/dashboard/presentation/components/D
 import { EnergyWaterCard } from "@/features/dashboard/presentation/components/EnergyWaterCard";
 import { WalletChartCard } from "@/features/dashboard/presentation/components/WalletChartCard";
 import { TodayMealsCard } from "@/features/dashboard/presentation/components/TodayMealsCard";
+import { DiaryCard } from "@/features/dashboard/presentation/components/DiaryCard";
 
 /** Dashboard toast duration, preserved from before the shared toast component. */
 const TOAST_DURATION_MS = TOAST_DURATION.long;
@@ -294,8 +295,9 @@ export default function DashboardScreen() {
       />
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 pb-10">
         <DeadlinesSection inlineTasks={inlineTasks} activeCount={activeTasks.length} openEditTask={openEditTask} completeTask={completeTask} taskPositions={taskPositions} />
-        <EnergyWaterCard totalCalories={totalCalories} caloriePercent={caloriePercent} totalWater={totalWater} waterPercent={waterPercent} logWaterQuick={logWaterQuick} />
+        <DiaryCard />
         <WalletChartCard walletData={walletData} walletChartView={walletChartView} onViewChange={(view) => { setWalletChartView(view); fetchBudgetStats(view); }} />
+        <EnergyWaterCard totalCalories={totalCalories} caloriePercent={caloriePercent} totalWater={totalWater} waterPercent={waterPercent} logWaterQuick={logWaterQuick} />
         <TodayMealsCard todayMeals={todayMeals} />
       </div>
 
