@@ -46,7 +46,7 @@ export function ProfileEditForm({ values, onChange, onSubmit, onCancel }: Profil
             <option value="OTHER">{tShell("profile.genderOther")}</option>
           </Select>
         </Field>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 items-end gap-3">
           <Field label={tc("profile.age")}>
             <TextInput
               type="number"
