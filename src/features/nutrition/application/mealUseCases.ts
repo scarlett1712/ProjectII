@@ -37,7 +37,10 @@ export function updateMealEntry(userId: string, id: string, input: UpdateMealInp
   return mealRepository.update(userId, id, input);
 }
 
-export function deleteMealEntry(userId: string, id: string) {
+export async function deleteMealEntry(userId: string, id: string, options?: { deletePhotos?: boolean }) {
+  if (options?.deletePhotos) {
+    await mealRepository.deleteLinkedPhotos(userId, id);
+  }
   return mealRepository.delete(userId, id);
 }
 

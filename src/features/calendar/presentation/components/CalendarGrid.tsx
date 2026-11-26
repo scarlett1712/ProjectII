@@ -13,6 +13,7 @@ import { Plus } from "lucide-react";
 import { Tag, CalendarItem } from "@/features/calendar/presentation/types";
 import { DEFAULT_EVENT_LAYOUT } from "@/features/calendar/presentation/calendarUtils";
 import { colors } from "@/shared/theme/tokens";
+import { useUserSettings } from "@/shared/client/settingsContext";
 import { contrastTextColor } from "@/features/calendar/presentation/taskNoteColors";
 import { useTaskPositions } from "@/features/calendar/presentation/components/useTaskPositions";
 import { CalendarTaskCard } from "@/features/calendar/presentation/components/CalendarTaskCard";
@@ -53,6 +54,8 @@ export function CalendarGrid({
 }: CalendarGridProps) {
   const t = useTranslations("calendar");
   const tc = useTranslations("common");
+  const { settings } = useUserSettings();
+  const isDark = settings.theme === "dark";
   const handleDropOnGrid = (e: React.DragEvent, date: Date, hour: number = 12) => {
     e.preventDefault();
     const data = e.dataTransfer.getData("text/plain");
@@ -70,6 +73,14 @@ export function CalendarGrid({
   const getEventStyle = (item: CalendarItem) => {
     const tagColor = tags.find(t => t.id === item.tagId)?.color || colors.primary;
     const baseColor = item.color || item.noteColor || tagColor;
+    if (isDark) {
+      return {
+        backgroundColor: baseColor + "40",
+        border: `1px solid ${baseColor}66`,
+        borderLeft: `4px solid ${baseColor}`,
+        color: colors.white,
+      };
+    }
     return {
       backgroundColor: baseColor + "1E", // 12% opacity
       border: `1px solid ${baseColor}33`,

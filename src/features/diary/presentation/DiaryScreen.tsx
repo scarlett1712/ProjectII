@@ -9,8 +9,8 @@ import { apiErrorMessage, apiRequest } from "@/shared/client/api";
 import { fetchWithCache, notifyDataChanged } from "@/shared/client/cacheSync";
 import { useDataSync } from "@/shared/client/hooks";
 import { formatDate } from "@/shared/i18n/format";
-import { toLocalDateKey, toLocalMonthKey } from "@/features/diary/domain/diaryDate";
-import { Button, IconButton, Modal, TextInput, useConfirm, useToast } from "@/shared/ui/components";
+import { toLocalDateKey, toLocalMonthKey, formatShortCurrencyTag } from "@/features/diary/domain/diaryDate";
+import { Button, IconButton, LinkedDeleteModal, Modal, TextInput, useConfirm, useToast } from "@/shared/ui/components";
 import { DiaryPhotoCard } from "./components/DiaryPhotoCard";
 import { DiaryCaptureModal } from "./components/DiaryCaptureModal";
 import type { DiaryDayResponse, DiaryMonthResponse, DiaryPhoto } from "./types";
@@ -35,6 +35,7 @@ export default function DiaryScreen() {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<DiaryPhoto | null>(null);
   const [editCaption, setEditCaption] = useState("");
+  const [deletingPhoto, setDeletingPhoto] = useState<DiaryPhoto | null>(null);
 
   const selectedDateKey = toLocalDateKey(selectedDate);
   const selectedMonthKey = toLocalMonthKey(selectedDate);
@@ -121,17 +122,34 @@ export default function DiaryScreen() {
     }
   };
 
-  const handleDeletePhoto = async (photo: DiaryPhoto) => {
-    if (!(await confirm({ message: tCam("deletePhotoConfirm"), cancelLabel: tc("action.cancel") }))) return;
+  const executeDeletePhoto = async (photo: DiaryPhoto, deleteMeal: boolean, deleteTransaction: boolean) => {
     try {
-      await apiRequest(withQuery(API_ROUTES.diary.photos, { id: photo.id }), { method: "DELETE" });
+      await apiRequest(
+        withQuery(API_ROUTES.diary.photos, {
+          id: photo.id,
+          deleteMeal: deleteMeal ? "1" : undefined,
+          deleteTransaction: deleteTransaction ? "1" : undefined,
+        }),
+        { method: "DELETE" },
+      );
       notifyDataChanged("diary");
+      if (deleteMeal) notifyDataChanged("meals");
+      if (deleteTransaction) notifyDataChanged("budget");
       loadMonth();
       loadDay();
       toast.success(tCam("photoDeleted"));
     } catch (err) {
       toast.error(apiErrorMessage(err, tCam("photoSaveFailed")));
     }
+  };
+
+  const handleDeletePhoto = async (photo: DiaryPhoto) => {
+    if (photo.meal || photo.transaction) {
+      setDeletingPhoto(photo);
+      return;
+    }
+    if (!(await confirm({ message: tCam("deletePhotoConfirm"), cancelLabel: tc("action.cancel") }))) return;
+    await executeDeletePhoto(photo, false, false);
   };
 
   const handleSaveCaption = async () => {
@@ -357,6 +375,32 @@ export default function DiaryScreen() {
           </div>
         </div>
       </Modal>
+
+      {/* Linked Delete Photo Confirmation */}
+      <LinkedDeleteModal
+        open={!!deletingPhoto}
+        message={tCam("deletePhotoConfirm")}
+        options={[
+          ...(deletingPhoto?.meal
+            ? [{ key: "meal", label: tCam("deleteMealOption", { name: deletingPhoto.meal.mealName }) }]
+            : []),
+          ...(deletingPhoto?.transaction
+            ? [{
+                key: "transaction",
+                label: tCam("deleteBudgetOption", {
+                  amount: formatShortCurrencyTag(deletingPhoto.transaction.amount, deletingPhoto.transaction.type),
+                }),
+              }]
+            : []),
+        ]}
+        onClose={() => setDeletingPhoto(null)}
+        onConfirm={async (selected) => {
+          if (!deletingPhoto) return;
+          const target = deletingPhoto;
+          setDeletingPhoto(null);
+          await executeDeletePhoto(target, selected.has("meal"), selected.has("transaction"));
+        }}
+      />
     </div>
   );
 }

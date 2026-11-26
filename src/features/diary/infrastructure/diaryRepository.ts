@@ -107,6 +107,13 @@ export const diaryRepository = {
     });
   },
 
+  findPhotoForDelete(userId: string, id: string) {
+    return db.diaryPhoto.findFirst({
+      where: { id, userId },
+      select: { id: true, mealId: true, transactionId: true },
+    });
+  },
+
   async deletePhoto(userId: string, id: string) {
     const result = await db.diaryPhoto.deleteMany({ where: { id, userId } });
     return result.count > 0;

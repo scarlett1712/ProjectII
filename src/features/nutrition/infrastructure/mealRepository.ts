@@ -14,6 +14,7 @@ export const mealRepository = {
   findRecent(userId: string, take: number) {
     return db.mealEntry.findMany({
       where: { userId },
+      include: { _count: { select: { diaryPhotos: true } } },
       orderBy: { eatenAt: "desc" },
       take,
     });
@@ -37,6 +38,10 @@ export const mealRepository = {
   /** Prisma throws if the meal is missing or belongs to another user. */
   update(userId: string, id: string, data: MealEntryPatch) {
     return db.mealEntry.update({ where: { id, userId }, data });
+  },
+
+  async deleteLinkedPhotos(userId: string, mealId: string) {
+    await db.diaryPhoto.deleteMany({ where: { userId, mealId } });
   },
 
   async delete(userId: string, id: string) {

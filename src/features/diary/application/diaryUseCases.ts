@@ -1,6 +1,6 @@
 import { badRequest, notFound } from "@/shared/application/errors";
-import { createMealEntry } from "@/features/nutrition/application/mealUseCases";
-import { createTransaction } from "@/features/budget/application/budgetUseCases";
+import { createMealEntry, deleteMealEntry } from "@/features/nutrition/application/mealUseCases";
+import { createTransaction, deleteTransaction } from "@/features/budget/application/budgetUseCases";
 import { isValidDateKey, isValidMonthKey, toLocalDateKey } from "../domain/diaryDate";
 import { diaryRepository } from "../infrastructure/diaryRepository";
 import type { CreateDiaryPhotoInput, UpdateDiaryPhotoInput, UpsertDiaryEntryInput } from "./diarySchemas";
@@ -94,9 +94,23 @@ export async function updateDiaryPhoto(userId: string, input: UpdateDiaryPhotoIn
   return updated;
 }
 
-export async function deleteDiaryPhoto(userId: string, id: string) {
+export async function deleteDiaryPhoto(
+  userId: string,
+  id: string,
+  options?: { deleteMeal?: boolean; deleteTransaction?: boolean },
+) {
   if (!id) throw badRequest("diary.photoNotFound");
+  const photo = await diaryRepository.findPhotoForDelete(userId, id);
+  if (!photo) throw notFound("diary.photoNotFound");
+
   const deleted = await diaryRepository.deletePhoto(userId, id);
   if (!deleted) throw notFound("diary.photoNotFound");
+
+  if (options?.deleteMeal && photo.mealId) {
+    await deleteMealEntry(userId, photo.mealId);
+  }
+  if (options?.deleteTransaction && photo.transactionId) {
+    await deleteTransaction(userId, photo.transactionId).catch(() => undefined);
+  }
   return { ok: true };
 }

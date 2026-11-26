@@ -1,10 +1,11 @@
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { X } from "lucide-react";
+import { Maximize2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DraggableStar } from "@/shared/ui/mascot/DraggableStar";
 import { IconButton } from "@/shared/ui/components";
-import { API_ROUTES } from "@/shared/config/routes";
+import { API_ROUTES, ROUTES } from "@/shared/config/routes";
 import { apiErrorMessage, apiRequest } from "@/shared/client/api";
 import { DRAFT_CHAT_SESSION_ID } from "@/shared/config/chat";
 import { ChatBubble, useChatSend } from "@/shared/ui/chat";
@@ -75,9 +76,20 @@ export function QuickChat({ userId }: QuickChatProps) {
                 <div className="h-2 w-2 rounded-full bg-green-400" />
                 <span className="text-sm font-black text-primary">{tShell("quickChat.title")}</span>
               </div>
-              <IconButton label={tc("action.close")} onClick={() => setChatOpen(false)}>
-                <X className="h-4 w-4" />
-              </IconButton>
+              <div className="flex items-center gap-1">
+                <Link
+                  href={ROUTES.chat}
+                  onClick={() => setChatOpen(false)}
+                  aria-label={tShell("header.chatTitle")}
+                  title={tShell("header.chatTitle")}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:bg-primary-soft hover:text-primary transition"
+                >
+                  <Maximize2 className="h-4 w-4" />
+                </Link>
+                <IconButton label={tc("action.close")} onClick={() => setChatOpen(false)}>
+                  <X className="h-4 w-4" />
+                </IconButton>
+              </div>
             </div>
             <div className="mb-4 max-h-60 space-y-4 overflow-y-auto rounded-2xl bg-primary-soft/50 p-4 text-sm scrollbar-thin">
               {chatMessages.map((msg) => (

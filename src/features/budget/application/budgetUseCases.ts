@@ -191,10 +191,13 @@ export function updateTransaction(userId: string, input: UpdateTransactionInput)
 }
 
 /** Delete the transaction and reverse its balance changes. */
-export function deleteTransaction(userId: string, id: string) {
+export function deleteTransaction(userId: string, id: string, options?: { deletePhotos?: boolean }) {
   return budgetRepository.inTransaction(userId, async (scope) => {
     const old = await scope.findTransaction(id);
     if (!old) throw ownershipError("budget.transaction.notFoundOrCannotDelete");
+    if (options?.deletePhotos) {
+      await scope.deleteLinkedPhotos(id);
+    }
     await scope.applyBalanceDeltas(revertDeltas(old));
     await scope.deleteTransaction(id);
   });

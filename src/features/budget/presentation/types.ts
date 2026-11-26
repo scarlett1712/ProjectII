@@ -33,6 +33,7 @@ export type Transaction = {
   category?: Category | null;
   fromAccount?: Account | null;
   toAccount?: Account | null;
+  _count?: { diaryPhotos?: number };
 };
 
 export type TransactionType = Transaction["type"];

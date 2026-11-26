@@ -2,7 +2,12 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/shared/infrastructure/db";
 import type { BalanceDeltas, CategoryKind, TransactionKind } from "../domain/balance";
 
-const WITH_RELATIONS = { category: true, fromAccount: true, toAccount: true } as const;
+const WITH_RELATIONS = {
+  category: true,
+  fromAccount: true,
+  toAccount: true,
+  _count: { select: { diaryPhotos: true } },
+} as const;
 
 interface AccountData {
   name: string;
@@ -60,6 +65,10 @@ function scopedTransaction(tx: Prisma.TransactionClient, userId: string) {
 
     updateTransaction(id: string, data: TransactionRecordData) {
       return tx.budgetTransaction.update({ where: { id, userId }, data });
+    },
+
+    async deleteLinkedPhotos(transactionId: string) {
+      await tx.diaryPhoto.deleteMany({ where: { userId, transactionId } });
     },
 
     async deleteTransaction(id: string) {

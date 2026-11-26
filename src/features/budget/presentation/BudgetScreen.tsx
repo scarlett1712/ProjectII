@@ -12,7 +12,7 @@ import { categoryBudgetRows, sumCategoryBudget } from "@/features/budget/domain/
 import { notifyDataChanged } from "@/shared/client/cacheSync";
 import { apiErrorMessage, apiRequest } from "@/shared/client/api";
 import { sumCashflow } from "@/features/budget/domain/cashflow";
-import { IconButton, SegmentedControl, Spinner, useConfirm, useToast } from "@/shared/ui/components";
+import { IconButton, LinkedDeleteModal, SegmentedControl, Spinner, useConfirm, useToast } from "@/shared/ui/components";
 import { useTranslations } from "next-intl";
 import { API_ROUTES, withQuery } from "@/shared/config/routes";
 import { useBudgetMonth } from "@/features/budget/presentation/useBudgetMonth";
@@ -56,7 +56,9 @@ const QUICK_ACTIONS = [
 
 export default function BudgetScreen() {
   const tBudget = useTranslations("budget");
+  const tCam = useTranslations("diary.camera");
   const tc = useTranslations("common");
+  const [deletingTx, setDeletingTx] = useState<{ id: string; photoCount: number } | null>(null);
   // Active Tab
   const [activeTab, setActiveTab] = useState<"monthly" | "reports">("monthly");
   const { currentYear, setCurrentYear, currentMonth, setCurrentMonth, accounts, categories,
@@ -91,17 +93,16 @@ export default function BudgetScreen() {
     }
   };
   // Delete Transaction
-  const handleDeleteTx = async (id: string) => {
-    if (!(await confirm({ message: tBudget("confirm.deleteTransaction"), confirmLabel: tc("action.delete") }))) return;
-
+  const executeDeleteTx = async (id: string, deletePhotos: boolean) => {
     try {
-      const res = await fetch(withQuery(API_ROUTES.budget.transactions, { id }), {
+      const res = await fetch(withQuery(API_ROUTES.budget.transactions, { id, deletePhotos: deletePhotos ? "1" : undefined }), {
         method: "DELETE",
       });
 
       if (res.ok) {
         showSuccess(tBudget("toast.transactionDeleted"));
         notifyDataChanged("budget");
+        if (deletePhotos) notifyDataChanged("diary");
         fetchData();
       } else {
         const body = await res.json();
@@ -110,6 +111,17 @@ export default function BudgetScreen() {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const handleDeleteTx = async (id: string) => {
+    const tx = transactions.find((t) => t.id === id);
+    const photoCount = tx?._count?.diaryPhotos ?? 0;
+    if (photoCount > 0) {
+      setDeletingTx({ id, photoCount });
+      return;
+    }
+    if (!(await confirm({ message: tBudget("confirm.deleteTransaction"), confirmLabel: tc("action.delete") }))) return;
+    await executeDeleteTx(id, false);
   };
   // Process Accounts data for monthly overview
   /** Balance of the relevant account immediately after each transaction, shown in both transaction tables. */
@@ -295,6 +307,23 @@ export default function BudgetScreen() {
       )}
 
       {editor.dialogs}
+
+      <LinkedDeleteModal
+        open={!!deletingTx}
+        message={tBudget("confirm.deleteTransaction")}
+        options={
+          deletingTx
+            ? [{ key: "photos", label: tCam("deleteLinkedPhotosOption", { count: String(deletingTx.photoCount) }) }]
+            : []
+        }
+        onClose={() => setDeletingTx(null)}
+        onConfirm={async (selected) => {
+          if (!deletingTx) return;
+          const targetId = deletingTx.id;
+          setDeletingTx(null);
+          await executeDeleteTx(targetId, selected.has("photos"));
+        }}
+      />
     </div>
   );
 }

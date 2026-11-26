@@ -2,18 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { format } from "date-fns";
-import { Camera, ImagePlus, Plus, RefreshCw, RotateCcw, UtensilsCrossed, Wallet, X } from "lucide-react";
+import { Camera, ImagePlus, RefreshCw, RotateCcw, UtensilsCrossed, Wallet, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { API_ROUTES, withQuery } from "@/shared/config/routes";
 import { apiErrorMessage, apiRequest } from "@/shared/client/api";
 import { notifyDataChanged } from "@/shared/client/cacheSync";
 import { resizeImageToDataUrl } from "@/shared/client/image";
-import { MEAL_CATEGORIES, mealCategoryForHour } from "@/features/nutrition/domain/mealCategories";
-import { QuickMealModal } from "@/features/dashboard/presentation/components/QuickMealModal";
-import { TransactionModal } from "@/features/budget/presentation/components/TransactionModal";
-import type { Account, Category, Transaction } from "@/features/budget/presentation/types";
+import { MEAL_CATEGORIES, MEAL_CATEGORY_KEYS, defaultMealTime, mealCategoryForHour } from "@/features/nutrition/domain/mealCategories";
+import { fromDateInputValue, toDateInputValue } from "@/shared/domain/time";
+import { AccountSelect } from "@/features/budget/presentation/components/AccountSelect";
+import { CategorySelect } from "@/features/budget/presentation/components/CategorySelect";
+import { TransactionTypeSelector } from "@/features/budget/presentation/components/TransactionTypeSelector";
+import type { Account, Category, Transaction, TransactionType } from "@/features/budget/presentation/types";
 import { formatShortCurrencyTag, toLocalDateKey } from "@/features/diary/domain/diaryDate";
-import { Button, Modal, useToast } from "@/shared/ui/components";
+import { Button, Field, Modal, SegmentedControl, TextInput, useToast } from "@/shared/ui/components";
 import type { DiaryPhoto } from "../types";
 
 interface RecentMeal {
@@ -22,6 +24,24 @@ interface RecentMeal {
   calories: number;
   grams: number;
   note: string | null;
+}
+
+interface PendingNewMeal {
+  mealName: string;
+  grams: number;
+  calories: number;
+  note: string;
+  eatenAt: string;
+}
+
+interface PendingNewTransaction {
+  amount: number;
+  type: TransactionType;
+  categoryId: string | null;
+  fromAccountId: string | null;
+  toAccountId: string | null;
+  note: string | null;
+  occurredAt: string;
 }
 
 interface DiaryCaptureModalProps {
@@ -50,22 +70,32 @@ export function DiaryCaptureModal({ open, dateKey, onClose, onSaved }: DiaryCapt
   const [caption, setCaption] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Picker drawer for linking existing meal / transaction
   const [activePanel, setActivePanel] = useState<"meal" | "budget" | null>(null);
-  const [linkedMeal, setLinkedMeal] = useState<RecentMeal | null>(null);
-  const [linkedTx, setLinkedTx] = useState<Transaction | null>(null);
+  const [mealMode, setMealMode] = useState<"new" | "existing">("new");
+  const [txMode, setTxMode] = useState<"new" | "existing">("new");
 
-  // Reuse existing QuickMealModal & TransactionModal
-  const [showMealModal, setShowMealModal] = useState(false);
-  const [isSavingMeal, setIsSavingMeal] = useState(false);
-  const [mealForm, setMealForm] = useState({
-    name: "",
-    grams: "",
-    calories: "",
-    category: MEAL_CATEGORIES.breakfast as string,
-    time: "07:00",
-  });
-  const [showTxModal, setShowTxModal] = useState(false);
+  // Linked existing OR pending new (only persisted when Save Photo is clicked)
+  const [linkedMeal, setLinkedMeal] = useState<RecentMeal | null>(null);
+  const [pendingNewMeal, setPendingNewMeal] = useState<PendingNewMeal | null>(null);
+  const [linkedTx, setLinkedTx] = useState<Transaction | null>(null);
+  const [pendingNewTx, setPendingNewTx] = useState<PendingNewTransaction | null>(null);
+
+  // Inline Meal form state (matches QuickMealModal)
+  const [mealName, setMealName] = useState("");
+  const [mealCategory, setMealCategory] = useState<string>(() => mealCategoryForHour(new Date().getHours()));
+  const [mealTime, setMealTime] = useState(() => format(new Date(), "HH:mm"));
+  const [mealGrams, setMealGrams] = useState("");
+  const [mealCalories, setMealCalories] = useState("");
+
+  // Inline Transaction form state (matches TransactionFormModal)
+  const [txType, setTxType] = useState<TransactionType>("EXPENSE");
+  const [txAmount, setTxAmount] = useState("");
+  const [txFromAccountId, setTxFromAccountId] = useState("");
+  const [txToAccountId, setTxToAccountId] = useState("");
+  const [txCategoryId, setTxCategoryId] = useState("");
+  const [txDate, setTxDate] = useState(() => toDateInputValue(new Date()));
+  const [txNote, setTxNote] = useState("");
+  const [txMenu, setTxMenu] = useState<"category" | "from" | "to" | null>(null);
 
   // Recent items & budget metadata
   const [recentMeals, setRecentMeals] = useState<RecentMeal[]>([]);
@@ -97,9 +127,15 @@ export function DiaryCaptureModal({ open, dateKey, onClose, onSaved }: DiaryCapt
       transactions: Transaction[];
     }>(withQuery(API_ROUTES.budget.root, { year: now.getFullYear(), month: now.getMonth() + 1 }))
       .then((data) => {
-        setAccounts(data.accounts ?? []);
-        setCategories(data.categories ?? []);
+        const accs = data.accounts ?? [];
+        const cats = data.categories ?? [];
+        setAccounts(accs);
+        setCategories(cats);
         setRecentTxs((data.transactions ?? []).slice(0, 15));
+        if (accs[0]?.id) {
+          setTxFromAccountId((prev) => prev || accs[0].id);
+          setTxToAccountId((prev) => prev || (accs[1]?.id ?? accs[0].id));
+        }
       })
       .catch(() => undefined);
 
@@ -148,7 +184,15 @@ export function DiaryCaptureModal({ open, dateKey, onClose, onSaved }: DiaryCapt
     setCaption("");
     setActivePanel(null);
     setLinkedMeal(null);
+    setPendingNewMeal(null);
     setLinkedTx(null);
+    setPendingNewTx(null);
+    setMealName("");
+    setMealGrams("");
+    setMealCalories("");
+    setTxAmount("");
+    setTxNote("");
+    setTxMenu(null);
   };
 
   const handleClose = () => {
@@ -188,34 +232,36 @@ export function DiaryCaptureModal({ open, dateKey, onClose, onSaved }: DiaryCapt
     }
   };
 
-  const handleCreateMeal = async () => {
-    if (!mealForm.name.trim() || isSavingMeal) return;
-    setIsSavingMeal(true);
-    try {
-      const eatenAt = new Date();
-      const [h, m] = (mealForm.time || "07:00").split(":");
-      eatenAt.setHours(Number(h), Number(m), 0, 0);
-      const created = await apiRequest<RecentMeal>(API_ROUTES.meals.root, {
-        method: "POST",
-        body: {
-          mealName: mealForm.name.trim(),
-          grams: mealForm.grams === "" ? 0 : Number(mealForm.grams),
-          calories: mealForm.calories === "" ? 0 : Number(mealForm.calories),
-          note: mealForm.category,
-          eatenAt: eatenAt.toISOString(),
-        },
-      });
-      notifyDataChanged("meals");
-      setLinkedMeal(created);
-      setRecentMeals((prev) => [created, ...prev]);
-      setShowMealModal(false);
-      setActivePanel(null);
-      toast.success(tc("mealForm.saved"));
-    } catch (err) {
-      toast.error(apiErrorMessage(err, tc("mealForm.saveFailed")));
-    } finally {
-      setIsSavingMeal(false);
-    }
+  const applyPendingMeal = () => {
+    if (!mealName.trim()) return;
+    const eatenAt = new Date();
+    const [h, m] = (mealTime || "07:00").split(":");
+    eatenAt.setHours(Number(h), Number(m), 0, 0);
+    setLinkedMeal(null);
+    setPendingNewMeal({
+      mealName: mealName.trim(),
+      grams: mealGrams === "" ? 0 : Math.max(0, Number(mealGrams)),
+      calories: mealCalories === "" ? 0 : Math.max(0, Math.round(Number(mealCalories))),
+      note: mealCategory,
+      eatenAt: eatenAt.toISOString(),
+    });
+    setActivePanel(null);
+  };
+
+  const applyPendingTx = () => {
+    const amount = Number(txAmount);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    setLinkedTx(null);
+    setPendingNewTx({
+      amount,
+      type: txType,
+      categoryId: txType !== "TRANSFER" ? txCategoryId || null : null,
+      fromAccountId: txType !== "INCOME" ? txFromAccountId || null : null,
+      toAccountId: txType !== "EXPENSE" ? txToAccountId || null : null,
+      note: txNote.trim() || null,
+      occurredAt: fromDateInputValue(txDate, new Date()).toISOString(),
+    });
+    setActivePanel(null);
   };
 
   const handleSave = async () => {
@@ -230,10 +276,14 @@ export function DiaryCaptureModal({ open, dateKey, onClose, onSaved }: DiaryCapt
           caption: caption.trim() || null,
           dateKey: targetDateKey,
           mealId: linkedMeal?.id ?? null,
+          newMeal: pendingNewMeal ?? null,
           transactionId: linkedTx?.id ?? null,
+          newTransaction: pendingNewTx ?? null,
         },
       });
       notifyDataChanged("diary");
+      if (pendingNewMeal) notifyDataChanged("meals");
+      if (pendingNewTx) notifyDataChanged("budget");
       toast.success(t("photoSaved"));
       onSaved(saved);
       handleClose();
@@ -244,13 +294,24 @@ export function DiaryCaptureModal({ open, dateKey, onClose, onSaved }: DiaryCapt
     }
   };
 
+  const mealCategoryOptions = MEAL_CATEGORY_KEYS.map((key) => ({
+    value: MEAL_CATEGORIES[key] as string,
+    label: tc(`meal.${key}`),
+  }));
+
   const mealTagPreview = linkedMeal
     ? linkedMeal.note
       ? tc(`meal.${linkedMeal.note}` as "meal.breakfast")
       : linkedMeal.mealName
-    : null;
+    : pendingNewMeal
+      ? tc(`meal.${pendingNewMeal.note}` as "meal.breakfast")
+      : null;
 
-  const txTagPreview = linkedTx ? formatShortCurrencyTag(linkedTx.amount, linkedTx.type) : null;
+  const txTagPreview = linkedTx
+    ? formatShortCurrencyTag(linkedTx.amount, linkedTx.type)
+    : pendingNewTx
+      ? formatShortCurrencyTag(pendingNewTx.amount, pendingNewTx.type)
+      : null;
 
   const txTypeLabel = (type: Transaction["type"]) => {
     if (type === "INCOME") return tc("budget.income");
@@ -258,271 +319,363 @@ export function DiaryCaptureModal({ open, dateKey, onClose, onSaved }: DiaryCapt
     return tBudget("quickActions.transferAction");
   };
 
+  const filteredCategories = categories.filter((c) => c.type === txType);
+
   return (
-    <>
-      <Modal open={open} onClose={handleClose} title={t("title")} size="md">
-        <div className="space-y-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileSelected}
-          />
+    <Modal open={open} onClose={handleClose} title={t("title")} size="lg">
+      <div className="space-y-4">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileSelected}
+        />
 
-          {/* Camera / Locket Photo Frame */}
-          <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-gray-900 shadow-inner">
-            {imageData ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={imageData} alt="Preview" className="h-full w-full object-cover" />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/45" />
+        {/* Camera / Locket Photo Frame */}
+        <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-gray-900 shadow-inner">
+          {imageData ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={imageData} alt="Preview" className="h-full w-full object-cover" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/45" />
 
-                {mealTagPreview && (
-                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-md">
-                    <UtensilsCrossed className="h-3 w-3" />
-                    {mealTagPreview}
-                  </span>
-                )}
+              {mealTagPreview && (
+                <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-md">
+                  <UtensilsCrossed className="h-3 w-3" />
+                  {mealTagPreview}
+                </span>
+              )}
 
-                {txTagPreview && (
-                  <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-rose-600/85 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-md">
-                    <Wallet className="h-3 w-3" />
-                    {txTagPreview}
-                  </span>
-                )}
+              {txTagPreview && (
+                <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-rose-600/85 px-2.5 py-1 text-xs font-bold text-white backdrop-blur-md">
+                  <Wallet className="h-3 w-3" />
+                  {txTagPreview}
+                </span>
+              )}
 
-                {/* Bottom-center note overlay input */}
-                <div className="absolute inset-x-4 bottom-3 flex justify-center">
-                  <input
-                    type="text"
-                    value={caption}
-                    onChange={(e) => setCaption(e.target.value)}
-                    maxLength={200}
-                    placeholder={t("captionPlaceholder")}
-                    className="w-full rounded-full bg-black/55 px-4 py-2 text-center text-sm font-semibold text-white placeholder:text-white/70 backdrop-blur-md outline-none ring-1 ring-white/25 focus:ring-primary"
-                  />
-                </div>
-              </>
-            ) : cameraError ? (
-              <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-white/80">
-                <Camera className="h-10 w-10 text-white/50" />
-                <p className="text-sm">{t("cameraUnavailable")}</p>
-                <Button variant="primary" size="sm" icon={<ImagePlus className="h-4 w-4" />} onClick={() => fileInputRef.current?.click()}>
-                  {t("uploadFromDevice")}
-                </Button>
+              {/* Bottom-center note overlay input */}
+              <div className="absolute inset-x-4 bottom-3 flex justify-center">
+                <input
+                  type="text"
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  maxLength={200}
+                  placeholder={t("captionPlaceholder")}
+                  className="w-full rounded-full bg-black/55 px-4 py-2 text-center text-sm font-semibold text-white placeholder:text-white/70 backdrop-blur-md outline-none ring-1 ring-white/25 focus:ring-primary"
+                />
               </div>
-            ) : (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className={`h-full w-full object-cover ${facingMode === "user" ? "-scale-x-100" : ""}`}
-              />
-            )}
-          </div>
-
-          {/* Camera Controls or Preview Controls */}
-          {!imageData ? (
-            <div className="flex items-center justify-between gap-3">
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={<ImagePlus className="h-4 w-4" />}
-                onClick={() => fileInputRef.current?.click()}
-              >
+            </>
+          ) : cameraError ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-white/80">
+              <Camera className="h-10 w-10 text-white/50" />
+              <p className="text-sm">{t("cameraUnavailable")}</p>
+              <Button variant="primary" size="sm" icon={<ImagePlus className="h-4 w-4" />} onClick={() => fileInputRef.current?.click()}>
                 {t("uploadFromDevice")}
               </Button>
-              {!cameraError && (
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    icon={<RefreshCw className="h-4 w-4" />}
-                    onClick={() => setFacingMode((m) => (m === "user" ? "environment" : "user"))}
-                  >
-                    {t("switchCamera")}
-                  </Button>
-                  <Button variant="primary" size="sm" icon={<Camera className="h-4 w-4" />} onClick={handleTakePhoto}>
-                    {t("takePhoto")}
-                  </Button>
-                </div>
-              )}
             </div>
           ) : (
-            <div className="space-y-3">
-              {/* +Bữa ăn / +Xèng / Retake bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActivePanel((p) => (p === "meal" ? null : "meal"))}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                      linkedMeal || activePanel === "meal"
-                        ? "bg-primary text-white shadow-sm"
-                        : "bg-primary-soft text-primary-ink hover:bg-primary-tint"
-                    }`}
-                  >
-                    <UtensilsCrossed className="h-3.5 w-3.5" />
-                    {t("addMeal")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActivePanel((p) => (p === "budget" ? null : "budget"))}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
-                      linkedTx || activePanel === "budget"
-                        ? "bg-primary text-white shadow-sm"
-                        : "bg-primary-soft text-primary-ink hover:bg-primary-tint"
-                    }`}
-                  >
-                    <Wallet className="h-3.5 w-3.5" />
-                    {t("addBudget")}
-                  </button>
-                </div>
-                <Button variant="ghost" size="sm" icon={<RotateCcw className="h-3.5 w-3.5" />} onClick={() => setImageData(null)}>
-                  {t("retake")}
-                </Button>
-              </div>
-
-              {/* Meal picker / create drawer */}
-              {activePanel === "meal" && (
-                <div className="space-y-2.5 rounded-2xl border border-gray-100 bg-gray-50 p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-700">{t("linkMealTitle")}</span>
-                    <div className="flex items-center gap-2">
-                      {linkedMeal && (
-                        <button
-                          type="button"
-                          onClick={() => setLinkedMeal(null)}
-                          className="inline-flex items-center gap-1 text-2xs font-bold text-danger"
-                        >
-                          <X className="h-3 w-3" /> {t("removeLink")}
-                        </button>
-                      )}
-                      <Button
-                        size="sm"
-                        icon={<Plus className="h-3.5 w-3.5" />}
-                        onClick={() => {
-                          const now = new Date();
-                          setMealForm({
-                            name: "",
-                            grams: "",
-                            calories: "",
-                            category: mealCategoryForHour(now.getHours()),
-                            time: format(now, "HH:mm"),
-                          });
-                          setShowMealModal(true);
-                        }}
-                      >
-                        {t("modeNew")}
-                      </Button>
-                    </div>
-                  </div>
-                  {recentMeals.length === 0 ? (
-                    <p className="py-2 text-center text-xs text-gray-400">{t("noExistingMeals")}</p>
-                  ) : (
-                    <div className="max-h-36 space-y-1 overflow-y-auto">
-                      {recentMeals.map((m) => (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => {
-                            setLinkedMeal(m);
-                            setActivePanel(null);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${
-                            linkedMeal?.id === m.id ? "bg-primary-soft ring-1 ring-primary" : "bg-white hover:bg-primary-soft"
-                          }`}
-                        >
-                          <span className="font-bold text-gray-800 truncate">{m.mealName}</span>
-                          <span className="text-primary font-bold">{m.calories} {tc("unit.kcal")}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Budget picker / create drawer */}
-              {activePanel === "budget" && (
-                <div className="space-y-2.5 rounded-2xl border border-gray-100 bg-gray-50 p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-700">{t("linkBudgetTitle")}</span>
-                    <div className="flex items-center gap-2">
-                      {linkedTx && (
-                        <button
-                          type="button"
-                          onClick={() => setLinkedTx(null)}
-                          className="inline-flex items-center gap-1 text-2xs font-bold text-danger"
-                        >
-                          <X className="h-3 w-3" /> {t("removeLink")}
-                        </button>
-                      )}
-                      <Button size="sm" icon={<Plus className="h-3.5 w-3.5" />} onClick={() => setShowTxModal(true)}>
-                        {t("modeNew")}
-                      </Button>
-                    </div>
-                  </div>
-                  {recentTxs.length === 0 ? (
-                    <p className="py-2 text-center text-xs text-gray-400">{t("noExistingTransactions")}</p>
-                  ) : (
-                    <div className="max-h-36 space-y-1 overflow-y-auto">
-                      {recentTxs.map((tx) => (
-                        <button
-                          key={tx.id}
-                          type="button"
-                          onClick={() => {
-                            setLinkedTx(tx);
-                            setActivePanel(null);
-                          }}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${
-                            linkedTx?.id === tx.id ? "bg-primary-soft ring-1 ring-primary" : "bg-white hover:bg-primary-soft"
-                          }`}
-                        >
-                          <span className="font-bold text-gray-800 truncate">
-                            {tx.note || tx.category?.name || txTypeLabel(tx.type)}
-                          </span>
-                          <span className="font-bold text-primary">{formatShortCurrencyTag(tx.amount, tx.type)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <Button fullWidth loading={isSaving} loadingText={tc("action.saving")} onClick={handleSave}>
-                {t("savePhoto")}
-              </Button>
-            </div>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className={`h-full w-full object-cover ${facingMode === "user" ? "-scale-x-100" : ""}`}
+            />
           )}
         </div>
-      </Modal>
 
-      {/* Reuse existing QuickMealModal */}
-      <QuickMealModal
-        showAddMeal={showMealModal}
-        onClose={() => setShowMealModal(false)}
-        mealForm={mealForm}
-        setMealForm={setMealForm}
-        handleSaveMeal={handleCreateMeal}
-        isSubmitting={isSavingMeal}
-      />
+        {/* Camera Controls or Preview Controls */}
+        {!imageData ? (
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<ImagePlus className="h-4 w-4" />}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {t("uploadFromDevice")}
+            </Button>
+            {!cameraError && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<RefreshCw className="h-4 w-4" />}
+                  onClick={() => setFacingMode((m) => (m === "user" ? "environment" : "user"))}
+                >
+                  {t("switchCamera")}
+                </Button>
+                <Button variant="primary" size="sm" icon={<Camera className="h-4 w-4" />} onClick={handleTakePhoto}>
+                  {t("takePhoto")}
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* +Bữa ăn / +Xèng / Retake bar */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActivePanel((p) => (p === "meal" ? null : "meal"))}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                    linkedMeal || pendingNewMeal || activePanel === "meal"
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-primary-soft text-primary-ink hover:bg-primary-tint"
+                  }`}
+                >
+                  <UtensilsCrossed className="h-3.5 w-3.5" />
+                  {t("addMeal")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel((p) => (p === "budget" ? null : "budget"))}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                    linkedTx || pendingNewTx || activePanel === "budget"
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-primary-soft text-primary-ink hover:bg-primary-tint"
+                  }`}
+                >
+                  <Wallet className="h-3.5 w-3.5" />
+                  {t("addBudget")}
+                </button>
+              </div>
+              <Button variant="ghost" size="sm" icon={<RotateCcw className="h-3.5 w-3.5" />} onClick={() => setImageData(null)}>
+                {t("retake")}
+              </Button>
+            </div>
 
-      {/* Reuse existing TransactionModal */}
-      <TransactionModal
-        isOpen={showTxModal}
-        onClose={() => setShowTxModal(false)}
-        accounts={accounts}
-        categories={categories}
-        onSuccess={(savedTx) => {
-          if (savedTx) {
-            setLinkedTx(savedTx);
-            setRecentTxs((prev) => [savedTx, ...prev]);
-          }
-          setActivePanel(null);
-        }}
-      />
-    </>
+            {/* Inline Meal drawer */}
+            {activePanel === "meal" && (
+              <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-700">{t("linkMealTitle")}</span>
+                  {(linkedMeal || pendingNewMeal) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLinkedMeal(null);
+                        setPendingNewMeal(null);
+                      }}
+                      className="inline-flex items-center gap-1 text-2xs font-bold text-danger"
+                    >
+                      <X className="h-3 w-3" /> {t("removeLink")}
+                    </button>
+                  )}
+                </div>
+                <SegmentedControl
+                  size="sm"
+                  options={[
+                    { value: "new", label: t("modeNew") },
+                    { value: "existing", label: t("modeExisting") },
+                  ]}
+                  value={mealMode}
+                  onChange={setMealMode}
+                />
+                {mealMode === "new" ? (
+                  <div className="space-y-3">
+                    <TextInput
+                      placeholder={tc("mealForm.namePlaceholder")}
+                      value={mealName}
+                      onChange={(e) => setMealName(e.target.value)}
+                    />
+                    <SegmentedControl
+                      size="sm"
+                      options={mealCategoryOptions}
+                      value={mealCategory}
+                      onChange={(cat) => {
+                        setMealCategory(cat);
+                        setMealTime(defaultMealTime(cat));
+                      }}
+                    />
+                    <Field label={tc("mealForm.eatenAt")}>
+                      <TextInput type="time" value={mealTime} onChange={(e) => setMealTime(e.target.value)} />
+                    </Field>
+                    <div className="flex gap-2">
+                      <TextInput
+                        type="number"
+                        placeholder={tc("mealForm.grams")}
+                        value={mealGrams}
+                        onChange={(e) => setMealGrams(e.target.value)}
+                        className="w-1/2"
+                      />
+                      <TextInput
+                        type="number"
+                        placeholder={tc("mealForm.calories")}
+                        value={mealCalories}
+                        onChange={(e) => setMealCalories(e.target.value)}
+                        className="w-1/2"
+                      />
+                    </div>
+                    <Button size="sm" fullWidth onClick={applyPendingMeal} disabled={!mealName.trim()}>
+                      {tc("action.confirm")}
+                    </Button>
+                  </div>
+                ) : recentMeals.length === 0 ? (
+                  <p className="py-2 text-center text-xs text-gray-400">{t("noExistingMeals")}</p>
+                ) : (
+                  <div className="max-h-36 space-y-1 overflow-y-auto">
+                    {recentMeals.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setPendingNewMeal(null);
+                          setLinkedMeal(m);
+                          setActivePanel(null);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${
+                          linkedMeal?.id === m.id ? "bg-primary-soft ring-1 ring-primary" : "bg-white hover:bg-primary-soft"
+                        }`}
+                      >
+                        <span className="font-bold text-gray-800 truncate">{m.mealName}</span>
+                        <span className="text-primary font-bold">{m.calories} {tc("unit.kcal")}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Inline Budget drawer */}
+            {activePanel === "budget" && (
+              <div className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50 p-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-700">{t("linkBudgetTitle")}</span>
+                  {(linkedTx || pendingNewTx) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLinkedTx(null);
+                        setPendingNewTx(null);
+                      }}
+                      className="inline-flex items-center gap-1 text-2xs font-bold text-danger"
+                    >
+                      <X className="h-3 w-3" /> {t("removeLink")}
+                    </button>
+                  )}
+                </div>
+                <SegmentedControl
+                  size="sm"
+                  options={[
+                    { value: "new", label: t("modeNew") },
+                    { value: "existing", label: t("modeExisting") },
+                  ]}
+                  value={txMode}
+                  onChange={setTxMode}
+                />
+                {txMode === "new" ? (
+                  <div className="space-y-3">
+                    <TransactionTypeSelector
+                      value={txType}
+                      onChange={(nextType) => {
+                        setTxType(nextType);
+                        setTxCategoryId("");
+                        setTxMenu(null);
+                      }}
+                    />
+                    <Field label={tBudget("transactionModal.amount")}>
+                      <TextInput
+                        type="number"
+                        placeholder="0"
+                        value={txAmount}
+                        onChange={(e) => setTxAmount(e.target.value)}
+                      />
+                    </Field>
+                    {txType !== "TRANSFER" && (
+                      <Field label={tBudget("transactionModal.category")}>
+                        <CategorySelect
+                          categories={filteredCategories}
+                          value={txCategoryId}
+                          open={txMenu === "category"}
+                          onOpenChange={(isOpen) => setTxMenu(isOpen ? "category" : null)}
+                          onChange={(id) => {
+                            setTxCategoryId(id);
+                            setTxMenu(null);
+                          }}
+                        />
+                      </Field>
+                    )}
+                    <div className={`grid gap-2 ${txType === "TRANSFER" ? "grid-cols-2" : "grid-cols-1"}`}>
+                      {txType !== "INCOME" && (
+                        <Field label={txType === "TRANSFER" ? tBudget("transactionModal.fromAccount") : tBudget("transactionModal.moneySource")}>
+                          <AccountSelect
+                            accounts={accounts}
+                            value={txFromAccountId}
+                            open={txMenu === "from"}
+                            onOpenChange={(isOpen) => setTxMenu(isOpen ? "from" : null)}
+                            onChange={(id) => {
+                              setTxFromAccountId(id);
+                              setTxMenu(null);
+                            }}
+                          />
+                        </Field>
+                      )}
+                      {txType !== "EXPENSE" && (
+                        <Field label={txType === "TRANSFER" ? tBudget("transactionModal.toAccount") : tBudget("transactionModal.moneySource")}>
+                          <AccountSelect
+                            accounts={accounts}
+                            value={txToAccountId}
+                            open={txMenu === "to"}
+                            onOpenChange={(isOpen) => setTxMenu(isOpen ? "to" : null)}
+                            onChange={(id) => {
+                              setTxToAccountId(id);
+                              setTxMenu(null);
+                            }}
+                          />
+                        </Field>
+                      )}
+                    </div>
+                    <Field label={tBudget("transactionModal.time")}>
+                      <TextInput type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
+                    </Field>
+                    <Field label={tBudget("transactionModal.note")}>
+                      <TextInput
+                        placeholder={tc("budget.notePlaceholder")}
+                        value={txNote}
+                        onChange={(e) => setTxNote(e.target.value)}
+                      />
+                    </Field>
+                    <Button size="sm" fullWidth onClick={applyPendingTx} disabled={!txAmount || Number(txAmount) <= 0}>
+                      {tc("action.confirm")}
+                    </Button>
+                  </div>
+                ) : recentTxs.length === 0 ? (
+                  <p className="py-2 text-center text-xs text-gray-400">{t("noExistingTransactions")}</p>
+                ) : (
+                  <div className="max-h-36 space-y-1 overflow-y-auto">
+                    {recentTxs.map((tx) => (
+                      <button
+                        key={tx.id}
+                        type="button"
+                        onClick={() => {
+                          setPendingNewTx(null);
+                          setLinkedTx(tx);
+                          setActivePanel(null);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition ${
+                          linkedTx?.id === tx.id ? "bg-primary-soft ring-1 ring-primary" : "bg-white hover:bg-primary-soft"
+                        }`}
+                      >
+                        <span className="font-bold text-gray-800 truncate">
+                          {tx.note || tx.category?.name || txTypeLabel(tx.type)}
+                        </span>
+                        <span className="font-bold text-primary">{formatShortCurrencyTag(tx.amount, tx.type)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Button fullWidth loading={isSaving} loadingText={tc("action.saving")} onClick={handleSave}>
+              {t("savePhoto")}
+            </Button>
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }

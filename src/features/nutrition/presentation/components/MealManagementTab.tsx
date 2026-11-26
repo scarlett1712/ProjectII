@@ -39,7 +39,7 @@ import { colors } from "@/shared/theme/tokens";
 import { useTranslations } from "next-intl";
 import { formatDate } from "@/shared/i18n/format";
 import { MEAL_CATEGORIES, defaultMealTime, mealCategoryForHour } from "@/features/nutrition/domain/mealCategories";
-import { TOAST_DURATION, Button, IconButton, SegmentedControl, useConfirm, useToast } from "@/shared/ui/components";
+import { TOAST_DURATION, Button, IconButton, LinkedDeleteModal, SegmentedControl, useConfirm, useToast } from "@/shared/ui/components";
 import { MealDetailsModal } from "./MealDetailsModal";
 import { MealFormModal } from "./MealFormModal";
 import type { Meal, MealCategoryDetails } from "./mealTypes";
@@ -63,8 +63,10 @@ const TOAST_DURATION_MS = TOAST_DURATION.long;
 
 export function MealManagementTab() {
   const t = useTranslations("nutrition");
+  const tCam = useTranslations("diary.camera");
   const tc = useTranslations("common");
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [deletingMeal, setDeletingMeal] = useState<Meal | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [activeView, setActiveView] = useState<"list" | "month" | "week" | "day">("list");
@@ -216,27 +218,37 @@ export function MealManagementTab() {
     }
   }
 
-  async function deleteMeal(id: string) {
-    const confirmed = await confirm({
-      title: t("meal.deleteConfirm.title"),
-      message: t("meal.deleteConfirm.message"),
-      cancelLabel: tc("action.close"),
-    });
-    if (!confirmed) return;
+  async function executeDeleteMeal(id: string, deletePhotos: boolean) {
     try {
-      const res = await fetch(withQuery(API_ROUTES.meals.root, { id }), {
+      const res = await fetch(withQuery(API_ROUTES.meals.root, { id, deletePhotos: deletePhotos ? "1" : undefined }), {
         method: "DELETE",
       });
       if (res.ok) {
         setSelectedMealForDetails(null);
         showToast(t("meal.toast.deleted"));
         notifyDataChanged("meals");
+        if (deletePhotos) notifyDataChanged("diary");
         loadMeals();
       }
     } catch (e) {
       console.error(e);
       toast.error(t("meal.toast.deleteFailed"), { durationMs: TOAST_DURATION_MS });
     }
+  }
+
+  async function deleteMeal(id: string) {
+    const meal = meals.find((m) => m.id === id);
+    if (meal && (meal._count?.diaryPhotos ?? 0) > 0) {
+      setDeletingMeal(meal);
+      return;
+    }
+    const confirmed = await confirm({
+      title: t("meal.deleteConfirm.title"),
+      message: t("meal.deleteConfirm.message"),
+      cancelLabel: tc("action.close"),
+    });
+    if (!confirmed) return;
+    await executeDeleteMeal(id, false);
   }
 
   // Categories helper
@@ -728,6 +740,24 @@ export function MealManagementTab() {
         onHide={hideHour}
         onShowAll={showAllHours}
         onClose={closeHourMenu}
+      />
+
+      <LinkedDeleteModal
+        open={!!deletingMeal}
+        title={t("meal.deleteConfirm.title")}
+        message={t("meal.deleteConfirm.message")}
+        options={
+          deletingMeal?._count?.diaryPhotos
+            ? [{ key: "photos", label: tCam("deleteLinkedPhotosOption", { count: String(deletingMeal._count.diaryPhotos) }) }]
+            : []
+        }
+        onClose={() => setDeletingMeal(null)}
+        onConfirm={async (selected) => {
+          if (!deletingMeal) return;
+          const targetId = deletingMeal.id;
+          setDeletingMeal(null);
+          await executeDeleteMeal(targetId, selected.has("photos"));
+        }}
       />
     </div>
   );

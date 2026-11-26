@@ -9,7 +9,7 @@ export const POST = withUser(async (req, userId) => createMealEntry(userId, crea
 export const DELETE = withUser(async (req, userId) => {
   const { searchParams } = new URL(req.url);
   const { id } = deleteMealSchema.parse({ id: searchParams.get("id") ?? undefined });
-  await deleteMealEntry(userId, id);
+  await deleteMealEntry(userId, id, { deletePhotos: searchParams.get("deletePhotos") === "1" });
   return { ok: true };
 });
 

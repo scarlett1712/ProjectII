@@ -51,9 +51,13 @@ export const patchDiaryPhoto = withUser(
 
 export const deleteDiaryPhotoHandler = withUser(
   async (req: NextRequest, userId) => {
-    const id = req.nextUrl.searchParams.get("id");
+    const params = req.nextUrl.searchParams;
+    const id = params.get("id");
     if (!id) throw badRequest("diary.photoNotFound");
-    return deleteDiaryPhoto(userId, id);
+    return deleteDiaryPhoto(userId, id, {
+      deleteMeal: params.get("deleteMeal") === "1",
+      deleteTransaction: params.get("deleteTransaction") === "1",
+    });
   },
   { errorCode: "diary.deleteFailed" },
 );

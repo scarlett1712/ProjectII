@@ -26,7 +26,8 @@ export const PATCH = withUser(async (req, userId) => {
 }, options);
 
 export const DELETE = withUser(async (req, userId) => {
-  const id = idSchema.parse(new URL(req.url).searchParams.get("id") ?? "");
-  await deleteTransaction(userId, id);
+  const params = new URL(req.url).searchParams;
+  const id = idSchema.parse(params.get("id") ?? "");
+  await deleteTransaction(userId, id, { deletePhotos: params.get("deletePhotos") === "1" });
   return { ok: true };
 }, options);
