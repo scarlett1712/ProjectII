@@ -30,9 +30,13 @@ export const chatPostSchema = z.object({
   // Preserve the previous String(content ?? "") coercion.
   content: z
     .unknown()
+    .optional()
     .transform((v) => (v == null ? "" : String(v)))
     .pipe(z.string().max(MAX_CHAT_MESSAGE_LENGTH, messageKey("chat.contentTooLong"))),
-  sessionId: z.unknown().transform((v) => (typeof v === "string" && v ? v : undefined)),
+  sessionId: z
+    .unknown()
+    .optional()
+    .transform((v) => (typeof v === "string" && v ? v : undefined)),
 });
 
 export const renameSessionSchema = z.object(

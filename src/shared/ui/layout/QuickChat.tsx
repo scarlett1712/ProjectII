@@ -8,7 +8,7 @@ import { IconButton } from "@/shared/ui/components";
 import { API_ROUTES, ROUTES } from "@/shared/config/routes";
 import { apiErrorMessage, apiRequest } from "@/shared/client/api";
 import { DRAFT_CHAT_SESSION_ID } from "@/shared/config/chat";
-import { ChatBubble, useChatSend } from "@/shared/ui/chat";
+import { CHAT_LOADING_TOKEN, ChatBubble, useChatSend } from "@/shared/ui/chat";
 
 const GREETING_ID = "greeting";
 interface QuickChatProps {
@@ -28,7 +28,7 @@ export function QuickChat({ userId }: QuickChatProps) {
   } = useChatSend({
     initialMessages: () => [{ id: GREETING_ID, role: "ASSISTANT", content: tShell("quickChat.greeting") }],
     sessionId: chatSessionId,
-    pendingContent: tShell("quickChat.connecting"),
+    pendingContent: CHAT_LOADING_TOKEN,
     fallbackReply: tShell("quickChat.connectionError"),
     errorMessage: (err) => apiErrorMessage(err, tShell("quickChat.connectionError")),
     onSession: (chatSession) => setChatSessionId(chatSession.id),
@@ -62,14 +62,14 @@ export function QuickChat({ userId }: QuickChatProps) {
     void sendChat(content);
   };
   return (
-    <DraggableStar onClick={() => setChatOpen(!chatOpen)}>
+    <DraggableStar isAuthenticated={!!userId} onClick={() => setChatOpen(!chatOpen)}>
       <AnimatePresence>
         {chatOpen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="w-[320px] rounded-3xl border border-white/50 bg-white/90 p-5 shadow-2xl backdrop-blur-md"
+            className="w-[320px] max-w-[calc(100vw-24px)] rounded-3xl border border-white/50 bg-white/90 p-5 shadow-2xl backdrop-blur-md"
           >
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">

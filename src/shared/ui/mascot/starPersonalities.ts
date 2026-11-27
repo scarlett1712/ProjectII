@@ -98,6 +98,16 @@ export interface BriefingItem {
   tagName?: string | null;
 }
 
+export function formatGuestBriefingMessage(
+  personality: StarPersonality,
+  hour: number,
+  weatherText: string | null,
+): string {
+  const greet = getGreetingByHour(personality, hour);
+  const weatherPart = weatherText ? ` 🌤️ ${weatherText}.` : "";
+  return `${greet}${weatherPart}`;
+}
+
 export function formatBriefingMessage(
   personality: StarPersonality,
   hour: number,

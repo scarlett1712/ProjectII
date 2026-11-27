@@ -16,6 +16,7 @@ import { StarPetSprite } from "./StarPetSprite";
 import {
   fetchWeatherSummary,
   formatBriefingMessage,
+  formatGuestBriefingMessage,
   getCelebrateLine,
   getDragLine,
   getPokeLine,
@@ -45,7 +46,15 @@ type AlertPayload = {
   portions?: PortionOption[];
 };
 
-export function DraggableStar({ onClick, children }: { onClick?: () => void; children?: React.ReactNode }) {
+export function DraggableStar({
+  onClick,
+  isAuthenticated = false,
+  children,
+}: {
+  onClick?: () => void;
+  isAuthenticated?: boolean;
+  children?: React.ReactNode;
+}) {
   const tShell = useTranslations("shell");
   const tc = useTranslations("common");
   const toast = useToast();
@@ -174,10 +183,13 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
     return onStarNotification((detail) => void handleNotification(detail));
   }, [tShell]);
 
-  // Morning / session startup briefing: greeting + weather + today's schedule summary
+  // Morning / session startup briefing:
+  // - On login screen (isAuthenticated = false): greet + weather only, without marking session as briefed.
+  // - Inside app (isAuthenticated = true): wait for settings, then greet + weather + today's schedule/tasks.
   useEffect(() => {
-    if (!isMounted || settingsLoading || typeof window === "undefined") return;
-    if (sessionStorage.getItem("star-briefed")) return;
+    if (!isMounted || typeof window === "undefined") return;
+    if (isAuthenticated && settingsLoading) return;
+    if (isAuthenticated && sessionStorage.getItem("star-briefed")) return;
 
     const now = new Date();
     const todayStr = now.toDateString();
@@ -185,6 +197,13 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
     async function runBriefing() {
       const currentSettings = settingsRef.current;
+      if (!isAuthenticated) {
+        const weather = await fetchWeatherSummary(currentSettings.weatherCity);
+        if (cancelled) return;
+        speak(formatGuestBriefingMessage(currentSettings.starPersonality, now.getHours(), weather), 7000);
+        return;
+      }
+
       const [weather, tasks, events, tags] = await Promise.all([
         fetchWeatherSummary(currentSettings.weatherCity),
         apiRequest<{ title: string; completed: boolean; dueAt?: string | null; tagId?: string | null }[]>(API_ROUTES.tasks).catch(() => []),
@@ -209,7 +228,7 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
       cancelled = true;
       clearTimeout(t);
     };
-  }, [isMounted, settingsLoading]);
+  }, [isMounted, isAuthenticated, settingsLoading]);
 
   // Autonomous roaming, singing/dancing, and sleepy night state
   useEffect(() => {
@@ -314,11 +333,15 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
   if (!isMounted) return null;
   const isAlerting = !!alert;
-  const isLeftHalf = position.x < window.innerWidth / 2;
   const bubbleWidth = Math.min(260, window.innerWidth - 24);
   const bubbleLeft =
     Math.min(Math.max(12, position.x + starSize / 2 - bubbleWidth / 2), Math.max(12, window.innerWidth - bubbleWidth - 12)) -
     position.x;
+  const chatPopupWidth = Math.min(320, window.innerWidth - 24);
+  const chatPopupLeft =
+    Math.min(Math.max(12, position.x + starSize / 2 - chatPopupWidth / 2), Math.max(12, window.innerWidth - chatPopupWidth - 12)) -
+    position.x;
+  const openChatBelow = position.y < Math.min(360, window.innerHeight * 0.45);
 
   return (
     <>
@@ -495,7 +518,10 @@ export function DraggableStar({ onClick, children }: { onClick?: () => void; chi
 
         {/* Standard Popup Children when NOT alerting */}
         {!isAlerting && (
-          <div className={`absolute bottom-full mb-4 pointer-events-auto ${isLeftHalf ? "left-0" : "right-0"}`}>
+          <div
+            style={{ left: chatPopupLeft }}
+            className={`absolute pointer-events-auto ${openChatBelow ? "top-full mt-4" : "bottom-full mb-4"}`}
+          >
             {children}
           </div>
         )}

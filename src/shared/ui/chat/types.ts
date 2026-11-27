@@ -1,3 +1,6 @@
+/** Sentinel message content rendered as a wavy loading dots indicator. */
+export const CHAT_LOADING_TOKEN = "__CHAT_LOADING__";
+
 /** Message shared by the full chat, quick chat and the guest chat on the sign-in screen. */
 export interface ChatMessage {
   id: string;

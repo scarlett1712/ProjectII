@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/shared/ui/components";
 import { DraggableStar } from "@/shared/ui/mascot/DraggableStar";
 import { ApiError } from "@/shared/client/api";
-import { ChatBubble, useChatSend } from "@/shared/ui/chat";
+import { CHAT_LOADING_TOKEN, ChatBubble, useChatSend } from "@/shared/ui/chat";
 
 interface AuthMascotChatProps {
   greeting: string;
@@ -21,6 +21,7 @@ export function AuthMascotChat({ greeting, placeholder }: AuthMascotChatProps) {
   // Guests have no session. The server returns a predefined help response.
   const { messages, sending, send } = useChatSend({
     initialMessages: () => [{ id: "greeting", role: "ASSISTANT", content: greeting }],
+    pendingContent: CHAT_LOADING_TOKEN,
     fallbackReply: t("chat.noReply"),
     errorMessage: (error) =>
       error instanceof ApiError
@@ -39,7 +40,7 @@ export function AuthMascotChat({ greeting, placeholder }: AuthMascotChatProps) {
   return (
     <DraggableStar onClick={() => setChatOpen((v) => !v)}>
       {chatOpen && (
-        <div className="w-[300px] rounded-2xl border border-primary-border bg-white/95 p-4 shadow-float backdrop-blur-sm">
+        <div className="w-[300px] max-w-[calc(100vw-24px)] rounded-2xl border border-primary-border bg-white/95 p-4 shadow-float backdrop-blur-sm">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-semibold text-primary">{t("chat.title")}</p>
             <Button variant="ghost" size="sm" onClick={() => setChatOpen(false)}>
